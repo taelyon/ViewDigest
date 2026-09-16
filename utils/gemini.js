@@ -71,9 +71,12 @@ function isLikelyYoutubeUrl(url) {
 /**
  * Gemini generateContent 요청 바디를 구성한다.
  * - systemInstruction / user prompt 는 utils/prompt.js 의 상수를 사용
- * - YouTube 영상은 fileData.fileUri 로 URL을 그대로 전달 (업로드 불필요)
- * - "processing": "agentic" 은 Agentic Video Understanding 모드를 활성화하기
- *   위해 반드시 포함해야 하는 값
+ * - YouTube 영상은 fileData.fileUri 로 URL을 그대로 전달 (업로드 불필요).
+ *   Google 공식 문서(ai.google.dev/gemini-api/docs/video-understanding)의
+ *   요청 형식에는 이 필드들 외에 별도의 "processing" 같은 모드 플래그가
+ *   존재하지 않는다 — 과거 이 코드에 있던 `processing: "agentic"` 필드는
+ *   실제 API 스키마에 없는 값이라 Gemini가 400(Bad Request)으로 거부하는
+ *   원인이었으므로 제거했다. 영상 이해 자체는 fileData만으로 이미 동작한다.
  */
 function buildRequestBody(youtubeUrl, customPrompt) {
   return {
@@ -89,8 +92,6 @@ function buildRequestBody(youtubeUrl, customPrompt) {
         ],
       },
     ],
-    // Agentic Video Understanding 모드 필수 옵션
-    processing: "agentic",
   };
 }
 
