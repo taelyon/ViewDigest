@@ -71,9 +71,21 @@ function isLikelyYoutubeUrl(url) {
 /**
  * Gemini generateContent 요청 바디를 구성한다.
  * - systemInstruction / user prompt 는 utils/prompt.js 의 상수를 사용
- * - YouTube 영상은 fileData.fileUri 로 URL을 그대로 전달 (업로드 불필요)
- * - "processing": "agentic" 은 Agentic Video Understanding 모드를 활성화하기
- *   위해 반드시 포함해야 하는 값
+ * - YouTube 영상은 fileData.fileUri 로 URL을 그대로 전달 (업로드 불필요).
+ * - Agentic Video Understanding은 top-level `processing` 필드가 아니라,
+ *   영상을 담은 Part 안에 `mediaProcessing: "AGENTIC"` 을 함께 실어야 켜진다
+ *   (Google 공식 문서 기준. 과거 이 코드의 `processing: "agentic"` 필드는
+ *   실제 스키마에 없는 값이라 400을 유발했었다). 이 모드에서는 Gemini가
+ *   정적으로 전체 프레임을 훑는 대신, 프롬프트에 맞춰 필요한 구간을 스스로
+ *   탐색하며 프레임 레이트/해상도를 동적으로 조절한다.
+ * - Google Search 도구를 함께 전달해, 영상 밖의 최신/실시간 정보(발행일,
+ *   채널 맥락 등)로 보강된 분석이 가능하도록 한다.
+ * - `mediaResolution: { level: "media_resolution_low" }` 도 같은 Part에
+ *   함께 실어, 프레임당 토큰 사용량을 낮춘다. 긴 영상은 기본(high) 해상도로
+ *   토큰화하면 입력 토큰이 모델의 최대치(1,048,576)를 넘어 요청 자체가
+ *   거부되는 경우가 있어("input token count exceeds the maximum..."),
+ *   텍스트 위주의 분석 리포트 목적에는 낮은 해상도로도 충분하다고 보고
+ *   기본값을 낮춰 이 실패를 방지한다.
  */
 function buildRequestBody(youtubeUrl, customPrompt) {
   return {
@@ -85,17 +97,23 @@ function buildRequestBody(youtubeUrl, customPrompt) {
         role: "user",
         parts: [
           { text: getUserPrompt(customPrompt) },
-          { fileData: { fileUri: youtubeUrl } },
+          {
+            fileData: { fileUri: youtubeUrl, mimeType: "video/mp4" },
+            mediaProcessing: "AGENTIC",
+            mediaResolution: { level: "media_resolution_low" },
+          },
         ],
       },
     ],
-    // Agentic Video Understanding 모드 필수 옵션
-    processing: "agentic",
+    tools: [{ googleSearch: {} }],
   };
 }
 
 /**
  * fetch 응답에서 에러를 검사하고, 실패 시 GeminiApiError를 던진다.
+ * Google이 응답 본문에 실어 보내는 구체적인 사유(error.message)를 그대로
+ * 사용자에게 보여줘야, "HTTP 400" 같은 뜻모를 메시지 대신 실제 원인(예: 잘못된
+ * 모델명, 권한 없는 API 키 등)을 바로 알 수 있다.
  */
 async function assertOkResponse(response) {
   if (response.ok) return;
@@ -107,11 +125,15 @@ async function assertOkResponse(response) {
     details = await response.text().catch(() => null);
   }
 
-  throw new GeminiApiError(
-    `Gemini API 요청이 실패했습니다. (HTTP ${response.status})`,
-    ERROR_CODES.REQUEST_FAILED,
-    { status: response.status, body: details }
-  );
+  const apiMessage = typeof details === "object" ? details?.error?.message : null;
+  const message = apiMessage
+    ? `Gemini API 요청이 실패했습니다: ${apiMessage}`
+    : `Gemini API 요청이 실패했습니다. (HTTP ${response.status})`;
+
+  throw new GeminiApiError(message, ERROR_CODES.REQUEST_FAILED, {
+    status: response.status,
+    body: details,
+  });
 }
 
 /**
