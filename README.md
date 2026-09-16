@@ -26,7 +26,11 @@ LilysAI-YouTube-Analyzer/
 │   ├── gemini.js             # Gemini API 클라이언트
 │   ├── storage.js            # chrome.storage 래퍼
 │   └── cost.js                # 토큰 사용량/비용 계산
-├── icons/                   # 확장프로그램 아이콘 (추가 필요)
+├── icons/
+│   ├── icon16.png
+│   ├── icon32.png
+│   ├── icon48.png
+│   └── icon128.png
 └── README.md
 ```
 
@@ -47,7 +51,6 @@ LilysAI-YouTube-Analyzer/
 
 ## TODO
 
-- [ ] `icons/` 폴더에 16/32/48/128px 아이콘 추가 및 `manifest.json`에 등록
 - [ ] Gemini API 키 발급 및 `options` 페이지에서 저장 기능 구현
 - [ ] YouTube 영상 메타데이터/자막 추출 (`content.js`)
 - [ ] Gemini Agentic Video Understanding 연동 (`utils/gemini.js`)
