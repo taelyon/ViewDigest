@@ -72,20 +72,22 @@ function isLikelyYoutubeUrl(url) {
  * Gemini generateContent 요청 바디를 구성한다.
  * - systemInstruction / user prompt 는 utils/prompt.js 의 상수를 사용
  * - YouTube 영상은 fileData.fileUri 로 URL을 그대로 전달 (업로드 불필요).
- * - Agentic Video Understanding은 top-level `processing` 필드가 아니라,
- *   영상을 담은 Part 안에 `mediaProcessing: "AGENTIC"` 을 함께 실어야 켜진다
- *   (Google 공식 문서 기준. 과거 이 코드의 `processing: "agentic"` 필드는
- *   실제 스키마에 없는 값이라 400을 유발했었다). 이 모드에서는 Gemini가
- *   정적으로 전체 프레임을 훑는 대신, 프롬프트에 맞춰 필요한 구간을 스스로
- *   탐색하며 프레임 레이트/해상도를 동적으로 조절한다.
- * - Google Search 도구를 함께 전달해, 영상 밖의 최신/실시간 정보(발행일,
- *   채널 맥락 등)로 보강된 분석이 가능하도록 한다.
- * - `mediaResolution: { level: "media_resolution_low" }` 도 같은 Part에
- *   함께 실어, 프레임당 토큰 사용량을 낮춘다. 긴 영상은 기본(high) 해상도로
- *   토큰화하면 입력 토큰이 모델의 최대치(1,048,576)를 넘어 요청 자체가
- *   거부되는 경우가 있어("input token count exceeds the maximum..."),
- *   텍스트 위주의 분석 리포트 목적에는 낮은 해상도로도 충분하다고 보고
- *   기본값을 낮춰 이 실패를 방지한다.
+ * - `mediaProcessing: "AGENTIC"` 은 의도적으로 사용하지 않는다. 실제로 켜봤더니
+ *   7분짜리 짧은 영상에서도 "입력 토큰이 1,048,576을 초과했다"는 오류가
+ *   발생했는데 — 정적(1fps) 처리라면 7분 영상은 낮은 해상도 기준으로도
+ *   4~5만 토큰 수준이라 1M을 넘을 수가 없다. Google 문서도 "영상 전체를
+ *   빠짐없이 훑어야 하는 질의는 agentic 모드의 이점이 거의 없고, 결국 모델이
+ *   전체를 다 훑는다"고 명시하는데, 우리 SYSTEM_INSTRUCTION은 정확히 그런
+ *   "빠짐없이 전부 다룰 것"을 요구하는 초고밀도 분석 프롬프트다. 이 조합에서
+ *   agentic의 서버사이드 다중 턴 탐색 루프가 매 턴 누적 컨텍스트를 반복
+ *   재전송하며 토큰을 기하급수적으로 불려, 짧은 영상조차 한도를 넘긴 것으로
+ *   보인다. 따라서 정적 처리를 유지한다.
+ * - Google Search 도구는 그대로 전달해, 영상 밖의 최신/실시간 정보(발행일,
+ *   채널 맥락 등)로 보강된 분석이 가능하도록 한다. 이건 agentic 모드와
+ *   무관하게 별도로 동작하며 토큰 폭증의 원인이 아니다.
+ * - `mediaResolution: { level: "media_resolution_low" }` 은 그대로 유지해
+ *   프레임당 토큰 사용량을 낮춘다. 정적 처리에서도 아주 긴 영상(수 시간)은
+ *   여전히 한도에 가까워질 수 있어, 안전 마진으로 남겨둔다.
  */
 function buildRequestBody(youtubeUrl, customPrompt) {
   return {
@@ -99,7 +101,6 @@ function buildRequestBody(youtubeUrl, customPrompt) {
           { text: getUserPrompt(customPrompt) },
           {
             fileData: { fileUri: youtubeUrl, mimeType: "video/mp4" },
-            mediaProcessing: "AGENTIC",
             mediaResolution: { level: "media_resolution_low" },
           },
         ],
