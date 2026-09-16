@@ -1,4 +1,4 @@
-// LilysAI Style YouTube Analyzer - chrome.storage.local 래퍼
+// ViewDigest - chrome.storage.local 래퍼
 
 const STORAGE_KEYS = {
   HISTORY: "analysisHistory",

@@ -1,4 +1,4 @@
-// LilysAI Style YouTube Analyzer - popup script
+// ViewDigest - popup script
 
 import { getHistory, deleteAnalysis } from "../utils/storage.js";
 import { getUsageStats, checkRateLimit } from "../utils/cost.js";

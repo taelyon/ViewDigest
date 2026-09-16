@@ -1,4 +1,4 @@
-// LilysAI Style YouTube Analyzer - options script
+// ViewDigest - options script
 
 import {
   getSettings,

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "LilysAI Style YouTube Analyzer",
+  "name": "ViewDigest",
   "version": "0.1.0",
-  "description": "Gemini Agentic Video Understanding으로 YouTube 영상을 분석하여 Lilys AI를 능가하는 초고밀도 상세 분석 리포트를 생성하는 확장프로그램",
+  "description": "Gemini Agentic Video Understanding으로 YouTube 영상을 분석해 초고밀도 상세 분석 리포트를 생성하는 확장프로그램",
   "permissions": [
     "storage",
     "activeTab",
@@ -21,7 +21,7 @@
   },
   "action": {
     "default_popup": "popup/popup.html",
-    "default_title": "LilysAI Style YouTube Analyzer",
+    "default_title": "ViewDigest",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png",

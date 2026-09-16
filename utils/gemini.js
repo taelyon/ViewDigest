@@ -1,7 +1,7 @@
-// LilysAI Style YouTube Analyzer - Gemini API 클라이언트
+// ViewDigest - Gemini API 클라이언트
 //
 // Gemini의 "Agentic Video Understanding" 기능을 사용해 YouTube 영상 URL을 직접
-// 전달하고, Lilys AI를 능가하는 초고밀도 분석 리포트를 생성해서 반환합니다.
+// 전달하고, 초고밀도 분석 리포트를 생성해서 반환합니다.
 
 import { getSystemInstruction, getUserPrompt } from "./prompt.js";
 import { checkRateLimit, estimateCost, recordUsage } from "./cost.js";
