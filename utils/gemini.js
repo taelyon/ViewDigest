@@ -80,6 +80,12 @@ function isLikelyYoutubeUrl(url) {
  *   탐색하며 프레임 레이트/해상도를 동적으로 조절한다.
  * - Google Search 도구를 함께 전달해, 영상 밖의 최신/실시간 정보(발행일,
  *   채널 맥락 등)로 보강된 분석이 가능하도록 한다.
+ * - `mediaResolution: { level: "media_resolution_low" }` 도 같은 Part에
+ *   함께 실어, 프레임당 토큰 사용량을 낮춘다. 긴 영상은 기본(high) 해상도로
+ *   토큰화하면 입력 토큰이 모델의 최대치(1,048,576)를 넘어 요청 자체가
+ *   거부되는 경우가 있어("input token count exceeds the maximum..."),
+ *   텍스트 위주의 분석 리포트 목적에는 낮은 해상도로도 충분하다고 보고
+ *   기본값을 낮춰 이 실패를 방지한다.
  */
 function buildRequestBody(youtubeUrl, customPrompt) {
   return {
@@ -94,6 +100,7 @@ function buildRequestBody(youtubeUrl, customPrompt) {
           {
             fileData: { fileUri: youtubeUrl, mimeType: "video/mp4" },
             mediaProcessing: "AGENTIC",
+            mediaResolution: { level: "media_resolution_low" },
           },
         ],
       },
