@@ -288,6 +288,23 @@ body {
   flex-wrap: wrap;
 }
 
+/* 타임스탬프 이동 등 짧은 상태 피드백 메시지 */
+.feedback {
+  min-height: 14px;
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+.feedback:empty {
+  display: none;
+}
+.feedback.success {
+  color: var(--success);
+}
+.feedback.error {
+  color: var(--danger);
+}
+
 /* 마크다운 렌더링 영역 */
 .markdown-body {
   flex: 1;

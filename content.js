@@ -90,22 +90,38 @@
     document.head.appendChild(style);
   }
 
+  function truncate(text, maxLength) {
+    if (!text || text.length <= maxLength) return text;
+    return `${text.slice(0, maxLength)}…`;
+  }
+
   function handleAnalyzeClick(event) {
     const button = event.currentTarget;
     if (button.disabled) return;
 
-    const originalLabel = BUTTON_LABEL;
     button.disabled = true;
-    button.textContent = "분석 요청 중...";
+    button.textContent = "⏳ Gemini가 분석 중...";
 
     chrome.runtime.sendMessage(
       { action: "analyzeVideo", url: location.href },
-      () => {
+      (response) => {
         // background.js가 비동기로 분석을 처리하는 동안 lastError(수신자 없음 등)는
         // 버튼 UI 복구를 막을 이유가 없으므로 조회만 하고 무시한다.
         void chrome.runtime.lastError;
+
+        // 성공/실패를 버튼에 잠시 표시해, 팝업을 열지 않아도 현재 상태를 바로 알 수 있게 한다.
+        if (response?.success) {
+          button.textContent = "✅ 분석 완료! 확장 아이콘을 눌러 확인하세요";
+        } else if (response?.error) {
+          button.textContent = `❌ ${truncate(response.error.message, 30)}`;
+        } else {
+          button.textContent = BUTTON_LABEL;
+        }
+
         button.disabled = false;
-        button.textContent = originalLabel;
+        setTimeout(() => {
+          button.textContent = BUTTON_LABEL;
+        }, 3000);
       }
     );
   }

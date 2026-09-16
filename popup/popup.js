@@ -232,6 +232,7 @@ function renderResult(entry) {
   document.getElementById("result-model").textContent = entry.model ?? "-";
   document.getElementById("result-cost").textContent = `예상 비용 ${formatCost(entry.estimatedCost)}`;
   document.getElementById("result-content").innerHTML = renderMarkdown(entry.markdown ?? "");
+  showSeekFeedback("", null); // 이전 결과에서 남아있던 타임스탬프 이동 에러 메시지를 지운다
 }
 
 // ---------------------------------------------------------------------
@@ -312,12 +313,43 @@ function setupCurrentTabActions() {
   });
 }
 
+let seekFeedbackTimer = null;
+
+function showSeekFeedback(message, type) {
+  const el = document.getElementById("seek-feedback");
+  if (!el) return;
+  el.textContent = message;
+  el.className = `feedback${type ? ` ${type}` : ""}`;
+
+  clearTimeout(seekFeedbackTimer);
+  if (message) {
+    seekFeedbackTimer = setTimeout(() => {
+      el.textContent = "";
+      el.className = "feedback";
+    }, 3500);
+  }
+}
+
 function seekToTimestamp(el) {
   const seconds = Number(el.dataset.seconds);
   if (!Number.isFinite(seconds)) return;
-  chrome.runtime.sendMessage({ action: "seekTo", seconds }, () => {
-    void chrome.runtime.lastError;
-  });
+
+  // videoId를 함께 보내, background가 "지금 보고 있는 리포트의 영상"이 실제로
+  // 열려있는 탭을 찾아 그 탭에만 seek을 적용하도록 한다 (엉뚱한 영상 탐색 방지).
+  chrome.runtime.sendMessage(
+    { action: "seekTo", seconds, videoId: currentEntry?.videoId },
+    (response) => {
+      if (chrome.runtime.lastError) {
+        showSeekFeedback(chrome.runtime.lastError.message, "error");
+        return;
+      }
+      if (response?.success) {
+        showSeekFeedback("", null); // 이전에 남아있던 에러 메시지를 즉시 지운다
+      } else {
+        showSeekFeedback(response?.error?.message ?? "영상으로 이동하지 못했습니다.", "error");
+      }
+    }
+  );
 }
 
 async function copyCurrentMarkdown() {
