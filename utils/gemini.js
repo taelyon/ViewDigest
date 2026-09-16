@@ -126,6 +126,19 @@ async function assertOkResponse(response) {
   }
 
   const apiMessage = typeof details === "object" ? details?.error?.message : null;
+
+  // 영상 길이(+ 해상도) 자체가 Gemini의 입력 토큰 한도를 넘는 경우.
+  // mediaResolution을 이미 최저값으로 낮춰도 아주 긴 영상은 여전히 넘을 수
+  // 있는데, 이때 원본 메시지("...exceeds the maximum number of tokens...")만
+  // 보여주면 사용자가 재시도해도 소용없는 상황임을 알기 어렵다.
+  if (apiMessage && /exceeds the maximum number of tokens/i.test(apiMessage)) {
+    throw new GeminiApiError(
+      "이 영상은 길이가 너무 길어 Gemini가 한 번에 분석할 수 있는 한도(입력 토큰)를 초과합니다. 더 짧은 영상으로 시도해주세요.",
+      ERROR_CODES.REQUEST_FAILED,
+      { status: response.status, body: details }
+    );
+  }
+
   const message = apiMessage
     ? `Gemini API 요청이 실패했습니다: ${apiMessage}`
     : `Gemini API 요청이 실패했습니다. (HTTP ${response.status})`;
