@@ -1,4 +1,4 @@
-// LilysAI Style YouTube Analyzer - background service worker
+// ViewDigest - background service worker
 //
 // content.js / popup.js 로부터 오는 메시지를 받아 실제 분석 파이프라인을 조율한다.
 // manifest.json의 background.type이 "module"이므로 ES import를 사용할 수 있다.
@@ -222,7 +222,7 @@ async function handleSeekTo(message) {
 // ---------------------------------------------------------------------
 
 function notifyNewVideoAnalyzed(channel, video) {
-  chrome.notifications.create(`lilysai-analysis-${video.videoId}`, {
+  chrome.notifications.create(`viewdigest-analysis-${video.videoId}`, {
     type: "basic",
     iconUrl: "icons/icon128.png",
     title: "새 영상 분석 완료",

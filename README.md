@@ -1,4 +1,4 @@
-# LilysAI Style YouTube Analyzer
+# ViewDigest
 
 Gemini의 **Agentic Video Understanding**을 이용해 YouTube 영상을 통째로 분석하고,
 "영상을 1초도 보지 않아도 내용을 100% 이해할 수 있는" 수준의 초고밀도 리포트를
@@ -15,7 +15,7 @@ Gemini의 **Agentic Video Understanding**을 이용해 YouTube 영상을 통째�
 - 챕터 → 소주제(Section) → 상세 포인트(detailedPoints) 3~6개의 계층적 구조
 - 각 소주제의 타임스탬프(00:00 형식)
 
-를 갖춘 **Lilys AI 스타일의 초고밀도 분석 리포트**를 생성하는 것을 목표로 합니다.
+를 갖춘 **초고밀도 분석 리포트**를 생성하는 것을 목표로 합니다.
 YouTube 시청 페이지에 분석 버튼을 추가해 원클릭으로 리포트를 생성하고, 리포트 내
 타임스탬프를 클릭하면 실제 영상이 그 지점으로 바로 이동합니다.
 
@@ -41,7 +41,7 @@ YouTube 시청 페이지에 분석 버튼을 추가해 원클릭으로 리포트
 3. 화면 우측 상단의 **"개발자 모드"** 토글을 켭니다.
 4. **"압축해제된 확장프로그램을 로드합니다"** 버튼을 클릭합니다.
 5. 방금 클론/압축 해제한 프로젝트의 **루트 폴더**(`manifest.json`이 있는 폴더)를 선택합니다.
-6. 확장프로그램 목록에 **"LilysAI Style YouTube Analyzer"**가 나타나고, 브라우저 툴바에
+6. 확장프로그램 목록에 **"ViewDigest"**가 나타나고, 브라우저 툴바에
    보라색 아이콘이 추가되면 설치가 완료된 것입니다.
 7. 코드를 수정했다면, `chrome://extensions` 페이지에서 이 확장프로그램의 **새로고침(⟳) 아이콘**을
    눌러 변경사항을 반영하세요. (background.js/utils 변경 시 특히 필요)
@@ -192,7 +192,7 @@ YouTube 시청 페이지(`youtube.com/watch?v=...`)를 열면 좋아요/공유 �
 ## 6. 프로젝트 구조
 
 ```
-LilysAI-YouTube-Analyzer/
+ViewDigest/
 ├── manifest.json            # Manifest V3 설정
 ├── background.js            # 메시지 라우팅, 분석 파이프라인 조율, seekTo 중계, 채널 자동 확인(alarms)
 ├── content.js                # YouTube 페이지에 분석 버튼 삽입 + 영상 탐색(seek) 처리

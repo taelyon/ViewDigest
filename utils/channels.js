@@ -1,4 +1,4 @@
-// LilysAI Style YouTube Analyzer - 채널 구독/RSS 피드 유틸리티
+// ViewDigest - 채널 구독/RSS 피드 유틸리티
 //
 // background.js(service worker)에는 DOMParser가 없으므로, 채널 페이지 HTML과
 // RSS 피드 XML을 모두 정규식으로 직접 파싱한다. YouTube의 채널 RSS 피드는

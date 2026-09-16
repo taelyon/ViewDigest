@@ -1,4 +1,4 @@
-// LilysAI Style YouTube Analyzer - YouTube 페이지 content script
+// ViewDigest - YouTube 페이지 content script
 //
 // 이 스크립트는 일반 script(non-module)로 주입되므로 utils/*.js 의 ES export를
 // 직접 import할 수 없다. Gemini 호출 등 무거운 로직은 background.js 에서
@@ -13,8 +13,8 @@
 // TODO: 분석 진행 상태(로딩/완료/에러)를 background로부터 응답받아 버튼 UI에 반영
 
 (function () {
-  const BUTTON_ID = "lilysai-analyze-button";
-  const STYLE_ID = "lilysai-analyze-button-style";
+  const BUTTON_ID = "viewdigest-analyze-button";
+  const STYLE_ID = "viewdigest-analyze-button-style";
   const BUTTON_LABEL = "⚡ 초고밀도 분석 노트 생성";
 
   // YouTube DOM 구조는 자주 바뀌므로, 우선순위대로 여러 삽입 지점을 시도한다.
