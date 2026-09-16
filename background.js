@@ -146,6 +146,9 @@ async function handleAnalyzeVideo(url, { tab, titleOverride } = {}) {
     notifyPopup({ action: "analysisComplete", result: savedEntry });
     return { success: true, result: savedEntry };
   } catch (error) {
+    // 서비스 워커 콘솔(chrome://extensions → 세부정보 → 서비스 워커 검사)에서
+    // Google이 보낸 원본 에러 본문까지 확인할 수 있도록 전체 에러를 남긴다.
+    console.error("[analyzeVideo 실패]", url, error, error?.details ?? "");
     const normalized = normalizeError(error);
     notifyPopup({ action: "analysisError", url, error: normalized });
     return { success: false, error: normalized };

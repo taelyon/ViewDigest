@@ -96,6 +96,9 @@ function buildRequestBody(youtubeUrl, customPrompt) {
 
 /**
  * fetch 응답에서 에러를 검사하고, 실패 시 GeminiApiError를 던진다.
+ * Google이 응답 본문에 실어 보내는 구체적인 사유(error.message)를 그대로
+ * 사용자에게 보여줘야, "HTTP 400" 같은 뜻모를 메시지 대신 실제 원인(예: 잘못된
+ * 모델명, 권한 없는 API 키 등)을 바로 알 수 있다.
  */
 async function assertOkResponse(response) {
   if (response.ok) return;
@@ -107,11 +110,15 @@ async function assertOkResponse(response) {
     details = await response.text().catch(() => null);
   }
 
-  throw new GeminiApiError(
-    `Gemini API 요청이 실패했습니다. (HTTP ${response.status})`,
-    ERROR_CODES.REQUEST_FAILED,
-    { status: response.status, body: details }
-  );
+  const apiMessage = typeof details === "object" ? details?.error?.message : null;
+  const message = apiMessage
+    ? `Gemini API 요청이 실패했습니다: ${apiMessage}`
+    : `Gemini API 요청이 실패했습니다. (HTTP ${response.status})`;
+
+  throw new GeminiApiError(message, ERROR_CODES.REQUEST_FAILED, {
+    status: response.status,
+    body: details,
+  });
 }
 
 /**
