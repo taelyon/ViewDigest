@@ -65,6 +65,46 @@
       <p id="settings-feedback" class="feedback"></p>
     </section>
 
+    <!-- 채널 구독 (새 영상 자동 분석) -->
+    <section class="card">
+      <h2>채널 구독 (새 영상 자동 분석)</h2>
+      <p class="card-desc">
+        채널을 등록하면, 등록한 시점 이후 새로 올라오는 영상만 자동으로 분석됩니다.
+        (등록 시점의 기존 영상은 자동 분석되지 않습니다.) 브라우저가 켜져 있을 때만 확인합니다.
+      </p>
+
+      <label class="field-label" for="channel-input">채널 URL, @핸들 또는 채널 ID</label>
+      <div class="input-row">
+        <input
+          type="text"
+          id="channel-input"
+          class="text-input"
+          placeholder="https://www.youtube.com/@채널핸들"
+          autocomplete="off"
+        />
+        <button id="add-channel-btn" class="primary-btn" type="button">채널 추가</button>
+      </div>
+      <p id="channel-add-feedback" class="feedback"></p>
+
+      <label class="field-label" for="channel-check-interval-input">확인 주기(분)</label>
+      <div class="input-row">
+        <input
+          type="number"
+          id="channel-check-interval-input"
+          class="text-input"
+          min="5"
+          max="1440"
+          step="1"
+        />
+        <button id="save-channel-interval-btn" class="secondary-btn" type="button">주기 저장</button>
+        <button id="check-channels-now-btn" class="secondary-btn" type="button">지금 확인</button>
+      </div>
+      <p id="channel-interval-feedback" class="feedback"></p>
+
+      <ul id="channel-list" class="channel-list"></ul>
+      <p id="channel-list-empty" class="card-desc hidden">아직 구독한 채널이 없습니다.</p>
+    </section>
+
     <!-- 사용량 요약 -->
     <section class="card">
       <h2>사용량 요약</h2>

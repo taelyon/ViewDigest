@@ -295,3 +295,81 @@ select.text-input {
 .rate-limit-fill.is-full {
   background: var(--danger);
 }
+
+.hidden {
+  display: none !important;
+}
+
+/* 채널 구독 목록 */
+.channel-list {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.channel-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+}
+
+.channel-item-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.channel-item-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.channel-item-title a {
+  color: inherit;
+  text-decoration: none;
+}
+.channel-item-title a:hover {
+  text-decoration: underline;
+}
+
+.channel-item-meta {
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.channel-toggle {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.channel-remove-btn {
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.channel-remove-btn:hover {
+  background: rgba(248, 113, 113, 0.15);
+  color: var(--danger);
+}

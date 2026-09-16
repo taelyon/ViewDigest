@@ -3,6 +3,7 @@
 const STORAGE_KEYS = {
   HISTORY: "analysisHistory",
   SETTINGS: "settings",
+  CHANNELS: "subscribedChannels",
 };
 
 const MAX_HISTORY_ITEMS = 50;
@@ -82,6 +83,60 @@ async function clearHistory() {
   await chrome.storage.local.set({ [STORAGE_KEYS.HISTORY]: [] });
 }
 
+/**
+ * 구독 중인 채널 목록을 조회
+ */
+async function getChannels() {
+  const { [STORAGE_KEYS.CHANNELS]: channels } = await chrome.storage.local.get(
+    STORAGE_KEYS.CHANNELS
+  );
+  return channels ?? [];
+}
+
+/**
+ * 채널을 구독 목록에 추가한다. 이미 등록된 channelId면 아무것도 하지 않고
+ * 기존 항목을 그대로 반환한다.
+ */
+async function addChannel(channel) {
+  const channels = await getChannels();
+  const existing = channels.find((c) => c.channelId === channel.channelId);
+  if (existing) return existing;
+
+  const entry = {
+    channelId: channel.channelId,
+    title: channel.title ?? channel.channelId,
+    url: channel.url ?? `https://www.youtube.com/channel/${channel.channelId}`,
+    enabled: true,
+    addedAt: new Date().toISOString(),
+    // 등록 시점의 최신 영상을 기준선으로 삼아, 그 이후 올라온 영상만 자동 분석 대상이 된다.
+    lastVideoId: channel.lastVideoId ?? null,
+    lastCheckedAt: null,
+  };
+
+  await chrome.storage.local.set({ [STORAGE_KEYS.CHANNELS]: [...channels, entry] });
+  return entry;
+}
+
+/**
+ * channelId로 채널을 구독 목록에서 제거
+ */
+async function removeChannel(channelId) {
+  const channels = await getChannels();
+  const updated = channels.filter((c) => c.channelId !== channelId);
+  await chrome.storage.local.set({ [STORAGE_KEYS.CHANNELS]: updated });
+  return updated;
+}
+
+/**
+ * channelId로 채널 항목을 부분 수정(활성화 여부, lastVideoId 등)
+ */
+async function updateChannel(channelId, patch) {
+  const channels = await getChannels();
+  const updated = channels.map((c) => (c.channelId === channelId ? { ...c, ...patch } : c));
+  await chrome.storage.local.set({ [STORAGE_KEYS.CHANNELS]: updated });
+  return updated.find((c) => c.channelId === channelId) ?? null;
+}
+
 export {
   STORAGE_KEYS,
   MAX_HISTORY_ITEMS,
@@ -91,4 +146,8 @@ export {
   saveAnalysis,
   deleteAnalysis,
   clearHistory,
+  getChannels,
+  addChannel,
+  removeChannel,
+  updateChannel,
 };

@@ -23,6 +23,7 @@ YouTube 시청 페이지에 분석 버튼을 추가해 원클릭으로 리포트
 
 - 🎯 **원클릭 분석**: YouTube 시청 페이지의 "초고밀도 분석 노트 생성" 버튼 클릭 한 번
 - ⏱ **클릭 가능한 타임스탬프**: 리포트의 `00:00` 형식 타임스탬프를 클릭하면 영상이 해당 지점으로 자동 이동
+- 📡 **채널 구독**: 관심 채널을 등록해두면, 새 영상이 올라올 때마다 자동으로 분석
 - 🗂 **히스토리 관리**: 분석 결과를 최대 50개까지 자동 저장, 언제든 다시 열람·삭제
 - 💰 **비용/사용량 추적**: 모델별 예상 비용 계산, 일일 사용 횟수 제한(rate limit)으로 과금 폭탄 방지
 - 🌙 **다크 모드 UI**: 긴 리포트도 눈이 편하게, 팝업/옵션 페이지 모두 다크 테마 기본 적용
@@ -134,6 +135,37 @@ YouTube 시청 페이지(`youtube.com/watch?v=...`)를 열면 좋아요/공유 �
 | `gemini-3.8-flash` | 더 높은 품질(고성능), 비용도 더 높음 |
 | `gemini-3.5-flash-lite` | 가장 경제적인 모델, 간단한 영상에 적합 |
 
+### 4.6 채널 구독 (새 영상 자동 분석)
+
+특정 영상이 아니라 **채널 전체를 구독**해두면, 그 채널에 새 영상이 올라올 때마다
+자동으로 분석되어 히스토리에 쌓입니다.
+
+1. 옵션 페이지의 **"채널 구독 (새 영상 자동 분석)"** 섹션에서 채널 URL, `@핸들`,
+   또는 채널 ID(`UC...`)를 입력하고 **"채널 추가"**를 클릭합니다.
+2. 확장프로그램이 (별도의 YouTube API 키 없이) 해당 채널의 공개 RSS 피드를 주기적으로
+   확인해 새 영상을 감지합니다. 기본 확인 주기는 30분이며, **"확인 주기(분)"**에서
+   원하는 값(최소 5분)으로 바꿀 수 있습니다. **"지금 확인"** 버튼으로 즉시 확인해볼 수도
+   있습니다.
+3. 새 영상이 발견되면 자동으로 "지금 분석하기"와 동일한 파이프라인으로 분석이 진행되고,
+   완료되면 브라우저 알림으로 알려줍니다.
+4. 채널 목록의 체크박스로 채널별 자동 분석을 켜고 끌 수 있고, 🗑 버튼으로 구독을
+   완전히 해제할 수 있습니다.
+
+**동작 방식에 대해 알아두면 좋은 점**
+
+- **소급 분석되지 않습니다**: 채널을 등록하는 시점의 최신 영상은 자동 분석 대상이
+  아니라 "기준선"으로만 기록됩니다. 그 시점 *이후*에 새로 올라오는 영상부터 자동
+  분석됩니다.
+- **브라우저가 켜져 있을 때만 확인**합니다. Chrome/Whale이 꺼져 있는 동안 올라온
+  영상은, 다음에 브라우저를 켰을 때 알람이 다시 실행되면서 확인됩니다.
+- **일일 사용 한도(rate limit)를 함께 소모**합니다. 채널 자동 분석도 수동 분석과
+  동일한 하루 횟수 제한을 공유합니다. 한도를 다 쓰면 자동 분석은 잠시 건너뛰고,
+  다음 확인(한도가 초기화된 이후)에 자동으로 다시 시도합니다.
+- 브라우저가 오래 꺼져있다 켜져서 한 채널에 새 영상이 한꺼번에 여러 개 쌓여있으면,
+  **한 번에 확인할 때마다 최대 3개까지만** 자동 분석합니다. (한 채널이 전체 일일
+  한도를 독점하는 것을 방지하기 위함이며, 3개를 넘는 나머지는 소급 분석되지
+  않습니다.)
+
 ## 5. 사용 시 주의사항
 
 - **API 키는 사용자 본인 소유**입니다. 이 확장프로그램은 별도의 백엔드 서버 없이 브라우저에서
@@ -153,27 +185,31 @@ YouTube 시청 페이지(`youtube.com/watch?v=...`)를 열면 좋아요/공유 �
   다운로드 기능으로 별도 백업해두는 것을 권장합니다.
 - YouTube가 페이지 구조(DOM)를 변경하면 분석 버튼이 일시적으로 표시되지 않을 수 있습니다.
   이 경우 페이지를 새로고침하거나 확장프로그램을 업데이트해주세요.
+- **채널 구독은 브라우저가 켜져 있을 때만 동작**하며, 수동 분석과 일일 한도를 공유합니다.
+  구독 채널이 많거나 업로드가 잦으면 한도가 채널 자동 분석만으로 빠르게 소진될 수 있으니,
+  옵션 페이지의 사용량 요약을 주기적으로 확인하세요.
 
 ## 6. 프로젝트 구조
 
 ```
 LilysAI-YouTube-Analyzer/
 ├── manifest.json            # Manifest V3 설정
-├── background.js            # 메시지 라우팅, 분석 파이프라인 조율, seekTo 중계
+├── background.js            # 메시지 라우팅, 분석 파이프라인 조율, seekTo 중계, 채널 자동 확인(alarms)
 ├── content.js                # YouTube 페이지에 분석 버튼 삽입 + 영상 탐색(seek) 처리
 ├── popup/
 │   ├── popup.html            # 팝업 UI (현재 분석 / 히스토리 / 사용량 탭)
 │   ├── popup.js               # 마크다운 렌더링, 탭 전환, 히스토리/사용량 표시
 │   └── popup.css               # 다크 모드 UI 스타일
 ├── options/
-│   ├── options.html          # 설정 페이지 (API 키 / 모델 / 한도 / 히스토리 관리)
+│   ├── options.html          # 설정 페이지 (API 키 / 모델 / 한도 / 채널 구독 / 히스토리 관리)
 │   ├── options.js
 │   └── options.css
 ├── utils/
 │   ├── prompt.js              # Gemini 시스템/사용자 프롬프트 상수
 │   ├── gemini.js               # Gemini API 호출 (Agentic Video Understanding)
-│   ├── storage.js               # chrome.storage.local 래퍼 (설정/히스토리)
-│   └── cost.js                   # 비용 추정, 사용량 기록, rate limit
+│   ├── storage.js               # chrome.storage.local 래퍼 (설정/히스토리/구독 채널)
+│   ├── cost.js                   # 비용 추정, 사용량 기록, rate limit
+│   └── channels.js                # 채널 ID 조회, RSS 피드로 최신 영상 확인
 ├── icons/                     # 확장프로그램 아이콘 (16/32/48/128px)
 └── README.md
 ```
@@ -182,10 +218,12 @@ LilysAI-YouTube-Analyzer/
 
 | 권한 | 용도 |
 |---|---|
-| `storage` | 설정, 분석 히스토리, 사용량 기록 저장 |
+| `storage` | 설정, 분석 히스토리, 구독 채널, 사용량 기록 저장 |
 | `activeTab` / `tabs` | 현재 YouTube 탭 확인, 팝업에서 분석 시작, seekTo 메시지 중계 |
 | `scripting` | content script 관련 동작 지원 |
-| `host_permissions: youtube.com` | YouTube 시청 페이지에 분석 버튼 삽입, 영상 tab 탐색 |
+| `alarms` | 채널 구독 새 영상을 주기적으로 확인 |
+| `notifications` | 채널 자동 분석 완료 시 알림 표시 |
+| `host_permissions: youtube.com` | YouTube 시청 페이지에 분석 버튼 삽입, 영상 탭 탐색, 채널 RSS 피드/페이지 조회 |
 | `host_permissions: generativelanguage.googleapis.com` | Gemini API 호출 |
 
 ## 8. 개발 메모
@@ -195,4 +233,7 @@ LilysAI-YouTube-Analyzer/
 - `content.js`는 일반 스크립트(non-module)로 주입되므로 `utils/*.js`를 직접 import할 수
   없습니다. Gemini 호출 등 무거운 로직은 항상 `background.js`를 거칩니다.
 - 메시지 액션 이름: `analyzeVideo`(content/popup → background), `seekTo`(popup →
-  background → content), `analysisComplete` / `analysisError`(background → popup 브로드캐스트).
+  background → content), `analysisComplete` / `analysisError`(background → popup 브로드캐스트),
+  `checkChannelsNow` / `refreshChannelCheckAlarm`(options → background).
+- `utils/channels.js`는 background.js(service worker, DOMParser 없음)에서도 동작해야 하므로
+  채널 페이지 HTML과 RSS XML을 정규식으로 직접 파싱합니다.

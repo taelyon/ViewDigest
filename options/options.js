@@ -1,13 +1,25 @@
 // LilysAI Style YouTube Analyzer - options script
 
-import { getSettings, setSettings, getHistory, clearHistory } from "../utils/storage.js";
+import {
+  getSettings,
+  setSettings,
+  getHistory,
+  clearHistory,
+  getChannels,
+  addChannel,
+  removeChannel,
+  updateChannel,
+} from "../utils/storage.js";
 import { getUsageStats, checkRateLimit, DEFAULT_DAILY_LIMIT } from "../utils/cost.js";
+import { resolveChannelId } from "../utils/channels.js";
 
 // gemini.js가 읽는 것과 동일한 storage 영역/키. API 키는 기기 간 동기화되는
 // chrome.storage.sync에 저장하므로, 로컬 설정/히스토리를 다루는
 // utils/storage.js와는 별도로 이 파일에서 직접 다룬다.
 const API_KEY_STORAGE_KEY = "geminiApiKey";
 const DEFAULT_MODEL = "gemini-3.7-flash";
+// background.js의 기본값과 동일 (background.js는 다른 파일이 import하는 모듈이 아니므로 값을 복제)
+const DEFAULT_CHANNEL_CHECK_INTERVAL_MINUTES = 30;
 
 // ---------------------------------------------------------------------
 // 유틸리티
@@ -47,6 +59,19 @@ function formatCost(usd) {
 function showFeedback(el, message, type) {
   el.textContent = message;
   el.className = `feedback${type ? ` ${type}` : ""}`;
+}
+
+function formatDate(iso) {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleString("ko-KR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 // ---------------------------------------------------------------------
@@ -161,6 +186,139 @@ function setupSettingsSection() {
 }
 
 // ---------------------------------------------------------------------
+// 채널 구독 섹션 (새 영상 자동 분석)
+// ---------------------------------------------------------------------
+
+const channelInput = document.getElementById("channel-input");
+const addChannelBtn = document.getElementById("add-channel-btn");
+const channelAddFeedback = document.getElementById("channel-add-feedback");
+const channelIntervalInput = document.getElementById("channel-check-interval-input");
+const saveChannelIntervalBtn = document.getElementById("save-channel-interval-btn");
+const channelIntervalFeedback = document.getElementById("channel-interval-feedback");
+const checkChannelsNowBtn = document.getElementById("check-channels-now-btn");
+const channelListEl = document.getElementById("channel-list");
+const channelListEmptyEl = document.getElementById("channel-list-empty");
+
+async function refreshChannelList() {
+  const channels = await getChannels();
+  channelListEl.innerHTML = "";
+  channelListEmptyEl.classList.toggle("hidden", channels.length > 0);
+
+  for (const channel of channels) {
+    const li = document.createElement("li");
+    li.className = "channel-item";
+
+    const main = document.createElement("div");
+    main.className = "channel-item-main";
+
+    const title = document.createElement("div");
+    title.className = "channel-item-title";
+    const link = document.createElement("a");
+    link.href = channel.url;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = channel.title ?? channel.channelId;
+    title.appendChild(link);
+
+    const meta = document.createElement("div");
+    meta.className = "channel-item-meta";
+    meta.textContent = channel.lastCheckedAt
+      ? `마지막 확인: ${formatDate(channel.lastCheckedAt)}`
+      : "아직 확인 전";
+
+    main.append(title, meta);
+
+    const toggleLabel = document.createElement("label");
+    toggleLabel.className = "channel-toggle";
+    const toggle = document.createElement("input");
+    toggle.type = "checkbox";
+    toggle.checked = channel.enabled;
+    toggle.addEventListener("change", async () => {
+      await updateChannel(channel.channelId, { enabled: toggle.checked });
+    });
+    toggleLabel.append(toggle, document.createTextNode("자동 분석"));
+
+    const removeBtn = document.createElement("button");
+    removeBtn.className = "channel-remove-btn";
+    removeBtn.type = "button";
+    removeBtn.title = "구독 해제";
+    removeBtn.textContent = "🗑";
+    removeBtn.addEventListener("click", async () => {
+      await removeChannel(channel.channelId);
+      await refreshChannelList();
+    });
+
+    li.append(main, toggleLabel, removeBtn);
+    channelListEl.appendChild(li);
+  }
+}
+
+async function loadChannelIntervalForm() {
+  const settings = await getSettings();
+  channelIntervalInput.value = settings.channelCheckIntervalMinutes ?? DEFAULT_CHANNEL_CHECK_INTERVAL_MINUTES;
+}
+
+function refreshChannelCheckAlarm() {
+  // background.js에 즉시 새 주기로 알람을 다시 등록하도록 알린다.
+  chrome.runtime.sendMessage({ action: "refreshChannelCheckAlarm" }, () => {
+    void chrome.runtime.lastError;
+  });
+}
+
+function setupChannelSection() {
+  addChannelBtn.addEventListener("click", async () => {
+    const value = channelInput.value.trim();
+    if (!value) {
+      showFeedback(channelAddFeedback, "채널 URL, @핸들 또는 채널 ID를 입력해주세요.", "error");
+      return;
+    }
+
+    addChannelBtn.disabled = true;
+    showFeedback(channelAddFeedback, "채널 정보를 확인하는 중...", null);
+    try {
+      const resolved = await resolveChannelId(value);
+      await addChannel(resolved);
+      channelInput.value = "";
+      showFeedback(channelAddFeedback, `"${resolved.title}" 채널을 구독했습니다.`, "success");
+      await refreshChannelList();
+    } catch (error) {
+      showFeedback(channelAddFeedback, error.message, "error");
+    } finally {
+      addChannelBtn.disabled = false;
+    }
+  });
+
+  saveChannelIntervalBtn.addEventListener("click", async () => {
+    const minutes = Number(channelIntervalInput.value);
+    if (!Number.isFinite(minutes) || minutes < 5) {
+      showFeedback(channelIntervalFeedback, "확인 주기는 5분 이상이어야 합니다.", "error");
+      return;
+    }
+
+    saveChannelIntervalBtn.disabled = true;
+    try {
+      await setSettings({ channelCheckIntervalMinutes: minutes });
+      refreshChannelCheckAlarm();
+      showFeedback(channelIntervalFeedback, "확인 주기가 저장되었습니다.", "success");
+    } finally {
+      saveChannelIntervalBtn.disabled = false;
+    }
+  });
+
+  checkChannelsNowBtn.addEventListener("click", () => {
+    checkChannelsNowBtn.disabled = true;
+    checkChannelsNowBtn.textContent = "확인 중...";
+
+    chrome.runtime.sendMessage({ action: "checkChannelsNow" }, async () => {
+      void chrome.runtime.lastError;
+      checkChannelsNowBtn.disabled = false;
+      checkChannelsNowBtn.textContent = "지금 확인";
+      await Promise.all([refreshChannelList(), refreshUsage(), refreshHistoryCount()]);
+    });
+  });
+}
+
+// ---------------------------------------------------------------------
 // 사용량 요약 섹션
 // ---------------------------------------------------------------------
 
@@ -218,10 +376,13 @@ function setupHistorySection() {
 document.addEventListener("DOMContentLoaded", () => {
   setupApiKeySection();
   setupSettingsSection();
+  setupChannelSection();
   setupHistorySection();
 
   refreshApiKeyStatus();
   loadSettingsForm();
+  loadChannelIntervalForm();
+  refreshChannelList();
   refreshUsage();
   refreshHistoryCount();
 });

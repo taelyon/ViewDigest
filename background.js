@@ -5,25 +5,54 @@
 
 import { analyzeYouTubeVideo, GeminiApiError } from "./utils/gemini.js";
 import { checkRateLimit } from "./utils/cost.js";
-import { getSettings, setSettings, saveAnalysis } from "./utils/storage.js";
+import {
+  getSettings,
+  setSettings,
+  saveAnalysis,
+  getChannels,
+  updateChannel,
+} from "./utils/storage.js";
+import { fetchLatestVideos } from "./utils/channels.js";
 
 // 동시에 같은 영상이 중복 분석되는 것을 막기 위한 진행 중 URL 집합.
 // 서비스 워커가 유휴 상태에서 재시작되면 초기화되지만, 그 경우 이전 요청도
 // 이미 끝났거나 의미가 없으므로 메모리 내 Set으로 충분하다.
 const analysesInProgress = new Set();
 
+const CHANNEL_CHECK_ALARM_NAME = "checkChannels";
+const DEFAULT_CHANNEL_CHECK_INTERVAL_MINUTES = 30;
+// 채널 하나를 확인할 때 한 번에 자동 분석할 신규 영상 수 상한.
+// 브라우저가 오래 꺼져있다가 켜져서 한 채널에 영상이 왕창 쌓여있어도
+// 일일 사용 한도가 한 채널에 전부 소진되지 않도록 막는다.
+const MAX_NEW_VIDEOS_PER_CHECK = 3;
+
 // ---------------------------------------------------------------------
-// 설치/업데이트 초기화
+// 설치/업데이트/시작 초기화
 // ---------------------------------------------------------------------
+
+async function setupChannelCheckAlarm() {
+  const settings = await getSettings();
+  const interval = settings.channelCheckIntervalMinutes ?? DEFAULT_CHANNEL_CHECK_INTERVAL_MINUTES;
+  chrome.alarms.create(CHANNEL_CHECK_ALARM_NAME, {
+    periodInMinutes: interval,
+    delayInMinutes: interval,
+  });
+}
 
 chrome.runtime.onInstalled.addListener(async (details) => {
-  if (details.reason !== "install") return;
-
-  // 이미 저장된 값을 덮어쓰지 않도록, 없는 설정만 기본값으로 채운다.
-  const settings = await getSettings();
-  if (settings.dailyLimit === undefined) {
-    await setSettings({ dailyLimit: 20 });
+  if (details.reason === "install") {
+    // 이미 저장된 값을 덮어쓰지 않도록, 없는 설정만 기본값으로 채운다.
+    const settings = await getSettings();
+    if (settings.dailyLimit === undefined) {
+      await setSettings({ dailyLimit: 20 });
+    }
   }
+  await setupChannelCheckAlarm();
+});
+
+// 서비스 워커가 유휴 상태에서 깨어날 때(브라우저 재시작 등)도 알람이 등록되어 있는지 보장한다.
+chrome.runtime.onStartup.addListener(() => {
+  setupChannelCheckAlarm();
 });
 
 // ---------------------------------------------------------------------
@@ -75,7 +104,7 @@ function notifyPopup(message) {
 // analyzeVideo 처리
 // ---------------------------------------------------------------------
 
-async function handleAnalyzeVideo(url, tab) {
+async function handleAnalyzeVideo(url, { tab, titleOverride } = {}) {
   // has() 확인과 add()를 그 사이에 await 없이(동기적으로) 수행해야, 거의 동시에
   // 들어온 두 번째 analyzeVideo 요청이 첫 번째 요청의 등록을 확실히 보고 걸러진다.
   // (add()를 비동기 작업 뒤로 미루면 그 틈에 두 요청이 모두 통과하는 경쟁 조건이 생긴다.)
@@ -106,7 +135,7 @@ async function handleAnalyzeVideo(url, tab) {
     const videoId = extractVideoId(url);
     const savedEntry = await saveAnalysis({
       videoId,
-      title: extractTitle(tab, videoId),
+      title: titleOverride ?? extractTitle(tab, videoId),
       url,
       markdown: result.markdown,
       model: result.model,
@@ -189,6 +218,82 @@ async function handleSeekTo(message) {
 }
 
 // ---------------------------------------------------------------------
+// 채널 구독: 새 영상 자동 감지/분석
+// ---------------------------------------------------------------------
+
+function notifyNewVideoAnalyzed(channel, video) {
+  chrome.notifications.create(`lilysai-analysis-${video.videoId}`, {
+    type: "basic",
+    iconUrl: "icons/icon128.png",
+    title: "새 영상 분석 완료",
+    message: `${channel.title}\n${video.title}`,
+  });
+}
+
+/**
+ * 채널 하나의 RSS 피드를 확인해, 구독 등록 이후 새로 올라온 영상만 자동 분석한다.
+ *
+ * - lastVideoId가 없으면(=방금 구독) 지금 최신 영상을 기준선으로만 저장하고,
+ *   그 영상 자체는 분석하지 않는다. (구독 즉시 과거 영상까지 소급 분석되는 것을 방지)
+ * - RATE_LIMITED로 실패하면 그 영상부터는 기준선을 전진시키지 않아, 다음 확인 때
+ *   (한도가 초기화된 뒤) 같은 영상부터 다시 시도한다.
+ * - 그 외 사유로 분석에 실패한 영상은 계속 재시도해도 성공할 가능성이 낮으므로 건너뛴다.
+ */
+async function checkChannel(channel) {
+  const videos = await fetchLatestVideos(channel.channelId, MAX_NEW_VIDEOS_PER_CHECK + 1);
+  await updateChannel(channel.channelId, { lastCheckedAt: new Date().toISOString() });
+  if (videos.length === 0) return;
+
+  if (!channel.lastVideoId) {
+    await updateChannel(channel.channelId, { lastVideoId: videos[0].videoId });
+    return;
+  }
+
+  const lastIndex = videos.findIndex((v) => v.videoId === channel.lastVideoId);
+  // lastVideoId가 이번 피드에 없다면(그 사이 매우 많은 영상이 올라온 경우) 전부 새 영상으로 간주한다.
+  const newVideos = lastIndex === -1 ? videos : videos.slice(0, lastIndex);
+  if (newVideos.length === 0) return;
+
+  // 업로드 순서(오래된 것부터)대로 분석해 히스토리 순서가 자연스럽게 유지되도록 한다.
+  const toAnalyze = newVideos.slice(0, MAX_NEW_VIDEOS_PER_CHECK).reverse();
+
+  let advanceTo = channel.lastVideoId;
+  for (const video of toAnalyze) {
+    const response = await handleAnalyzeVideo(video.url, { titleOverride: video.title });
+    if (response.success) {
+      advanceTo = video.videoId;
+      notifyNewVideoAnalyzed(channel, video);
+    } else if (response.error?.code === "RATE_LIMITED") {
+      break;
+    } else {
+      advanceTo = video.videoId;
+    }
+  }
+
+  if (advanceTo !== channel.lastVideoId) {
+    await updateChannel(channel.channelId, { lastVideoId: advanceTo });
+  }
+}
+
+async function checkAllChannels() {
+  const channels = await getChannels();
+  for (const channel of channels.filter((c) => c.enabled)) {
+    try {
+      await checkChannel(channel);
+    } catch (error) {
+      // 한 채널의 네트워크 오류 등이 나머지 채널 확인을 막지 않도록 채널별로 격리한다.
+      console.error(`[채널 확인 실패] ${channel.title ?? channel.channelId}:`, error);
+    }
+  }
+}
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === CHANNEL_CHECK_ALARM_NAME) {
+    checkAllChannels();
+  }
+});
+
+// ---------------------------------------------------------------------
 // 메시지 라우팅
 // ---------------------------------------------------------------------
 
@@ -197,11 +302,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   switch (message.action) {
     case "analyzeVideo":
-      handleAnalyzeVideo(message.url, sender.tab).then(sendResponse);
+      handleAnalyzeVideo(message.url, { tab: sender.tab }).then(sendResponse);
       return true; // 비동기 응답
 
     case "seekTo":
       handleSeekTo(message).then(sendResponse);
+      return true; // 비동기 응답
+
+    case "checkChannelsNow":
+      checkAllChannels()
+        .then(() => sendResponse({ success: true }))
+        .catch((error) => sendResponse({ success: false, error: normalizeError(error) }));
+      return true; // 비동기 응답
+
+    case "refreshChannelCheckAlarm":
+      setupChannelCheckAlarm().then(() => sendResponse({ success: true }));
       return true; // 비동기 응답
 
     default:
