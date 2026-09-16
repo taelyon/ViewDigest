@@ -72,22 +72,22 @@ function isLikelyYoutubeUrl(url) {
  * Gemini generateContent 요청 바디를 구성한다.
  * - systemInstruction / user prompt 는 utils/prompt.js 의 상수를 사용
  * - YouTube 영상은 fileData.fileUri 로 URL을 그대로 전달 (업로드 불필요).
- * - `mediaProcessing: "AGENTIC"` 을 영상 Part에 함께 실어 Agentic Video
- *   Understanding을 켠다 (top-level `processing` 필드가 아니라 Part 안의
- *   camelCase `mediaProcessing` 필드라는 점이 핵심 — 과거 이 코드의
- *   `processing: "agentic"` 은 그런 필드가 없어 400을 유발했었다).
- *   이전에 이 모드를 켰다가 7분짜리 짧은 영상에서도 "입력 토큰이
- *   1,048,576을 초과했다"는 오류가 난 적이 있는데, 원인은 agentic 자체가
- *   아니라 당시 SYSTEM_INSTRUCTION이 "영상의 모든 순간을 빠짐없이" 다루도록
- *   요구했기 때문이었다 (Google 문서: 영상 전체를 빠짐없이 훑어야 하는
- *   질의는 agentic의 이점이 없고 결국 전체를 다 훑는다 → 서버사이드 다중 턴
- *   탐색 루프가 매 턴 누적 컨텍스트를 반복 전송하며 토큰이 폭증). 이제
- *   utils/prompt.js의 프롬프트를 "핵심 구간만 전략적으로 탐색" 하도록
- *   바꿨으므로 agentic 모드를 의도한 대로 다시 사용한다.
- * - Google Search 도구도 함께 전달해, 영상 밖의 최신/실시간 정보(발행일,
- *   채널 맥락 등)로 보강된 분석이 가능하도록 한다.
- * - `mediaResolution: { level: "media_resolution_low" }` 도 유지해 프레임당
- *   토큰 사용량을 한 번 더 낮춘다.
+ * - `mediaProcessing: "AGENTIC"` 은 의도적으로 사용하지 않는다. SYSTEM_INSTRUCTION이
+ *   "영상의 모든 순간을 빠짐없이", "챕터마다 3~6개 이상의 상세 문장"을
+ *   요구하는 초고밀도(Lilys AI 스타일) 분석 프롬프트인데, Google 문서에
+ *   따르면 영상 전체를 빠짐없이 훑어야 하는 질의는 agentic 모드의 이점이
+ *   없고 결국 전체를 다 훑게 된다 — 그리고 agentic은 서버사이드 다중 턴
+ *   탐색 루프로 동작해 매 턴 누적 컨텍스트를 반복 전송하므로, 이런 프롬프트와
+ *   결합하면 토큰이 기하급수적으로 불어난다. 실제로 7분짜리 짧은 영상에서도
+ *   "입력 토큰이 1,048,576을 초과했다"는 오류가 발생했다. 프롬프트의 밀도를
+ *   낮추지 않는 한(현재는 유지하기로 함) agentic과는 근본적으로 상성이 안
+ *   맞으므로, 안정적인 정적(1fps) 처리를 사용한다.
+ * - Google Search 도구는 그대로 전달해, 영상 밖의 최신/실시간 정보(발행일,
+ *   채널 맥락 등)로 보강된 분석이 가능하도록 한다. agentic 모드와 무관하게
+ *   별도로 동작하며 토큰 폭증의 원인이 아니다.
+ * - `mediaResolution: { level: "media_resolution_low" }` 는 유지해 프레임당
+ *   토큰 사용량을 낮춘다. 정적 처리에서도 아주 긴 영상(수 시간)은 여전히
+ *   한도에 가까워질 수 있어, 안전 마진으로 남겨둔다.
  */
 function buildRequestBody(youtubeUrl, customPrompt) {
   return {
@@ -101,7 +101,6 @@ function buildRequestBody(youtubeUrl, customPrompt) {
           { text: getUserPrompt(customPrompt) },
           {
             fileData: { fileUri: youtubeUrl, mimeType: "video/mp4" },
-            mediaProcessing: "AGENTIC",
             mediaResolution: { level: "media_resolution_low" },
           },
         ],
