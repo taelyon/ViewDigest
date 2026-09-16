@@ -1,0 +1,12 @@
+/* LilysAI Style YouTube Analyzer - options page styles */
+
+/* TODO: 설정 페이지 전체 레이아웃 정의 */
+/* TODO: 입력 폼 스타일 (API 키, 셀렉트 박스 등) */
+/* TODO: 저장 버튼 및 상태 메시지 스타일 */
+
+body {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
