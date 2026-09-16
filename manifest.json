@@ -1,12 +1,11 @@
 {
   "manifest_version": 3,
   "name": "ViewDigest",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Gemini Agentic Video Understanding으로 YouTube 영상을 분석해 초고밀도 상세 분석 리포트를 생성하는 확장프로그램",
   "permissions": [
     "storage",
     "activeTab",
-    "scripting",
     "tabs",
     "alarms",
     "notifications"
