@@ -34,7 +34,7 @@ function renderInline(text) {
   return html;
 }
 
-const BLOCK_START_RE = /^(#{1,4})\s+|^\s*[-*]\s+|^\s*\d+\.\s+|^>\s?|^(-{3,}|\*{3,})\s*$/;
+const BLOCK_START_RE = /^(#{1,6})\s+|^\s*[-*]\s+|^\s*\d+\.\s+|^>\s?|^(-{3,}|\*{3,})\s*$/;
 
 function renderMarkdown(markdown) {
   const lines = markdown.replace(/\r\n/g, "\n").split("\n");
@@ -58,10 +58,13 @@ function renderMarkdown(markdown) {
       continue;
     }
 
-    const header = line.match(/^(#{1,4})\s+(.*)$/);
+    const header = line.match(/^(#{1,6})\s+(.*)$/);
     if (header) {
       flushList();
-      const level = header[1].length;
+      // 이 렌더러가 스타일을 갖는 건 h1~h4뿐이다. 예전에는 #을 4개까지만
+      // 제목으로 인식해서, 모델이 "##### 소제목"을 쓰면 해시가 그대로 본문
+      // 텍스트로 새어 나왔다. 더 깊은 단계는 h4로 맞춰 받는다.
+      const level = Math.min(header[1].length, 4);
       blocks.push(`<h${level}>${renderInline(header[2])}</h${level}>`);
       i++;
       continue;
