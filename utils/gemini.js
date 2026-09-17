@@ -41,6 +41,16 @@ const ERROR_CODES = {
   EMPTY_RESPONSE: "EMPTY_RESPONSE",
 };
 
+// SYSTEM_INSTRUCTION이 요구하는 초고밀도 리포트 + googleSearch 도구 사용은 모델이
+// 답변을 쓰기 전에 내부적으로 여러 차례 검색/추론(thinking)을 반복하게 만든다.
+// thinkingBudget을 지정하지 않으면(동적/무제한) 이 추론 과정이 출력 토큰 예산을
+// 전부 소진해버려, 실제 리포트 텍스트는 한 글자도 못 쓴 채 finishReason이
+// MAX_TOKENS로 끝나는 "빈 응답"이 발생할 수 있다. thinkingBudget을 정해두면
+// 나머지 예산은 항상 실제 답변 텍스트를 위해 남는다.
+const GENERATION_CONFIG = {
+  thinkingConfig: { thinkingBudget: 8192 },
+};
+
 /**
  * chrome.storage.sync 에 저장된 Gemini API 키를 조회.
  * options 페이지에서 아직 키를 입력하지 않았다면 undefined를 반환한다.
@@ -101,6 +111,7 @@ ${transcriptText}`,
       },
     ],
     tools: [{ googleSearch: {} }],
+    generationConfig: GENERATION_CONFIG,
   };
 }
 
@@ -136,6 +147,7 @@ function buildVideoFallbackRequestBody(youtubeUrl, customPrompt) {
       },
     ],
     tools: [{ googleSearch: {} }],
+    generationConfig: GENERATION_CONFIG,
   };
 }
 
@@ -180,6 +192,26 @@ async function assertOkResponse(response) {
 }
 
 /**
+ * 응답 텍스트가 비어있을 때, finishReason을 근거로 실제 원인을 구체적으로 안내한다.
+ * (원인을 모르면 사용자는 그냥 "빈 응답"만 보고 재시도 외에 할 수 있는 게 없다.)
+ */
+function describeEmptyResponse(finishReason) {
+  switch (finishReason) {
+    case "MAX_TOKENS":
+      return "Gemini가 답변을 작성하기 전에 내부 추론/검색 과정에서 최대 출력 토큰 한도에 도달해 응답이 끊겼습니다. 영상이 매우 길거나 다루는 정보가 방대할 수 있습니다. 잠시 후 다시 시도해주세요.";
+    case "SAFETY":
+    case "PROHIBITED_CONTENT":
+    case "BLOCKLIST":
+    case "SPII":
+      return "Gemini의 안전 정책에 의해 이 영상에 대한 응답이 차단되었습니다.";
+    case "RECITATION":
+      return "Gemini가 원본 콘텐츠와의 유사도 문제로 응답 생성을 중단했습니다.";
+    default:
+      return "Gemini가 빈 응답을 반환했습니다.";
+  }
+}
+
+/**
  * Gemini 응답 JSON에서 마크다운 텍스트와 토큰 사용량을 추출한다.
  */
 function parseResponse(data) {
@@ -192,7 +224,7 @@ function parseResponse(data) {
 
   if (!markdown) {
     throw new GeminiApiError(
-      "Gemini가 빈 응답을 반환했습니다.",
+      describeEmptyResponse(candidate?.finishReason),
       ERROR_CODES.EMPTY_RESPONSE,
       data
     );
@@ -377,19 +409,24 @@ async function* analyzeYouTubeVideoStream(youtubeUrl, options = {}) {
 
     let markdown = "";
     let usage = null;
+    let finishReason = null;
     for await (const chunk of iterateSseChunks(response)) {
-      const parts = chunk?.candidates?.[0]?.content?.parts ?? [];
+      const candidate = chunk?.candidates?.[0];
+      const parts = candidate?.content?.parts ?? [];
       const deltaText = parts.map((part) => part.text ?? "").join("");
       if (deltaText) {
         markdown += deltaText;
         yield { type: "delta", text: deltaText, markdown };
       }
+      if (candidate?.finishReason) finishReason = candidate.finishReason;
       if (chunk?.usageMetadata) usage = chunk.usageMetadata;
     }
 
     const trimmed = markdown.trim();
     if (!trimmed) {
-      throw new GeminiApiError("Gemini가 빈 응답을 반환했습니다.", ERROR_CODES.EMPTY_RESPONSE, null);
+      throw new GeminiApiError(describeEmptyResponse(finishReason), ERROR_CODES.EMPTY_RESPONSE, {
+        finishReason,
+      });
     }
 
     const inputTokens = usage?.promptTokenCount ?? Math.ceil(trimmed.length / 4);
