@@ -14,24 +14,21 @@
   const BUTTON_ID = "viewdigest-analyze-button";
   const STYLE_ID = "viewdigest-analyze-button-style";
   // 좋아요/공유/다운로드 등 모든 네이티브 액션 버튼은 #actions-inner 안에서
-  // 실질적으로 #menu 라는 단일 블록(ytd-menu-renderer)에 다 뭉쳐 들어있다.
-  // #actions-inner는 사실상 두 형제(#menu, 우리 버튼)만 있는 flex row다.
-  // #menu를 항상 자기 폭에 맞게 그리는 건 YouTube 자신의 네이티브 렌더링이므로
-  // #menu는 그 컨테이너 안에 항상 들어맞는다(우리가 뭘 하든 안 바뀜) — 문제는
-  // 우리 버튼을 어느 "순서"에 놓느냐다. #menu보다 앞(왼쪽)에 두면, 폭이
-  // 부족해질 때 flex-wrap이 뒤쪽 항목부터 다음 줄로 밀어내는 규칙 때문에
-  // #menu 전체(=좋아요 포함 전부)가 밀려났었다. 대신 #menu보다 뒤(오른쪽,
-  // 즉 DOM상 마지막)에 두면, 공간이 부족할 때 밀려나는 건 항상 우리 버튼
-  // 자신뿐이고 #menu(좋아요 등)는 절대 움직이지 않는다.
+  // 실질적으로 #menu 라는 단일 블록(ytd-menu-renderer)에 다 뭉쳐 들어있고,
+  // #actions-inner는 사실상 그 #menu와 폭을 나눠 써야 하는 좁은 flex row다.
+  // 그 줄 안에 우리 버튼을 함께 넣으면(앞이든 뒤든) 화면이 좁아질 때
+  // 무언가가 다음 줄로 밀려나는 문제가 재발할 수 있다. 아예 그 줄과 폭을
+  // 다투지 않도록, 제목 줄과 채널정보/액션 버튼 줄(#top-row) "사이"에
+  // 우리 버튼만의 독립된 한 줄로 끼워넣는다.
   const BUTTON_LABEL = "⚡ 영상 분석";
   const BUTTON_LABEL_FULL = "영상 분석 (초고밀도 분석 노트 생성)";
 
   // YouTube DOM 구조는 자주 바뀌므로, 우선순위대로 여러 삽입 지점을 시도한다.
+  // 여기서 찾는 건 "채널정보 + 액션 버튼 줄" 자체(#top-row) — 그 바로 앞에
+  // 우리 버튼을 꽂아 제목과 그 줄 사이에 위치시킨다.
   const INSERTION_SELECTORS = [
-    "ytd-watch-metadata #top-row #actions #actions-inner",
-    "ytd-watch-metadata #actions #actions-inner",
-    "ytd-watch-metadata #actions",
-    "#above-the-fold #actions",
+    "ytd-watch-metadata #top-row",
+    "#above-the-fold #top-row",
   ];
 
   let insertionScheduled = false;
@@ -50,7 +47,7 @@
   function findInsertionPoint() {
     for (const selector of INSERTION_SELECTORS) {
       const el = document.querySelector(selector);
-      if (el) return el;
+      if (el && el.parentElement) return el;
     }
     return null;
   }
@@ -75,7 +72,7 @@
         gap: 6px;
         min-width: 32px;
         overflow: hidden;
-        margin: 8px 0 8px 8px;
+        margin: 8px 0;
         height: 36px;
         padding: 0 16px;
         border: none;
@@ -156,11 +153,11 @@
     const existing = document.getElementById(BUTTON_ID);
     if (existing && document.contains(existing)) return; // 이미 삽입됨: 중복 생성 방지
 
-    const target = findInsertionPoint();
-    if (!target) return; // 아직 DOM 준비 전: 다음 MutationObserver 콜백에서 재시도
+    const topRow = findInsertionPoint();
+    if (!topRow) return; // 아직 DOM 준비 전: 다음 MutationObserver 콜백에서 재시도
 
     if (existing) existing.remove(); // 옛 컨테이너에 붙어있던 유령 버튼 정리
-    target.appendChild(createButton()); // #menu(좋아요 등) 오른쪽 끝에 추가
+    topRow.parentElement.insertBefore(createButton(), topRow); // 제목과 액션 버튼 줄 사이
   }
 
   // MutationObserver 콜백은 매우 자주 호출될 수 있으므로 rAF로 한 프레임에
