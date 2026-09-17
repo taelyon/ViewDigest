@@ -28,6 +28,16 @@
     "#above-the-fold #actions",
   ];
 
+  // 좋아요(/싫어요) 버튼을 가리키는 후보 셀렉터. YouTube 리뉴얼마다 이름이
+  // 바뀌어 왔으므로 여러 개를 시도한다 — 이 중 삽입 컨테이너(target) 안에서
+  // 찾은 것 바로 앞에 분석 버튼을 놓아 "좋아요 왼쪽"에 위치시킨다.
+  const LIKE_BUTTON_SELECTORS = [
+    "like-button-view-model",
+    "segmented-like-dislike-button-view-model",
+    "ytd-segmented-like-dislike-button-renderer",
+    "ytd-toggle-button-renderer",
+  ];
+
   let insertionScheduled = false;
 
   // ---------------------------------------------------------------------
@@ -45,6 +55,26 @@
     for (const selector of INSERTION_SELECTORS) {
       const el = document.querySelector(selector);
       if (el) return el;
+    }
+    return null;
+  }
+
+  /**
+   * target(삽입 컨테이너) 안에서 좋아요 버튼에 해당하는, target의 "직계 자식"을
+   * 찾는다. 좋아요 버튼 자체가 target의 직계 자식이 아니라 더 깊이 중첩되어
+   * 있어도, target과 같은 줄(flex row)에 놓이도록 그 조상을 거슬러 올라가
+   * target의 직계 자식을 반환한다. 못 찾으면 null.
+   */
+  function findLikeButtonAnchor(target) {
+    for (const selector of LIKE_BUTTON_SELECTORS) {
+      const match = target.querySelector(selector);
+      if (!match) continue;
+
+      let el = match;
+      while (el.parentElement && el.parentElement !== target) {
+        el = el.parentElement;
+      }
+      if (el.parentElement === target) return el;
     }
     return null;
   }
@@ -152,7 +182,14 @@
     if (!target) return; // 아직 DOM 준비 전: 다음 MutationObserver 콜백에서 재시도
 
     if (existing) existing.remove(); // 옛 컨테이너에 붙어있던 유령 버튼 정리
-    target.prepend(createButton());
+
+    const button = createButton();
+    const likeAnchor = findLikeButtonAnchor(target);
+    if (likeAnchor) {
+      target.insertBefore(button, likeAnchor); // 좋아요 버튼 바로 왼쪽에 배치
+    } else {
+      target.prepend(button); // 좋아요 버튼을 못 찾으면 기존처럼 맨 앞에 배치
+    }
   }
 
   // MutationObserver 콜백은 매우 자주 호출될 수 있으므로 rAF로 한 프레임에
