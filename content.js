@@ -7,7 +7,8 @@
 // 역할:
 //   1. YouTube 영상 시청 페이지에 "⚡ 영상 분석" 버튼을 두 군데 삽입
 //      - 제목과 채널정보/액션 버튼 줄 사이(독립된 한 줄)
-//      - 우측 추천 영상 영역(#secondary) 최상단(그 영역 박스들과 같은 폭)
+//      - 우측 추천 영상 목록(#related) 최상단(그 영역 박스들과 같은 폭).
+//        실시간 채팅창이 있는 영상은 채팅창 아래·추천 영상 목록 바로 위에 온다.
 //   2. 버튼 클릭 시 background.js 로 { action: "openResultsTab", url } 전송해
 //      새 탭(results/results.html)을 열게 한다. 실제 분석/스트리밍 렌더링은
 //      그 탭이 직접 수행하므로, 여기서는 탭을 여는 것까지만 책임진다.
@@ -34,17 +35,17 @@
     "#above-the-fold #top-row",
   ];
 
-  // 우측 영역의 최상위 컨테이너 후보. 실시간 스트림/프리미어 영상은 이
-  // 컨테이너 안에 추천 영상 목록(#related)보다 먼저 실시간 채팅창이 들어있어,
-  // #related/#items 안에만 넣으면 채팅창 아래에 표시되는 문제가 있었다.
-  // 항상 우측 영역 맨 위에 오도록 가장 바깥 컨테이너(#secondary-inner 또는
-  // #secondary)의 첫 번째 자식으로 넣는다. 폭은 100%로 채워, 그 안의
-  // 추천 영상 박스/채팅창 등과 같은 폭이 되게 한다.
+  // 우측 추천 영상 영역의 컨테이너 후보. 실시간 스트림/프리미어 영상은
+  // 채팅창이 비동기로 늦게 렌더링되는데, 그보다 앞(#secondary-inner 등)에
+  // 우리 버튼을 넣으면 처음엔 맨 위에 보이다가 채팅창이 나중에 들어오면서
+  // 우리 버튼이 아래로 밀리는 깜빡임이 있었다. #related/#items 안에 넣으면
+  // 채팅창이 있을 땐 그 아래에 위치가 고정되어 이런 밀림이 없다.
+  // 폭은 100%로 채워, 그 안의 추천 영상 박스들과 같은 폭이 되게 한다.
   const SIDEBAR_CONTAINER_SELECTORS = [
-    "#secondary #secondary-inner",
-    "#secondary",
     "#secondary #related #items",
     "#secondary #related",
+    "#secondary #secondary-inner",
+    "#secondary",
   ];
 
   let insertionScheduled = false;

@@ -402,6 +402,9 @@ body {
   display: flex;
   justify-content: flex-end;
 }
+.history-header.hidden {
+  display: none;
+}
 
 .history-list {
   flex: 1;

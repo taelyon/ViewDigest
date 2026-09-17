@@ -98,7 +98,7 @@ async function refreshHistory() {
 
   list.innerHTML = "";
   empty.classList.toggle("hidden", history.length > 0);
-  document.getElementById("clear-history-btn").disabled = history.length === 0;
+  document.querySelector(".history-header").classList.toggle("hidden", history.length === 0);
 
   for (const entry of history) {
     const li = document.createElement("li");
@@ -155,8 +155,6 @@ function setupClearHistoryButton() {
   }
 
   btn.addEventListener("click", async () => {
-    if (btn.disabled) return;
-
     if (!armed) {
       armed = true;
       btn.textContent = "정말 삭제할까요? 다시 클릭";
