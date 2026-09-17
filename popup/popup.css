@@ -288,23 +288,6 @@ body {
   flex-wrap: wrap;
 }
 
-/* 타임스탬프 이동 등 짧은 상태 피드백 메시지 */
-.feedback {
-  min-height: 14px;
-  margin: 0;
-  font-size: 11.5px;
-  color: var(--text-muted);
-}
-.feedback:empty {
-  display: none;
-}
-.feedback.success {
-  color: var(--success);
-}
-.feedback.error {
-  color: var(--danger);
-}
-
 /* 마크다운 렌더링 영역 */
 .markdown-body {
   flex: 1;
@@ -392,24 +375,6 @@ body {
 
 .markdown-body strong {
   color: var(--text-primary);
-}
-
-/* 타임스탬프 링크 */
-.timestamp-link {
-  display: inline-block;
-  color: var(--accent);
-  background: var(--accent-soft);
-  border-radius: 4px;
-  padding: 0 5px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  cursor: pointer;
-  text-decoration: none;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-.timestamp-link:hover {
-  background: var(--accent);
-  color: #ffffff;
 }
 
 /* 히스토리 */

@@ -9,7 +9,6 @@
 //   2. 버튼 클릭 시 background.js 로 { action: "openResultsTab", url } 전송해
 //      새 탭(results/results.html)을 열게 한다. 실제 분석/스트리밍 렌더링은
 //      그 탭이 직접 수행하므로, 여기서는 탭을 여는 것까지만 책임진다.
-//   3. popup 등에서 보낸 { action: "seekTo", seconds } 메시지를 받아 영상 탐색
 
 (function () {
   const BUTTON_ID = "viewdigest-analyze-button";
@@ -175,40 +174,6 @@
   }
 
   // ---------------------------------------------------------------------
-  // 타임스탬프 클릭 → 영상 탐색(seek) 기능
-  // ---------------------------------------------------------------------
-
-  function getVideoElement() {
-    return document.querySelector("video.html5-main-video") || document.querySelector("video");
-  }
-
-  function seekTo(seconds) {
-    const video = getVideoElement();
-    if (!video) return false;
-
-    const target = Number(seconds);
-    if (!Number.isFinite(target) || target < 0) return false;
-
-    video.currentTime = target;
-    try {
-      // 자동재생 정책으로 거부되거나(reject) 드물게 동기적으로 throw할 수 있으나,
-      // 탐색(seek) 자체는 이미 성공했으므로 재생 실패는 무시한다.
-      video.play?.()?.catch(() => {});
-    } catch {
-      // no-op
-    }
-    return true;
-  }
-
-  function handleRuntimeMessage(message, sender, sendResponse) {
-    if (!message || message.action !== "seekTo") return false;
-
-    const success = seekTo(message.seconds);
-    sendResponse({ success });
-    return false; // 동기적으로 응답했으므로 sendResponse를 비동기로 열어둘 필요 없음
-  }
-
-  // ---------------------------------------------------------------------
   // 초기화
   // ---------------------------------------------------------------------
 
@@ -216,7 +181,6 @@
     injectStyles();
     setupNavigationWatchers();
     scheduleEnsureButton();
-    chrome.runtime.onMessage.addListener(handleRuntimeMessage);
   }
 
   init();

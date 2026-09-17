@@ -37,7 +37,6 @@ Generative Language API(`generativelanguage.googleapis.com`)로 **직접** 전�
 
 - 현재 페이지의 URL (영상 ID 추출용)
 - 탭 제목 (분석 리포트의 기본 제목으로 사용)
-- 페이지의 `<video>` 요소 (타임스탬프 클릭 시 재생 위치 이동용)
 
 그 외 페이지 콘텐츠(댓글, 시청 기록, 로그인 정보 등)는 읽거나 수집하지 않습니다.
 

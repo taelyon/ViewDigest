@@ -16,13 +16,11 @@ Gemini의 **Agentic Video Understanding**을 이용해 YouTube 영상을 통째�
 - 각 소주제의 타임스탬프(00:00 형식)
 
 를 갖춘 **초고밀도 분석 리포트**를 생성하는 것을 목표로 합니다.
-YouTube 시청 페이지에 분석 버튼을 추가해 원클릭으로 리포트를 생성하고, 리포트 내
-타임스탬프를 클릭하면 실제 영상이 그 지점으로 바로 이동합니다.
+YouTube 시청 페이지에 분석 버튼을 추가해 원클릭으로 리포트를 생성합니다.
 
 ### 핵심 특징
 
 - 🎯 **원클릭 분석**: YouTube 시청 페이지의 "초고밀도 분석 노트 생성" 버튼 클릭 한 번
-- ⏱ **클릭 가능한 타임스탬프**: 리포트의 `00:00` 형식 타임스탬프를 클릭하면 영상이 해당 지점으로 자동 이동
 - 📡 **채널 구독**: 관심 채널을 등록해두면, 새 영상이 올라올 때마다 자동으로 분석
 - 🗂 **히스토리 관리**: 분석 결과를 최대 50개까지 자동 저장, 언제든 다시 열람·삭제
 - 💰 **비용/사용량 추적**: 모델별 예상 비용 계산, 일일 사용 횟수 제한(rate limit)으로 과금 폭탄 방지
@@ -84,20 +82,6 @@ YouTube 시청 페이지(`youtube.com/watch?v=...`)를 열면 좋아요/공유 �
 
 팝업의 **"현재 분석"** 탭에서도 "🔍 지금 분석하기" 버튼으로 같은 방식의 분석을 시작할 수 있고,
 로딩 중/완료/에러 상태가 스피너와 메시지로 명확히 구분되어 표시됩니다.
-
-### 4.2 타임스탬프 클릭 → 영상 이동
-
-생성된 리포트에는 `00:15`, `1:02:03` 같은 타임스탬프가 자동으로 클릭 가능한 링크로
-표시됩니다. 이 링크를 클릭하면:
-
-1. 팝업이 어떤 영상의 리포트를 보고 있는지(videoId)를 함께 background로 전달합니다.
-2. background는 **그 영상이 실제로 열려있는 YouTube 탭**을 찾아 (활성 탭이 다른 영상이어도
-   정확히 해당 영상 탭을 찾습니다) 그 탭에만 이동 명령을 전달합니다.
-3. 해당 탭의 영상이 클릭한 시간으로 즉시 이동(seek)하고 재생됩니다.
-
-만약 리포트에 해당하는 영상이 현재 브라우저에 열려있지 않다면, 엉뚱한 영상이 움직이는 대신
-"이 영상이 열려있는 YouTube 탭을 찾을 수 없습니다"라는 안내 메시지가 팝업에 표시됩니다.
-해당 영상 페이지를 먼저 열어둔 뒤 다시 시도하세요.
 
 ### 4.3 히스토리
 
@@ -195,8 +179,8 @@ YouTube 시청 페이지(`youtube.com/watch?v=...`)를 열면 좋아요/공유 �
 ```
 ViewDigest/
 ├── manifest.json            # Manifest V3 설정
-├── background.js            # 메시지 라우팅, 분석 파이프라인 조율, seekTo 중계, 채널 자동 확인(alarms)
-├── content.js                # YouTube 페이지에 분석 버튼 삽입 + 영상 탐색(seek) 처리
+├── background.js            # 메시지 라우팅, 분석 파이프라인 조율, 채널 자동 확인(alarms)
+├── content.js                # YouTube 페이지에 분석 버튼 삽입
 ├── popup/
 │   ├── popup.html            # 팝업 UI (현재 분석 / 히스토리 / 사용량 탭)
 │   ├── popup.js               # 마크다운 렌더링, 탭 전환, 히스토리/사용량 표시
@@ -220,7 +204,7 @@ ViewDigest/
 | 권한 | 용도 |
 |---|---|
 | `storage` | 설정, 분석 히스토리, 구독 채널, 사용량 기록 저장 |
-| `activeTab` / `tabs` | 현재 YouTube 탭 확인, 팝업에서 분석 시작, seekTo 메시지 중계 |
+| `activeTab` / `tabs` | 현재 YouTube 탭 확인, 팝업에서 분석 시작, 분석 결과 탭 열기 |
 | `scripting` | content script 관련 동작 지원 |
 | `alarms` | 채널 구독 새 영상을 주기적으로 확인 |
 | `notifications` | 채널 자동 분석 완료 시 알림 표시 |
@@ -233,8 +217,8 @@ ViewDigest/
   `background.type`이 `"module"`로 설정되어 있어야 합니다.
 - `content.js`는 일반 스크립트(non-module)로 주입되므로 `utils/*.js`를 직접 import할 수
   없습니다. Gemini 호출 등 무거운 로직은 항상 `background.js`를 거칩니다.
-- 메시지 액션 이름: `analyzeVideo`(content/popup → background), `seekTo`(popup →
-  background → content), `analysisComplete` / `analysisError`(background → popup 브로드캐스트),
+- 메시지 액션 이름: `analyzeVideo`(popup → background), `openResultsTab`(content →
+  background), `analysisComplete` / `analysisError`(background → popup 브로드캐스트),
   `checkChannelsNow` / `refreshChannelCheckAlarm`(options → background).
 - `utils/channels.js`는 background.js(service worker, DOMParser 없음)에서도 동작해야 하므로
   채널 페이지 HTML과 RSS XML을 정규식으로 직접 파싱합니다.

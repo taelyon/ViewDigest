@@ -11,34 +11,8 @@ function escapeHtml(str) {
     .replace(/'/g, "&#39;");
 }
 
-/**
- * "00:00" / "12:34" / "1:02:03" 형태의 타임스탬프를 초 단위로 변환.
- * 형식이 아니면 null을 반환한다.
- */
-function timestampToSeconds(text) {
-  const parts = text.split(":").map(Number);
-  if (parts.some((n) => Number.isNaN(n))) return null;
-
-  if (parts.length === 2) {
-    const [m, s] = parts;
-    return m * 60 + s;
-  }
-  if (parts.length === 3) {
-    const [h, m, s] = parts;
-    return h * 3600 + m * 60 + s;
-  }
-  return null;
-}
-
 function renderInline(text) {
   let html = escapeHtml(text);
-
-  // 타임스탬프를 가장 먼저 처리해, 이후 마크다운 치환이 만든 태그와 섞이지 않게 한다.
-  html = html.replace(/\b(\d{1,2}(?::\d{2}){1,2})\b/g, (match) => {
-    const seconds = timestampToSeconds(match);
-    if (seconds === null) return match;
-    return `<span class="timestamp-link" data-seconds="${seconds}" role="button" tabindex="0">${match}</span>`;
-  });
 
   // [텍스트](URL) 링크
   html = html.replace(

@@ -64,34 +64,6 @@ function formatCost(usd) {
 }
 
 // ---------------------------------------------------------------------
-// 타임스탬프 클릭 → 원본 YouTube 탭 탐색(seek)
-// ---------------------------------------------------------------------
-
-function seekToTimestamp(el) {
-  const seconds = Number(el.dataset.seconds);
-  if (!Number.isFinite(seconds)) return;
-  chrome.runtime.sendMessage(
-    { action: "seekTo", seconds, videoId: extractVideoId(videoUrl) },
-    () => void chrome.runtime.lastError
-  );
-}
-
-function setupTimestampClicks() {
-  els.content.addEventListener("click", (e) => {
-    const target = e.target.closest(".timestamp-link");
-    if (target) seekToTimestamp(target);
-  });
-  els.content.addEventListener("keydown", (e) => {
-    if (e.key !== "Enter" && e.key !== " ") return;
-    const target = e.target.closest(".timestamp-link");
-    if (target) {
-      e.preventDefault();
-      seekToTimestamp(target);
-    }
-  });
-}
-
-// ---------------------------------------------------------------------
 // 복사 / 다운로드
 // ---------------------------------------------------------------------
 
@@ -191,7 +163,6 @@ async function run() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  setupTimestampClicks();
   els.copyBtn.addEventListener("click", copyMarkdown);
   els.downloadBtn.addEventListener("click", downloadMarkdown);
   run();

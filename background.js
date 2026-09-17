@@ -179,69 +179,6 @@ async function handleOpenResultsTab(url, { tab } = {}) {
 }
 
 // ---------------------------------------------------------------------
-// seekTo 중계 처리
-// ---------------------------------------------------------------------
-
-/**
- * message.videoId가 열려있는 YouTube 탭을 찾는다. (여러 개면 활성 탭을 우선)
- */
-async function findTabForVideo(videoId) {
-  if (!videoId) return null;
-  const tabs = await chrome.tabs.query({ url: "https://www.youtube.com/watch*" });
-  const matching = tabs.filter((t) => extractVideoId(t.url ?? "") === videoId);
-  if (matching.length === 0) return null;
-  return matching.find((t) => t.active) ?? matching[0];
-}
-
-/**
- * seekTo 요청을 실제 YouTube 탭의 content.js로 전달한다.
- *
- * - message.tabId가 주어지면 그 탭을 그대로 사용한다.
- * - message.videoId가 주어지면, 그 영상이 열려있는 탭을 직접 찾아서 사용한다.
- *   (팝업에서 보고 있는 리포트가 지금 활성 탭의 영상과 다를 수 있으므로, 무작정
- *   활성 탭에 쏘면 엉뚱한 영상이 탐색될 수 있다 — 반드시 videoId로 실제 탭을 확인한다.)
- * - 위 두 경우 모두 아니면(=힌트 없음) 현재 창의 활성 탭을 사용한다.
- */
-async function handleSeekTo(message) {
-  let targetTabId = message.tabId;
-
-  if (targetTabId === undefined && message.videoId) {
-    const matchedTab = await findTabForVideo(message.videoId);
-    if (!matchedTab) {
-      return {
-        success: false,
-        error: {
-          code: "VIDEO_TAB_NOT_FOUND",
-          message: "이 영상이 열려있는 YouTube 탭을 찾을 수 없습니다. 먼저 해당 영상 페이지를 열어주세요.",
-        },
-      };
-    }
-    targetTabId = matchedTab.id;
-  }
-
-  if (targetTabId === undefined) {
-    const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!activeTab) {
-      return { success: false, error: { code: "NO_ACTIVE_TAB", message: "활성 탭을 찾을 수 없습니다." } };
-    }
-    targetTabId = activeTab.id;
-  }
-
-  return new Promise((resolve) => {
-    chrome.tabs.sendMessage(targetTabId, { action: "seekTo", seconds: message.seconds }, (response) => {
-      if (chrome.runtime.lastError) {
-        resolve({
-          success: false,
-          error: { code: "TAB_UNREACHABLE", message: chrome.runtime.lastError.message },
-        });
-        return;
-      }
-      resolve(response ?? { success: false, error: { code: "NO_RESPONSE", message: "content script로부터 응답이 없습니다." } });
-    });
-  });
-}
-
-// ---------------------------------------------------------------------
 // 채널 구독: 새 영상 자동 감지/분석
 // ---------------------------------------------------------------------
 
@@ -333,10 +270,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       handleOpenResultsTab(message.url, { tab: sender.tab })
         .then(sendResponse)
         .catch((error) => sendResponse({ success: false, error: normalizeError(error) }));
-      return true; // 비동기 응답
-
-    case "seekTo":
-      handleSeekTo(message).then(sendResponse);
       return true; // 비동기 응답
 
     case "checkChannelsNow":
