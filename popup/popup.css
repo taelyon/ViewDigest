@@ -12,6 +12,7 @@
   --accent-dark: #5b21b6;
   --accent-soft: rgba(139, 92, 246, 0.16);
   --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.14);
   --success: #4ade80;
   --radius-sm: 6px;
   --radius-md: 10px;
@@ -247,6 +248,25 @@ body {
   border-color: var(--accent);
 }
 
+.danger-btn {
+  padding: 6px 12px;
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-sm);
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.danger-btn:hover:not(:disabled) {
+  background: rgba(248, 113, 113, 0.25);
+}
+.danger-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 /* 결과 뷰 (popup.html에는 더 이상 없지만, results.css가 그대로 재사용한다) */
 .result-meta {
   flex-shrink: 0;
@@ -377,6 +397,12 @@ body {
 }
 
 /* 히스토리 */
+.history-header {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
 .history-list {
   flex: 1;
   min-height: 0;

@@ -3,7 +3,7 @@
 // 분석은 항상 results/results.html을 새 탭으로 열어 처리한다(스트리밍 표시).
 // 팝업 자체는 분석 결과를 렌더링하지 않고, 분석 시작 버튼 + 히스토리 + 사용량만 보여준다.
 
-import { getHistory, deleteAnalysis } from "../utils/storage.js";
+import { getHistory, deleteAnalysis, clearHistory } from "../utils/storage.js";
 import { getUsageStats, checkRateLimit } from "../utils/cost.js";
 
 const YOUTUBE_WATCH_RE = /^https:\/\/(www\.)?youtube\.com\/watch\?.*v=/;
@@ -98,6 +98,7 @@ async function refreshHistory() {
 
   list.innerHTML = "";
   empty.classList.toggle("hidden", history.length > 0);
+  document.getElementById("clear-history-btn").disabled = history.length === 0;
 
   for (const entry of history) {
     const li = document.createElement("li");
@@ -136,6 +137,37 @@ async function refreshHistory() {
     li.append(main, deleteBtn);
     list.appendChild(li);
   }
+}
+
+// 팝업(작은 브라우저 액션 창)에서는 window.confirm()이 포커스를 잃으며 팝업 자체가
+// 닫혀버려 제대로 동작하지 않는다. 대신 첫 클릭에 버튼 텍스트를 확인 문구로 바꿔
+// 잠깐 대기하고, 그 상태에서 한 번 더 클릭해야 실제로 삭제되는 2단계 확인 방식을 쓴다.
+function setupClearHistoryButton() {
+  const btn = document.getElementById("clear-history-btn");
+  const originalLabel = btn.textContent;
+  let armed = false;
+  let resetTimer = null;
+
+  function reset() {
+    armed = false;
+    clearTimeout(resetTimer);
+    btn.textContent = originalLabel;
+  }
+
+  btn.addEventListener("click", async () => {
+    if (btn.disabled) return;
+
+    if (!armed) {
+      armed = true;
+      btn.textContent = "정말 삭제할까요? 다시 클릭";
+      resetTimer = setTimeout(reset, 3000);
+      return;
+    }
+
+    reset();
+    await clearHistory();
+    await refreshHistory();
+  });
 }
 
 // ---------------------------------------------------------------------
@@ -183,6 +215,7 @@ function setupBackgroundListener() {
 document.addEventListener("DOMContentLoaded", () => {
   setupTabs();
   setupAnalyzeButton();
+  setupClearHistoryButton();
   setupBackgroundListener();
 
   document.getElementById("open-options-btn").addEventListener("click", () => {

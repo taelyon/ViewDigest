@@ -104,48 +104,6 @@
       <ul id="channel-list" class="channel-list"></ul>
       <p id="channel-list-empty" class="card-desc hidden">아직 구독한 채널이 없습니다.</p>
     </section>
-
-    <!-- 사용량 요약 -->
-    <section class="card">
-      <h2>사용량 요약</h2>
-      <div class="usage-grid">
-        <div class="usage-stat">
-          <span class="usage-stat-label">오늘 분석</span>
-          <span class="usage-stat-value" id="usage-today-count">-</span>
-        </div>
-        <div class="usage-stat">
-          <span class="usage-stat-label">이번 달 분석</span>
-          <span class="usage-stat-value" id="usage-month-count">-</span>
-        </div>
-        <div class="usage-stat">
-          <span class="usage-stat-label">오늘 예상 비용</span>
-          <span class="usage-stat-value" id="usage-today-cost">-</span>
-        </div>
-        <div class="usage-stat">
-          <span class="usage-stat-label">이번 달 예상 비용</span>
-          <span class="usage-stat-value" id="usage-month-cost">-</span>
-        </div>
-      </div>
-      <div class="rate-limit-section">
-        <div class="rate-limit-label">
-          <span>오늘의 일일 한도</span>
-          <span id="rate-limit-text">- / -</span>
-        </div>
-        <div class="rate-limit-bar">
-          <div class="rate-limit-fill" id="rate-limit-fill"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 히스토리 관리 -->
-    <section class="card">
-      <h2>히스토리 관리</h2>
-      <p class="card-desc">저장된 분석 히스토리: <strong id="history-count">-</strong>개</p>
-      <div class="button-row">
-        <button id="clear-history-btn" class="danger-btn" type="button">히스토리 전체 삭제</button>
-      </div>
-      <p id="history-feedback" class="feedback"></p>
-    </section>
   </div>
   <script type="module" src="options.js"></script>
 </body>

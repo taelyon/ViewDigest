@@ -3,14 +3,12 @@
 import {
   getSettings,
   setSettings,
-  getHistory,
-  clearHistory,
   getChannels,
   addChannel,
   removeChannel,
   updateChannel,
 } from "../utils/storage.js";
-import { getUsageStats, checkRateLimit, DEFAULT_DAILY_LIMIT } from "../utils/cost.js";
+import { DEFAULT_DAILY_LIMIT } from "../utils/cost.js";
 import { resolveChannelId } from "../utils/channels.js";
 
 // gemini.js가 읽는 것과 동일한 storage 영역/키. API 키는 기기 간 동기화되는
@@ -49,11 +47,6 @@ function maskApiKey(key) {
   if (!key) return "";
   if (key.length <= 4) return "•".repeat(key.length);
   return `${"•".repeat(Math.max(key.length - 4, 4))}${key.slice(-4)}`;
-}
-
-function formatCost(usd) {
-  if (typeof usd !== "number" || Number.isNaN(usd)) return "$0.0000";
-  return `$${usd.toFixed(4)}`;
 }
 
 function showFeedback(el, message, type) {
@@ -178,7 +171,6 @@ function setupSettingsSection() {
       // 매 분석 요청마다 최신 설정을 새로 읽으므로 별도 새로고침 없이 바로 적용된다.
       await setSettings({ model: modelSelect.value, dailyLimit });
       showFeedback(settingsFeedback, "설정이 저장되었습니다.", "success");
-      await refreshUsage();
     } finally {
       saveSettingsBtn.disabled = false;
     }
@@ -313,59 +305,8 @@ function setupChannelSection() {
       void chrome.runtime.lastError;
       checkChannelsNowBtn.disabled = false;
       checkChannelsNowBtn.textContent = "지금 확인";
-      await Promise.all([refreshChannelList(), refreshUsage(), refreshHistoryCount()]);
+      await refreshChannelList();
     });
-  });
-}
-
-// ---------------------------------------------------------------------
-// 사용량 요약 섹션
-// ---------------------------------------------------------------------
-
-async function refreshUsage() {
-  const [stats, rateLimit] = await Promise.all([getUsageStats(), checkRateLimit()]);
-
-  document.getElementById("usage-today-count").textContent = `${stats.today.count}회`;
-  document.getElementById("usage-month-count").textContent = `${stats.month.count}회`;
-  document.getElementById("usage-today-cost").textContent = formatCost(stats.today.cost);
-  document.getElementById("usage-month-cost").textContent = formatCost(stats.month.cost);
-
-  document.getElementById("rate-limit-text").textContent = `${rateLimit.used} / ${rateLimit.limit}`;
-
-  const fill = document.getElementById("rate-limit-fill");
-  const percent = rateLimit.limit > 0 ? Math.min((rateLimit.used / rateLimit.limit) * 100, 100) : 100;
-  fill.style.width = `${percent}%`;
-  fill.classList.toggle("is-full", !rateLimit.allowed);
-}
-
-// ---------------------------------------------------------------------
-// 히스토리 관리 섹션
-// ---------------------------------------------------------------------
-
-const historyCountEl = document.getElementById("history-count");
-const historyFeedback = document.getElementById("history-feedback");
-const clearHistoryBtn = document.getElementById("clear-history-btn");
-
-async function refreshHistoryCount() {
-  const history = await getHistory();
-  historyCountEl.textContent = String(history.length);
-  return history.length;
-}
-
-function setupHistorySection() {
-  clearHistoryBtn.addEventListener("click", async () => {
-    const count = await refreshHistoryCount();
-    if (count === 0) {
-      showFeedback(historyFeedback, "삭제할 히스토리가 없습니다.", null);
-      return;
-    }
-
-    const confirmed = confirm(`저장된 분석 히스토리 ${count}개를 모두 삭제할까요? 되돌릴 수 없습니다.`);
-    if (!confirmed) return;
-
-    await clearHistory();
-    await refreshHistoryCount();
-    showFeedback(historyFeedback, "히스토리를 모두 삭제했습니다.", "success");
   });
 }
 
@@ -377,12 +318,9 @@ document.addEventListener("DOMContentLoaded", () => {
   setupApiKeySection();
   setupSettingsSection();
   setupChannelSection();
-  setupHistorySection();
 
   refreshApiKeyStatus();
   loadSettingsForm();
   loadChannelIntervalForm();
   refreshChannelList();
-  refreshUsage();
-  refreshHistoryCount();
 });
