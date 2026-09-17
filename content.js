@@ -13,33 +13,25 @@
 (function () {
   const BUTTON_ID = "viewdigest-analyze-button";
   const STYLE_ID = "viewdigest-analyze-button-style";
-  // YouTube의 다른 액션 버튼(좋아요/공유/저장 등)과 나란히 들어가는 아주 좁은
-  // flex 컨테이너에 삽입된다. 라벨을 "영상 분석"으로 짧게 유지하고, 공간이
-  // 부족해지면(CSS의 flex-shrink) 이 버튼 자신이 먼저 줄어들도록 해 다른
-  // 버튼들이 다음 줄로 밀리지 않게 한다. flex-grow/width는 !important로
-  // 강제한다 — YouTube 쪽 flex 컨테이너가 자식에게 균등 성장(flex-grow)을
-  // 적용하는 레이아웃일 경우, 우리 버튼이 남는 공간을 다 차지하며 옆으로
-  // 길게 늘어나 버리는 문제(실제로 발생했음)를 막기 위해서다.
+  // 좋아요/공유/다운로드 등 모든 네이티브 액션 버튼은 #actions-inner 안에서
+  // 실질적으로 #menu 라는 단일 블록(ytd-menu-renderer)에 다 뭉쳐 들어있다.
+  // 예전엔 그 #menu 바로 앞에 우리 버튼을 끼워넣어 "좋아요 왼쪽"에 두려
+  // 했지만, #actions-inner 폭이 좁아지는 순간(사이드바가 열려있거나 창이
+  // 좁을 때) 두 형제(우리 버튼 + #menu 전체)를 한 줄에 담을 공간이 부족해
+  // flex-wrap이 걸려 #menu 전체가 통째로 다음 줄로 밀려나는 문제가 있었다.
+  // 우리 버튼을 아무리 작게 줄여도 화면 폭에 따라 재발하는 구조적 문제라,
+  // 아예 그 flex row와 폭을 다투지 않도록 제목+액션 줄 전체 아래에
+  // 독립된 한 줄로 배치한다.
   const BUTTON_LABEL = "⚡ 영상 분석";
   const BUTTON_LABEL_FULL = "영상 분석 (초고밀도 분석 노트 생성)";
 
   // YouTube DOM 구조는 자주 바뀌므로, 우선순위대로 여러 삽입 지점을 시도한다.
+  // 각 컨테이너의 "마지막 자식으로 추가"해 제목/채널정보/액션 버튼 줄들
+  // 다음에 오는 새로운 한 줄이 되게 한다.
   const INSERTION_SELECTORS = [
-    "ytd-watch-metadata #top-row #actions #actions-inner",
-    "ytd-watch-metadata #actions #actions-inner",
-    "ytd-watch-metadata #actions",
-    "#above-the-fold #actions",
-  ];
-
-  // 좋아요(/싫어요) 버튼을 가리키는 후보 셀렉터. YouTube 리뉴얼마다 이름이
-  // 바뀌어 왔으므로 여러 개를 시도한다 — 이 중 삽입 컨테이너(target) 안에서
-  // 찾은 것 바로 앞에 분석 버튼을 놓아 "좋아요 왼쪽"에 위치시킨다.
-  // (구독 버튼/알림 종 등 다른 토글에도 매칭될 수 있는 범용 셀렉터
-  // `ytd-toggle-button-renderer`는 엉뚱한 위치에 꽂힐 위험이 있어 제외한다.)
-  const LIKE_BUTTON_SELECTORS = [
-    "like-button-view-model",
-    "segmented-like-dislike-button-view-model",
-    "ytd-segmented-like-dislike-button-renderer",
+    "ytd-watch-metadata #above-the-fold",
+    "ytd-watch-metadata",
+    "#above-the-fold",
   ];
 
   let insertionScheduled = false;
@@ -59,26 +51,6 @@
     for (const selector of INSERTION_SELECTORS) {
       const el = document.querySelector(selector);
       if (el) return el;
-    }
-    return null;
-  }
-
-  /**
-   * target(삽입 컨테이너) 안에서 좋아요 버튼에 해당하는, target의 "직계 자식"을
-   * 찾는다. 좋아요 버튼 자체가 target의 직계 자식이 아니라 더 깊이 중첩되어
-   * 있어도, target과 같은 줄(flex row)에 놓이도록 그 조상을 거슬러 올라가
-   * target의 직계 자식을 반환한다. 못 찾으면 null.
-   */
-  function findLikeButtonAnchor(target) {
-    for (const selector of LIKE_BUTTON_SELECTORS) {
-      const match = target.querySelector(selector);
-      if (!match) continue;
-
-      let el = match;
-      while (el.parentElement && el.parentElement !== target) {
-        el = el.parentElement;
-      }
-      if (el.parentElement === target) return el;
     }
     return null;
   }
@@ -103,7 +75,7 @@
         gap: 6px;
         min-width: 32px;
         overflow: hidden;
-        margin: 8px 8px 8px 0;
+        margin: 10px 0;
         height: 36px;
         padding: 0 16px;
         border: none;
@@ -188,14 +160,7 @@
     if (!target) return; // 아직 DOM 준비 전: 다음 MutationObserver 콜백에서 재시도
 
     if (existing) existing.remove(); // 옛 컨테이너에 붙어있던 유령 버튼 정리
-
-    const button = createButton();
-    const likeAnchor = findLikeButtonAnchor(target);
-    if (likeAnchor) {
-      target.insertBefore(button, likeAnchor); // 좋아요 버튼 바로 왼쪽에 배치
-    } else {
-      target.prepend(button); // 좋아요 버튼을 못 찾으면 기존처럼 맨 앞에 배치
-    }
+    target.appendChild(createButton()); // 제목/채널정보/액션 버튼 줄들 다음, 새로운 한 줄로 추가
   }
 
   // MutationObserver 콜백은 매우 자주 호출될 수 있으므로 rAF로 한 프레임에
