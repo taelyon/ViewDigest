@@ -5,14 +5,20 @@
 // utils/gemini.js 를 통해 처리하고, 여기서는 메시지만 주고받는다.
 //
 // 역할:
-//   1. YouTube 영상 시청 페이지에 "⚡ 영상 분석" 버튼 삽입
+//   1. YouTube 영상 시청 페이지에 "⚡ 영상 분석" 버튼을 두 군데 삽입
+//      - 제목과 채널정보/액션 버튼 줄 사이(독립된 한 줄)
+//      - 우측 추천 영상 영역(#secondary) 최상단(그 영역 박스들과 같은 폭)
 //   2. 버튼 클릭 시 background.js 로 { action: "openResultsTab", url } 전송해
 //      새 탭(results/results.html)을 열게 한다. 실제 분석/스트리밍 렌더링은
 //      그 탭이 직접 수행하므로, 여기서는 탭을 여는 것까지만 책임진다.
 
 (function () {
-  const BUTTON_ID = "viewdigest-analyze-button";
+  const TITLE_BUTTON_ID = "viewdigest-analyze-button";
+  const SIDEBAR_BUTTON_ID = "viewdigest-analyze-button-sidebar";
   const STYLE_ID = "viewdigest-analyze-button-style";
+  const BUTTON_LABEL = "⚡ 영상 분석";
+  const BUTTON_LABEL_FULL = "영상 분석 (초고밀도 분석 노트 생성)";
+
   // 좋아요/공유/다운로드 등 모든 네이티브 액션 버튼은 #actions-inner 안에서
   // 실질적으로 #menu 라는 단일 블록(ytd-menu-renderer)에 다 뭉쳐 들어있고,
   // #actions-inner는 사실상 그 #menu와 폭을 나눠 써야 하는 좁은 flex row다.
@@ -20,15 +26,21 @@
   // 무언가가 다음 줄로 밀려나는 문제가 재발할 수 있다. 아예 그 줄과 폭을
   // 다투지 않도록, 제목 줄과 채널정보/액션 버튼 줄(#top-row) "사이"에
   // 우리 버튼만의 독립된 한 줄로 끼워넣는다.
-  const BUTTON_LABEL = "⚡ 영상 분석";
-  const BUTTON_LABEL_FULL = "영상 분석 (초고밀도 분석 노트 생성)";
-
   // YouTube DOM 구조는 자주 바뀌므로, 우선순위대로 여러 삽입 지점을 시도한다.
   // 여기서 찾는 건 "채널정보 + 액션 버튼 줄" 자체(#top-row) — 그 바로 앞에
   // 우리 버튼을 꽂아 제목과 그 줄 사이에 위치시킨다.
-  const INSERTION_SELECTORS = [
+  const TITLE_ANCHOR_SELECTORS = [
     "ytd-watch-metadata #top-row",
     "#above-the-fold #top-row",
+  ];
+
+  // 우측 추천 영상 영역의 컨테이너 후보. 이 컨테이너의 맨 앞에 버튼을 넣고,
+  // 폭은 100%로 채워 그 안의 추천 영상 박스들과 같은 폭이 되게 한다.
+  const SIDEBAR_CONTAINER_SELECTORS = [
+    "#secondary #related #items",
+    "#secondary #related",
+    "ytd-watch-flexy #secondary ytd-watch-next-secondary-results-renderer",
+    "#secondary",
   ];
 
   let insertionScheduled = false;
@@ -44,10 +56,10 @@
     );
   }
 
-  function findInsertionPoint() {
-    for (const selector of INSERTION_SELECTORS) {
+  function findFirstMatch(selectors) {
+    for (const selector of selectors) {
       const el = document.querySelector(selector);
-      if (el && el.parentElement) return el;
+      if (el) return el;
     }
     return null;
   }
@@ -62,17 +74,12 @@
     const style = document.createElement("style");
     style.id = STYLE_ID;
     style.textContent = `
-      #${BUTTON_ID} {
+      #${TITLE_BUTTON_ID}, #${SIDEBAR_BUTTON_ID} {
         display: inline-flex !important;
-        flex: 0 1 auto !important;
-        width: auto !important;
-        max-width: 160px !important;
         align-items: center;
         justify-content: center;
         gap: 6px;
-        min-width: 32px;
         overflow: hidden;
-        margin: 8px 0;
         height: 36px;
         padding: 0 16px;
         border: none;
@@ -88,14 +95,27 @@
         white-space: nowrap;
         text-overflow: ellipsis;
       }
-      #${BUTTON_ID}:hover:not(:disabled) {
+      #${TITLE_BUTTON_ID} {
+        flex: 0 1 auto !important;
+        width: auto !important;
+        max-width: 160px !important;
+        min-width: 32px;
+        margin: 8px 0;
+      }
+      #${SIDEBAR_BUTTON_ID} {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        margin: 0 0 12px 0;
+      }
+      #${TITLE_BUTTON_ID}:hover:not(:disabled), #${SIDEBAR_BUTTON_ID}:hover:not(:disabled) {
         filter: brightness(1.08);
         transform: translateY(-1px);
       }
-      #${BUTTON_ID}:active:not(:disabled) {
+      #${TITLE_BUTTON_ID}:active:not(:disabled), #${SIDEBAR_BUTTON_ID}:active:not(:disabled) {
         transform: translateY(0);
       }
-      #${BUTTON_ID}:disabled {
+      #${TITLE_BUTTON_ID}:disabled, #${SIDEBAR_BUTTON_ID}:disabled {
         opacity: 0.7;
         cursor: default;
       }
@@ -128,9 +148,9 @@
     );
   }
 
-  function createButton() {
+  function createButton(id) {
     const button = document.createElement("button");
-    button.id = BUTTON_ID;
+    button.id = id;
     button.type = "button";
     button.textContent = BUTTON_LABEL;
     button.title = BUTTON_LABEL_FULL;
@@ -139,25 +159,42 @@
     return button;
   }
 
-  function removeButton() {
-    const existing = document.getElementById(BUTTON_ID);
+  function removeButtonById(id) {
+    const existing = document.getElementById(id);
     if (existing) existing.remove();
   }
 
-  function ensureButtonInjected() {
+  function ensureTitleButtonInjected() {
+    const existing = document.getElementById(TITLE_BUTTON_ID);
+    if (existing && document.contains(existing)) return; // 이미 삽입됨: 중복 생성 방지
+
+    const topRow = findFirstMatch(TITLE_ANCHOR_SELECTORS);
+    if (!topRow || !topRow.parentElement) return; // 아직 DOM 준비 전: 다음 MutationObserver 콜백에서 재시도
+
+    if (existing) existing.remove(); // 옛 컨테이너에 붙어있던 유령 버튼 정리
+    topRow.parentElement.insertBefore(createButton(TITLE_BUTTON_ID), topRow); // 제목과 액션 버튼 줄 사이
+  }
+
+  function ensureSidebarButtonInjected() {
+    const existing = document.getElementById(SIDEBAR_BUTTON_ID);
+    if (existing && document.contains(existing)) return; // 이미 삽입됨: 중복 생성 방지
+
+    const container = findFirstMatch(SIDEBAR_CONTAINER_SELECTORS);
+    if (!container) return; // 아직 DOM 준비 전: 다음 MutationObserver 콜백에서 재시도
+
+    if (existing) existing.remove(); // 옛 컨테이너에 붙어있던 유령 버튼 정리
+    container.prepend(createButton(SIDEBAR_BUTTON_ID)); // 우측 영역 최상단
+  }
+
+  function ensureButtonsInjected() {
     if (!isWatchPage()) {
-      removeButton();
+      removeButtonById(TITLE_BUTTON_ID);
+      removeButtonById(SIDEBAR_BUTTON_ID);
       return;
     }
 
-    const existing = document.getElementById(BUTTON_ID);
-    if (existing && document.contains(existing)) return; // 이미 삽입됨: 중복 생성 방지
-
-    const topRow = findInsertionPoint();
-    if (!topRow) return; // 아직 DOM 준비 전: 다음 MutationObserver 콜백에서 재시도
-
-    if (existing) existing.remove(); // 옛 컨테이너에 붙어있던 유령 버튼 정리
-    topRow.parentElement.insertBefore(createButton(), topRow); // 제목과 액션 버튼 줄 사이
+    ensureTitleButtonInjected();
+    ensureSidebarButtonInjected();
   }
 
   // MutationObserver 콜백은 매우 자주 호출될 수 있으므로 rAF로 한 프레임에
@@ -167,7 +204,7 @@
     insertionScheduled = true;
     requestAnimationFrame(() => {
       insertionScheduled = false;
-      ensureButtonInjected();
+      ensureButtonsInjected();
     });
   }
 
