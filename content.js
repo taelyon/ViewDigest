@@ -16,7 +16,10 @@
   // YouTube의 다른 액션 버튼(좋아요/공유/저장 등)과 나란히 들어가는 아주 좁은
   // flex 컨테이너에 삽입된다. 라벨을 "영상 분석"으로 짧게 유지하고, 공간이
   // 부족해지면(CSS의 flex-shrink) 이 버튼 자신이 먼저 줄어들도록 해 다른
-  // 버튼들이 다음 줄로 밀리지 않게 한다.
+  // 버튼들이 다음 줄로 밀리지 않게 한다. flex-grow/width는 !important로
+  // 강제한다 — YouTube 쪽 flex 컨테이너가 자식에게 균등 성장(flex-grow)을
+  // 적용하는 레이아웃일 경우, 우리 버튼이 남는 공간을 다 차지하며 옆으로
+  // 길게 늘어나 버리는 문제(실제로 발생했음)를 막기 위해서다.
   const BUTTON_LABEL = "⚡ 영상 분석";
   const BUTTON_LABEL_FULL = "영상 분석 (초고밀도 분석 노트 생성)";
 
@@ -31,11 +34,12 @@
   // 좋아요(/싫어요) 버튼을 가리키는 후보 셀렉터. YouTube 리뉴얼마다 이름이
   // 바뀌어 왔으므로 여러 개를 시도한다 — 이 중 삽입 컨테이너(target) 안에서
   // 찾은 것 바로 앞에 분석 버튼을 놓아 "좋아요 왼쪽"에 위치시킨다.
+  // (구독 버튼/알림 종 등 다른 토글에도 매칭될 수 있는 범용 셀렉터
+  // `ytd-toggle-button-renderer`는 엉뚱한 위치에 꽂힐 위험이 있어 제외한다.)
   const LIKE_BUTTON_SELECTORS = [
     "like-button-view-model",
     "segmented-like-dislike-button-view-model",
     "ytd-segmented-like-dislike-button-renderer",
-    "ytd-toggle-button-renderer",
   ];
 
   let insertionScheduled = false;
@@ -90,11 +94,13 @@
     style.id = STYLE_ID;
     style.textContent = `
       #${BUTTON_ID} {
-        display: inline-flex;
+        display: inline-flex !important;
+        flex: 0 1 auto !important;
+        width: auto !important;
+        max-width: 160px !important;
         align-items: center;
         justify-content: center;
         gap: 6px;
-        flex-shrink: 1;
         min-width: 32px;
         overflow: hidden;
         margin: 8px 8px 8px 0;
