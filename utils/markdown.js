@@ -43,7 +43,10 @@ const HEADING_RE = /^(#{1,6})\s+(.*)$/;
 // 않는다.
 const HEADING_NUMBER_PREFIX_RE = /^\s*(?:chapter|section)?\s*\d+(?:\s*[-.–]\s*\d+)*\s*[.):]?\s+/i;
 
-const TOC_HEADING_RE = /^(목차|차례|목록|table of contents|contents)$/i;
+// 리포트를 구성하는 껍데기 제목. 내용을 담는 장(章)이 아니라 구획을 나누는
+// 이름표이므로 번호에서 제외한다(프롬프트가 "목차"와 "상세 분석"을 요구한다).
+const WRAPPER_HEADING_RE =
+  /^(목차|차례|목록|상세\s*분석|분석\s*내용|table of contents|contents)$/i;
 
 function stripHeadingNumber(text) {
   return text.replace(HEADING_NUMBER_PREFIX_RE, "").trim();
@@ -85,15 +88,17 @@ function planHeadingNumbers(lines) {
   const prefixes = new Map();
   const sectionIndexes = new Set();
 
-  const candidates = headings.filter((h) => !TOC_HEADING_RE.test(h.text));
+  const candidates = headings.filter((h) => !WRAPPER_HEADING_RE.test(h.text));
 
-  // 리포트 제목은 번호에서 뺀다. 두 가지로 알아본다:
-  //  - 나머지 어떤 제목보다도 얕은 단계에 홀로 있거나(현재 프롬프트 형식),
-  //  - 챕터와 같은 단계지만, 본문 없이 곧바로 같거나 더 얕은 제목이 뒤따르는
-  //    경우(제목 단계를 고정하기 전에 저장된 리포트가 이렇다).
   // 제목이 하나뿐이면 그건 리포트 제목이다. "1."을 붙여봐야 가리킬 대상이 없다.
   if (candidates.length < 2) return { text, prefixes, sectionIndexes };
 
+  // 리포트 제목은 번호에서 뺀다. 두 가지로 알아본다:
+  //  - 나머지 어떤 제목보다도 얕은 단계에 홀로 있거나(현재 프롬프트 형식),
+  //  - 대주제와 같은 단계지만, 본문 없이 곧바로 같거나 더 얕은 제목이 뒤따르는
+  //    경우(제목 단계를 고정하기 전에 저장된 리포트가 이렇다).
+  // "상세 분석" 같은 구획 이름표는 위에서 이름으로 이미 걸러졌으므로, 여기서는
+  // 맨 앞 하나만 보면 된다.
   const [first, second] = candidates;
   const isLoneShallowest = first.level < Math.min(...candidates.slice(1).map((h) => h.level));
   const isBareTitleRow = first.leadsStraightToHeading && second.level <= first.level;
@@ -111,7 +116,7 @@ function planHeadingNumbers(lines) {
       prefixes.set(heading.index, `${chapter}. `);
     } else if (heading.level === sectionLevel && chapter > 0) {
       section += 1;
-      prefixes.set(heading.index, `${chapter}-${section} `);
+      prefixes.set(heading.index, `${chapter}-${section}. `);
       sectionIndexes.add(heading.index);
     }
   }
