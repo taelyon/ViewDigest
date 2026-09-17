@@ -86,12 +86,13 @@ function planHeadingNumbers(lines) {
 
   const text = new Map(headings.map((h) => [h.index, h.text]));
   const prefixes = new Map();
+  const chapterIndexes = new Set();
   const sectionIndexes = new Set();
 
   const candidates = headings.filter((h) => !WRAPPER_HEADING_RE.test(h.text));
 
   // 제목이 하나뿐이면 그건 리포트 제목이다. "1."을 붙여봐야 가리킬 대상이 없다.
-  if (candidates.length < 2) return { text, prefixes, sectionIndexes };
+  if (candidates.length < 2) return { text, prefixes, chapterIndexes, sectionIndexes };
 
   // 리포트 제목은 번호에서 뺀다. 두 가지로 알아본다:
   //  - 나머지 어떤 제목보다도 얕은 단계에 홀로 있거나(현재 프롬프트 형식),
@@ -114,6 +115,7 @@ function planHeadingNumbers(lines) {
       chapter += 1;
       section = 0;
       prefixes.set(heading.index, `${chapter}. `);
+      chapterIndexes.add(heading.index);
     } else if (heading.level === sectionLevel && chapter > 0) {
       section += 1;
       prefixes.set(heading.index, `${chapter}-${section}. `);
@@ -121,7 +123,7 @@ function planHeadingNumbers(lines) {
     }
   }
 
-  return { text, prefixes, sectionIndexes };
+  return { text, prefixes, chapterIndexes, sectionIndexes };
 }
 
 function renderMarkdown(markdown) {
@@ -129,6 +131,7 @@ function renderMarkdown(markdown) {
   const {
     text: headingText,
     prefixes: headingPrefixes,
+    chapterIndexes,
     sectionIndexes,
   } = planHeadingNumbers(lines);
   const blocks = [];
@@ -160,9 +163,11 @@ function renderMarkdown(markdown) {
       const level = Math.min(header[1].length, 4);
       const prefix = headingPrefixes.get(i) ?? "";
       const body = renderInline(headingText.get(i) ?? header[2]);
-      // 소주제는 리포트에 따라 h3이기도 h4이기도 하므로, 강조 스타일이 태그가
-      // 아니라 역할을 따라가도록 표시해 둔다.
-      const role = sectionIndexes.has(i) ? ' class="report-section"' : "";
+      // 대주제/소주제가 h2·h3인지 h3·h4인지는 리포트마다 다르므로, 강조 스타일이
+      // 태그가 아니라 역할을 따라가도록 표시해 둔다.
+      let role = "";
+      if (chapterIndexes.has(i)) role = ' class="report-chapter"';
+      else if (sectionIndexes.has(i)) role = ' class="report-section"';
       blocks.push(`<h${level}${role}>${escapeHtml(prefix)}${body}</h${level}>`);
       i++;
       continue;
