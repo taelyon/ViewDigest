@@ -49,9 +49,8 @@ main {
   justify-content: flex-end;
 }
 
-/* popup.css는 .state-view.hidden / .result-view.hidden만 정의하므로,
-   이 페이지에서 새로 쓰는 요소(markdown-body, result-actions, result-submeta)를
-   위한 범용 규칙을 추가한다. */
+/* popup.css는 .state-view.hidden만 정의하므로, 이 페이지에서 쓰는 요소
+   (markdown-body, result-actions, result-submeta)를 위한 범용 규칙을 추가한다. */
 .hidden {
   display: none !important;
 }

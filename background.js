@@ -262,10 +262,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (!message || typeof message.action !== "string") return false;
 
   switch (message.action) {
-    case "analyzeVideo":
-      handleAnalyzeVideo(message.url, { tab: sender.tab }).then(sendResponse);
-      return true; // 비동기 응답
-
     case "openResultsTab":
       handleOpenResultsTab(message.url, { tab: sender.tab })
         .then(sendResponse)

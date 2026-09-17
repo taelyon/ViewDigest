@@ -1,16 +1,15 @@
 // ViewDigest - popup script
+//
+// 분석은 항상 results/results.html을 새 탭으로 열어 처리한다(스트리밍 표시).
+// 팝업 자체는 분석 결과를 렌더링하지 않고, 분석 시작 버튼 + 히스토리 + 사용량만 보여준다.
 
 import { getHistory, deleteAnalysis } from "../utils/storage.js";
 import { getUsageStats, checkRateLimit } from "../utils/cost.js";
-import { renderMarkdown } from "../utils/markdown.js";
 
 const YOUTUBE_WATCH_RE = /^https:\/\/(www\.)?youtube\.com\/watch\?.*v=/;
 
-// 현재 "현재 분석" 탭에 표시 중인 결과의 원본 정보. 복사/다운로드/다시분석에 사용한다.
-let currentEntry = null; // { title, url, markdown, model, estimatedCost, createdAt, ... }
-
 // ---------------------------------------------------------------------
-// 탭 전환
+// 탭 전환 (히스토리 / 사용량)
 // ---------------------------------------------------------------------
 
 function switchTab(tabName) {
@@ -26,32 +25,6 @@ function setupTabs() {
   document.querySelectorAll(".tab-btn").forEach((btn) => {
     btn.addEventListener("click", () => switchTab(btn.dataset.tab));
   });
-}
-
-// ---------------------------------------------------------------------
-// "현재 분석" 탭: 상태 전환
-// ---------------------------------------------------------------------
-
-const stateViews = {
-  idle: document.getElementById("current-idle"),
-  loading: document.getElementById("current-loading"),
-  error: document.getElementById("current-error"),
-  result: document.getElementById("current-result"),
-};
-
-function setCurrentState(state, payload) {
-  Object.entries(stateViews).forEach(([name, el]) => {
-    el.classList.toggle("hidden", name !== state);
-  });
-
-  if (state === "error") {
-    document.getElementById("error-message-text").textContent =
-      payload?.message ?? "알 수 없는 오류가 발생했습니다.";
-  }
-
-  if (state === "result" && payload) {
-    renderResult(payload);
-  }
 }
 
 function formatDate(iso) {
@@ -72,38 +45,21 @@ function formatCost(usd) {
   return `$${usd.toFixed(4)}`;
 }
 
-function renderResult(entry) {
-  currentEntry = entry;
+// ---------------------------------------------------------------------
+// 분석 시작 버튼: 항상 새 탭(results.html)에서 스트리밍으로 진행한다
+// ---------------------------------------------------------------------
 
-  document.getElementById("result-title").textContent = entry.title ?? "제목 없음";
-  document.getElementById("result-date").textContent = formatDate(entry.createdAt);
-  document.getElementById("result-model").textContent = entry.model ?? "-";
-  document.getElementById("result-cost").textContent = `예상 비용 ${formatCost(entry.estimatedCost)}`;
-  document.getElementById("result-content").innerHTML = renderMarkdown(entry.markdown ?? "");
+function cleanYoutubeTitle(rawTitle) {
+  if (!rawTitle) return null;
+  return rawTitle.replace(/\s*-\s*YouTube\s*$/, "").trim() || null;
 }
 
-// ---------------------------------------------------------------------
-// 분석 시작/재시도
-// ---------------------------------------------------------------------
-
-function requestAnalysis(url) {
-  if (!url) return;
-  setCurrentState("loading");
-
-  chrome.runtime.sendMessage({ action: "analyzeVideo", url }, (response) => {
-    if (chrome.runtime.lastError) {
-      setCurrentState("error", { message: chrome.runtime.lastError.message });
-      return;
-    }
-    if (!response) return; // background가 별도 브로드캐스트로 결과를 전달할 예정
-    if (response.success) {
-      setCurrentState("result", response.result);
-      refreshHistory();
-      refreshUsage();
-    } else {
-      setCurrentState("error", response.error);
-    }
+function openResultsTab(params) {
+  const url = new URL(chrome.runtime.getURL("results/results.html"));
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) url.searchParams.set(key, value);
   });
+  chrome.tabs.create({ url: url.toString() });
 }
 
 async function getActiveYoutubeTab() {
@@ -112,74 +68,23 @@ async function getActiveYoutubeTab() {
   return tab;
 }
 
-async function initCurrentTab() {
+async function initAnalyzeButton() {
   const tab = await getActiveYoutubeTab();
   const startBtn = document.getElementById("start-analyze-btn");
   const hint = document.getElementById("idle-hint");
 
-  if (tab) {
-    startBtn.disabled = false;
-    startBtn.dataset.url = tab.url;
-    hint.textContent = "";
-  } else {
-    startBtn.disabled = true;
-    hint.textContent = "YouTube 영상 시청 페이지에서만 분석할 수 있어요.";
-  }
+  startBtn.disabled = !tab;
+  hint.textContent = tab ? "" : "YouTube 영상 시청 페이지에서만 분석할 수 있어요.";
 }
 
-function setupCurrentTabActions() {
-  document.getElementById("start-analyze-btn").addEventListener("click", (e) => {
-    requestAnalysis(e.currentTarget.dataset.url);
-  });
-
-  document.getElementById("retry-btn").addEventListener("click", async () => {
+function setupAnalyzeButton() {
+  document.getElementById("start-analyze-btn").addEventListener("click", async () => {
     const tab = await getActiveYoutubeTab();
-    requestAnalysis(currentEntry?.url ?? tab?.url);
+    if (!tab?.url) return;
+
+    openResultsTab({ url: tab.url, title: cleanYoutubeTitle(tab.title) });
+    window.close(); // 결과는 새 탭이 보여주므로 팝업은 닫아 자연스럽게 정리한다
   });
-
-  document.getElementById("reanalyze-btn").addEventListener("click", () => {
-    if (currentEntry?.url) requestAnalysis(currentEntry.url);
-  });
-
-  document.getElementById("copy-btn").addEventListener("click", copyCurrentMarkdown);
-  document.getElementById("download-btn").addEventListener("click", downloadCurrentMarkdown);
-}
-
-async function copyCurrentMarkdown() {
-  if (!currentEntry?.markdown) return;
-  const btn = document.getElementById("copy-btn");
-  try {
-    await navigator.clipboard.writeText(currentEntry.markdown);
-  } catch {
-    // 클립보드 API 사용이 막힌 환경을 위한 대체 경로
-    const textarea = document.createElement("textarea");
-    textarea.value = currentEntry.markdown;
-    textarea.style.position = "fixed";
-    textarea.style.opacity = "0";
-    document.body.appendChild(textarea);
-    textarea.select();
-    document.execCommand("copy");
-    textarea.remove();
-  }
-  const original = btn.textContent;
-  btn.textContent = "✅ 복사됨";
-  setTimeout(() => {
-    btn.textContent = original;
-  }, 1500);
-}
-
-function downloadCurrentMarkdown() {
-  if (!currentEntry?.markdown) return;
-  const safeTitle = (currentEntry.title ?? "analysis").replace(/[\\/:*?"<>|]/g, "_").slice(0, 80);
-  const blob = new Blob([currentEntry.markdown], { type: "text/markdown;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${safeTitle}.md`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
 }
 
 // ---------------------------------------------------------------------
@@ -225,8 +130,7 @@ async function refreshHistory() {
     });
 
     main.addEventListener("click", () => {
-      setCurrentState("result", entry);
-      switchTab("current");
+      openResultsTab({ entryId: entry.id });
     });
 
     li.append(main, deleteBtn);
@@ -260,17 +164,14 @@ async function refreshUsage() {
 }
 
 // ---------------------------------------------------------------------
-// 백그라운드에서 오는 브로드캐스트 (content.js 버튼 등으로 트리거된 분석 포함)
+// 백그라운드에서 오는 브로드캐스트 (채널 자동 분석, results 탭 완료 등)
 // ---------------------------------------------------------------------
 
 function setupBackgroundListener() {
   chrome.runtime.onMessage.addListener((message) => {
     if (message?.action === "analysisComplete") {
-      setCurrentState("result", message.result);
       refreshHistory();
       refreshUsage();
-    } else if (message?.action === "analysisError") {
-      setCurrentState("error", message.error);
     }
   });
 }
@@ -281,15 +182,14 @@ function setupBackgroundListener() {
 
 document.addEventListener("DOMContentLoaded", () => {
   setupTabs();
-  setupCurrentTabActions();
+  setupAnalyzeButton();
   setupBackgroundListener();
 
   document.getElementById("open-options-btn").addEventListener("click", () => {
     chrome.runtime.openOptionsPage();
   });
 
-  setCurrentState("idle");
-  initCurrentTab();
+  initAnalyzeButton();
   refreshHistory();
   refreshUsage();
 });

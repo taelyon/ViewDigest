@@ -96,6 +96,25 @@ body {
   color: var(--text-primary);
 }
 
+/* 분석 시작 버튼 바 (탭과 무관하게 항상 보임) */
+.analyze-bar {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.analyze-bar .primary-btn {
+  width: 100%;
+}
+
+.analyze-bar .state-hint {
+  text-align: center;
+}
+
 /* 탭 */
 .tabs {
   display: flex;
@@ -232,19 +251,7 @@ body {
   border-color: var(--accent);
 }
 
-/* 결과 뷰 */
-.result-view {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.result-view.hidden {
-  display: none;
-}
-
+/* 결과 뷰 (popup.html에는 더 이상 없지만, results.css가 그대로 재사용한다) */
 .result-meta {
   flex-shrink: 0;
 }
@@ -267,10 +274,6 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
-}
-
-.result-submeta .dot {
-  opacity: 0.6;
 }
 
 .model-badge {

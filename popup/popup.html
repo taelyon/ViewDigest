@@ -15,56 +15,21 @@
       <button id="open-options-btn" class="icon-btn" title="설정 열기" type="button">⚙</button>
     </header>
 
+    <div class="analyze-bar">
+      <button id="start-analyze-btn" class="primary-btn" type="button" disabled>
+        🔍 지금 분석하기
+      </button>
+      <p id="idle-hint" class="state-hint"></p>
+    </div>
+
     <nav class="tabs" role="tablist">
-      <button class="tab-btn active" data-tab="current" role="tab" type="button">현재 분석</button>
-      <button class="tab-btn" data-tab="history" role="tab" type="button">히스토리</button>
+      <button class="tab-btn active" data-tab="history" role="tab" type="button">히스토리</button>
       <button class="tab-btn" data-tab="usage" role="tab" type="button">사용량</button>
     </nav>
 
     <main class="panels">
-      <!-- 현재 분석 탭 -->
-      <section id="current-panel" class="panel active" data-panel="current">
-        <div id="current-idle" class="state-view">
-          <p class="state-message">YouTube 영상 페이지를 열고 분석을 시작해보세요.</p>
-          <button id="start-analyze-btn" class="primary-btn" type="button" disabled>
-            🔍 지금 분석하기
-          </button>
-          <p id="idle-hint" class="state-hint"></p>
-        </div>
-
-        <div id="current-loading" class="state-view hidden">
-          <div class="spinner" aria-hidden="true"></div>
-          <p class="state-message">Gemini가 영상을 초고밀도로 분석하고 있습니다...</p>
-          <p class="state-hint">영상 길이에 따라 다소 시간이 걸릴 수 있어요.</p>
-        </div>
-
-        <div id="current-error" class="state-view hidden">
-          <p class="state-message error-message" id="error-message-text"></p>
-          <button id="retry-btn" class="primary-btn" type="button">다시 시도</button>
-        </div>
-
-        <div id="current-result" class="result-view hidden">
-          <div class="result-meta">
-            <div class="result-title" id="result-title"></div>
-            <div class="result-submeta">
-              <span id="result-date"></span>
-              <span class="dot">·</span>
-              <span id="result-model" class="model-badge"></span>
-              <span class="dot">·</span>
-              <span id="result-cost"></span>
-            </div>
-          </div>
-          <div id="result-content" class="markdown-body scroll-area"></div>
-          <div class="result-actions">
-            <button id="copy-btn" class="secondary-btn" type="button">📋 복사</button>
-            <button id="download-btn" class="secondary-btn" type="button">⬇️ Markdown 다운로드</button>
-            <button id="reanalyze-btn" class="secondary-btn" type="button">🔄 다시 분석</button>
-          </div>
-        </div>
-      </section>
-
       <!-- 히스토리 탭 -->
-      <section id="history-panel" class="panel" data-panel="history">
+      <section id="history-panel" class="panel active" data-panel="history">
         <div id="history-empty" class="state-view hidden">
           <p class="state-message">아직 분석한 영상이 없습니다.</p>
         </div>
