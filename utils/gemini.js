@@ -41,13 +41,20 @@ const ERROR_CODES = {
   EMPTY_RESPONSE: "EMPTY_RESPONSE",
 };
 
-// SYSTEM_INSTRUCTION이 요구하는 초고밀도 리포트 + googleSearch 도구 사용은 모델이
-// 답변을 쓰기 전에 내부적으로 여러 차례 검색/추론(thinking)을 반복하게 만든다.
-// thinkingBudget을 지정하지 않으면(동적/무제한) 이 추론 과정이 출력 토큰 예산을
-// 전부 소진해버려, 실제 리포트 텍스트는 한 글자도 못 쓴 채 finishReason이
-// MAX_TOKENS로 끝나는 "빈 응답"이 발생할 수 있다. thinkingBudget을 정해두면
-// 나머지 예산은 항상 실제 답변 텍스트를 위해 남는다.
-const GENERATION_CONFIG = {
+// 자막 경로: 요약할 원문(자막 전문)을 이미 손에 쥐고 있으므로, 본문을 쓰기 전에
+// 따로 조사할 것이 없다. thinkingBudget을 0으로 두면 모델이 프롬프트를 읽자마자
+// 리포트 본문을 흘려보내기 시작해, 스트리밍이 즉시 화면에 나타난다(추론 중에는
+// text가 없는 청크만 오기 때문에 thinking 시간이 곧 무반응 구간이 된다).
+// 덤으로, 추론이 출력 토큰 예산을 잠식해 finishReason MAX_TOKENS + 빈 응답으로
+// 끝나는 경우도 원천적으로 사라진다.
+const TRANSCRIPT_GENERATION_CONFIG = {
+  thinkingConfig: { thinkingBudget: 0 },
+};
+
+// 영상 폴백 경로: 자막이 없어 영상 자체를 인식해야 하므로 추론과 검색 그라운딩이
+// 실제로 필요하다. 다만 예산을 열어두면(동적/무제한) 그 추론이 출력 토큰을 전부
+// 소진해 리포트를 한 글자도 못 쓴 채 끝나므로 상한을 둔다.
+const VIDEO_GENERATION_CONFIG = {
   thinkingConfig: { thinkingBudget: 8192 },
 };
 
@@ -110,8 +117,11 @@ ${transcriptText}`,
         ],
       },
     ],
-    tools: [{ googleSearch: {} }],
-    generationConfig: GENERATION_CONFIG,
+    // googleSearch 도구는 일부러 붙이지 않는다. SYSTEM_INSTRUCTION의 실시간 검색
+    // 조항은 "자막도 색인도 없는 신규 영상"을 위한 것이고, 자막 전문이 있는 지금은
+    // 근거가 이미 프롬프트 안에 다 들어있다. 도구를 붙이면 첫 토큰을 내보내기 전에
+    // 서버사이드 검색 왕복이 먼저 일어나 스트리밍 시작이 그만큼 늦어진다.
+    generationConfig: TRANSCRIPT_GENERATION_CONFIG,
   };
 }
 
@@ -147,7 +157,7 @@ function buildVideoFallbackRequestBody(youtubeUrl, customPrompt) {
       },
     ],
     tools: [{ googleSearch: {} }],
-    generationConfig: GENERATION_CONFIG,
+    generationConfig: VIDEO_GENERATION_CONFIG,
   };
 }
 
@@ -198,7 +208,7 @@ async function assertOkResponse(response) {
 function describeEmptyResponse(finishReason) {
   switch (finishReason) {
     case "MAX_TOKENS":
-      return "Gemini가 답변을 작성하기 전에 내부 추론/검색 과정에서 최대 출력 토큰 한도에 도달해 응답이 끊겼습니다. 영상이 매우 길거나 다루는 정보가 방대할 수 있습니다. 잠시 후 다시 시도해주세요.";
+      return "Gemini가 리포트 본문을 만들지 못한 채 최대 출력 토큰 한도에 도달해 응답이 끊겼습니다. 영상이 매우 길거나 다루는 정보가 방대할 수 있습니다. 잠시 후 다시 시도해주세요.";
     case "SAFETY":
     case "PROHIBITED_CONTENT":
     case "BLOCKLIST":
@@ -244,8 +254,14 @@ function parseResponse(data) {
  * analyzeYouTubeVideo와 analyzeYouTubeVideoStream이 공유하는 준비 단계:
  * URL 검증 → 일일 한도 확인 → API 키 확인 → 자막 조회(또는 폴백) → 요청 바디 구성.
  * 이 단계에서 던지는 에러는 항상 GeminiApiError이다.
+ *
+ * 진행 상태를 콜백이 아니라 yield로 내보내는 이유: 제너레이터는 콜백 안에서
+ * yield할 수 없어서, 콜백 방식으로는 상태 메시지를 배열에 모아뒀다가 이 함수가
+ * "끝난 뒤에야" 한꺼번에 내보낼 수밖에 없다. 그러면 정작 자막을 조회하는 몇 초
+ * 동안 화면이 초기 상태로 멈춰 있게 된다. 호출부는 `yield*`로 이 제너레이터를
+ * 위임해 상태를 실시간으로 흘려보내고, 반환값으로 요청 재료를 받는다.
  */
-async function prepareRequest(youtubeUrl, options, onStatus) {
+async function* prepareRequestStream(youtubeUrl, options) {
   if (!isLikelyYoutubeUrl(youtubeUrl)) {
     throw new GeminiApiError(
       "올바른 YouTube 영상 URL이 아닙니다.",
@@ -275,13 +291,34 @@ async function prepareRequest(youtubeUrl, options, onStatus) {
 
   // 3. 자막을 우선 시도하고, 없으면(또는 조회 자체가 실패하면) 영상 자체를
   //    Gemini에 보내는 방식으로 폴백한다.
-  onStatus?.("영상 자막을 확인하고 있습니다...");
+  yield { type: "status", message: "영상 자막을 확인하고 있습니다..." };
   const transcript = await getTranscript(youtubeUrl).catch(() => null);
+
+  if (!transcript) {
+    // 폴백 경로는 영상 전체를 인식해야 해서 자막 경로보다 훨씬 오래 걸린다.
+    // 왜 갑자기 느려졌는지 알 수 있도록 미리 알린다.
+    yield {
+      type: "status",
+      message: "자막이 없는 영상이라 영상 자체를 분석합니다. 시간이 더 걸릴 수 있습니다...",
+    };
+  }
+
   const requestBody = transcript
     ? buildTranscriptRequestBody(youtubeUrl, transcript.text, options.customPrompt ?? null)
     : buildVideoFallbackRequestBody(youtubeUrl, options.customPrompt ?? null);
 
   return { apiKey, requestBody };
+}
+
+/**
+ * 스트리밍이 아닌 호출부(background.js의 채널 자동 분석 등)를 위한 래퍼.
+ * 표시할 화면이 없으므로 진행 상태는 흘려버리고 최종 결과만 받는다.
+ */
+async function prepareRequest(youtubeUrl, options) {
+  const steps = prepareRequestStream(youtubeUrl, options);
+  let step = await steps.next();
+  while (!step.done) step = await steps.next();
+  return step.value;
 }
 
 function toGeminiApiError(error) {
@@ -389,11 +426,7 @@ async function* analyzeYouTubeVideoStream(youtubeUrl, options = {}) {
   const model = options.model ?? DEFAULT_MODEL;
 
   try {
-    const statusEvents = [];
-    const { apiKey, requestBody } = await prepareRequest(youtubeUrl, options, (message) =>
-      statusEvents.push(message)
-    );
-    for (const message of statusEvents) yield { type: "status", message };
+    const { apiKey, requestBody } = yield* prepareRequestStream(youtubeUrl, options);
 
     yield { type: "status", message: "Gemini가 분석을 생성하고 있습니다..." };
 
