@@ -1,0 +1,57 @@
+/* ViewDigest - 분석 결과 전용 탭 스타일. popup.css의 다크 테마/컴포넌트를
+   그대로 재사용하고, 고정 크기 팝업이 아닌 전체 페이지 레이아웃만 덧씌운다. */
+@import url("../popup/popup.css");
+
+body {
+  width: auto;
+  height: auto;
+  min-height: 100vh;
+}
+
+#app {
+  height: auto;
+  min-height: 100vh;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 24px 28px 48px;
+}
+
+.result-meta {
+  flex-shrink: 0;
+}
+
+.result-title {
+  font-size: 20px;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+
+.result-submeta.hidden {
+  display: none;
+}
+
+#status-view,
+#error-view {
+  padding: 48px 8px;
+}
+
+#result-content.markdown-body {
+  padding: 20px 26px;
+}
+
+#result-actions {
+  justify-content: flex-end;
+}
+
+/* popup.css는 .state-view.hidden / .result-view.hidden만 정의하므로,
+   이 페이지에서 새로 쓰는 요소(markdown-body, result-actions, result-submeta)를
+   위한 범용 규칙을 추가한다. */
+.hidden {
+  display: none !important;
+}

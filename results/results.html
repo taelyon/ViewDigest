@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>ViewDigest 분석</title>
+  <link rel="stylesheet" href="results.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="app-header">
+      <div class="app-title">
+        <img src="../icons/icon32.png" alt="" class="app-logo" />
+        <span>ViewDigest</span>
+      </div>
+    </header>
+
+    <main>
+      <div class="result-meta">
+        <h1 class="result-title" id="result-title">분석 준비 중...</h1>
+        <div class="result-submeta hidden" id="result-meta-line"></div>
+      </div>
+
+      <div id="status-view" class="state-view">
+        <div class="spinner" aria-hidden="true"></div>
+        <p class="state-message" id="status-text">시작하는 중...</p>
+      </div>
+
+      <div id="error-view" class="state-view hidden">
+        <p class="state-message error-message" id="error-text"></p>
+      </div>
+
+      <div id="result-content" class="markdown-body hidden"></div>
+
+      <div id="result-actions" class="result-actions hidden">
+        <button id="copy-btn" class="secondary-btn" type="button">📋 복사</button>
+        <button id="download-btn" class="secondary-btn" type="button">⬇️ Markdown 다운로드</button>
+      </div>
+    </main>
+  </div>
+  <script type="module" src="results.js"></script>
+</body>
+</html>

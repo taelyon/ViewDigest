@@ -158,6 +158,27 @@ async function handleAnalyzeVideo(url, { tab, titleOverride } = {}) {
 }
 
 // ---------------------------------------------------------------------
+// 분석 결과 탭 열기 (content.js의 분석 버튼 클릭)
+// ---------------------------------------------------------------------
+
+/**
+ * content.js의 분석 버튼 클릭을 받아, 실제 분석은 results/results.html이
+ * 직접 수행하도록 그 페이지를 새 탭으로 연다. 스트리밍 진행 상황을 보여줘야
+ * 하므로, 분석 자체를 여기서 기다리지 않고 탭만 열어준다.
+ */
+async function handleOpenResultsTab(url, { tab } = {}) {
+  const videoId = extractVideoId(url);
+  const title = extractTitle(tab, videoId);
+
+  const resultsUrl = new URL(chrome.runtime.getURL("results/results.html"));
+  resultsUrl.searchParams.set("url", url);
+  resultsUrl.searchParams.set("title", title);
+
+  await chrome.tabs.create({ url: resultsUrl.toString() });
+  return { success: true };
+}
+
+// ---------------------------------------------------------------------
 // seekTo 중계 처리
 // ---------------------------------------------------------------------
 
@@ -306,6 +327,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message.action) {
     case "analyzeVideo":
       handleAnalyzeVideo(message.url, { tab: sender.tab }).then(sendResponse);
+      return true; // 비동기 응답
+
+    case "openResultsTab":
+      handleOpenResultsTab(message.url, { tab: sender.tab })
+        .then(sendResponse)
+        .catch((error) => sendResponse({ success: false, error: normalizeError(error) }));
       return true; // 비동기 응답
 
     case "seekTo":

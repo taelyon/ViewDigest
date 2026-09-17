@@ -5,12 +5,11 @@
 // utils/gemini.js 를 통해 처리하고, 여기서는 메시지만 주고받는다.
 //
 // 역할:
-//   1. YouTube 영상 시청 페이지에 "초고밀도 분석 노트 생성" 버튼 삽입
-//   2. 버튼 클릭 시 background.js 로 { action: "analyzeVideo", url } 전송
+//   1. YouTube 영상 시청 페이지에 "⚡ 영상 분석" 버튼 삽입
+//   2. 버튼 클릭 시 background.js 로 { action: "openResultsTab", url } 전송해
+//      새 탭(results/results.html)을 열게 한다. 실제 분석/스트리밍 렌더링은
+//      그 탭이 직접 수행하므로, 여기서는 탭을 여는 것까지만 책임진다.
 //   3. popup 등에서 보낸 { action: "seekTo", seconds } 메시지를 받아 영상 탐색
-//
-// TODO: 영상 videoId/제목 등 메타데이터를 추출해 analyzeVideo 메시지에 함께 실어보내기
-// TODO: 분석 진행 상태(로딩/완료/에러)를 background로부터 응답받아 버튼 UI에 반영
 
 (function () {
   const BUTTON_ID = "viewdigest-analyze-button";
@@ -94,45 +93,27 @@
     document.head.appendChild(style);
   }
 
-  function truncate(text, maxLength) {
-    if (!text || text.length <= maxLength) return text;
-    return `${text.slice(0, maxLength)}…`;
-  }
-
   function handleAnalyzeClick(event) {
     const button = event.currentTarget;
     if (button.disabled) return;
 
+    // 실제 분석/진행 상태 표시는 새로 열리는 results 탭이 전담하므로, 이 버튼은
+    // 탭을 여는 짧은 순간만 중복 클릭을 막고 바로 원래 상태로 돌아온다.
     button.disabled = true;
-    button.textContent = "⏳ 분석 중...";
-    button.title = "Gemini가 영상을 분석하고 있습니다";
 
     chrome.runtime.sendMessage(
-      { action: "analyzeVideo", url: location.href },
+      { action: "openResultsTab", url: location.href },
       (response) => {
-        // background.js가 비동기로 분석을 처리하는 동안 lastError(수신자 없음 등)는
-        // 버튼 UI 복구를 막을 이유가 없으므로 조회만 하고 무시한다.
         void chrome.runtime.lastError;
-
-        // 성공/실패를 버튼에 잠시 표시해, 팝업을 열지 않아도 현재 상태를 바로 알 수 있게 한다.
-        // 라벨은 항상 짧게 유지하고(다른 액션 버튼을 밀어내지 않도록), 자세한 내용은
-        // title 툴팁으로 제공한다.
-        if (response?.success) {
-          button.textContent = "✅ 분석 완료";
-          button.title = "확장 아이콘을 눌러 결과를 확인하세요";
-        } else if (response?.error) {
-          button.textContent = "❌ 분석 실패";
-          button.title = truncate(response.error.message, 200);
-        } else {
-          button.textContent = BUTTON_LABEL;
-          button.title = BUTTON_LABEL_FULL;
+        if (!response?.success) {
+          button.textContent = "❌ 열기 실패";
+          button.title = response?.error?.message ?? "새 탭을 여는 중 오류가 발생했습니다.";
+          setTimeout(() => {
+            button.textContent = BUTTON_LABEL;
+            button.title = BUTTON_LABEL_FULL;
+          }, 3000);
         }
-
         button.disabled = false;
-        setTimeout(() => {
-          button.textContent = BUTTON_LABEL;
-          button.title = BUTTON_LABEL_FULL;
-        }, 3000);
       }
     );
   }

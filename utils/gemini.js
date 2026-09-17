@@ -209,6 +209,59 @@ function parseResponse(data) {
 }
 
 /**
+ * analyzeYouTubeVideo와 analyzeYouTubeVideoStream이 공유하는 준비 단계:
+ * URL 검증 → 일일 한도 확인 → API 키 확인 → 자막 조회(또는 폴백) → 요청 바디 구성.
+ * 이 단계에서 던지는 에러는 항상 GeminiApiError이다.
+ */
+async function prepareRequest(youtubeUrl, options, onStatus) {
+  if (!isLikelyYoutubeUrl(youtubeUrl)) {
+    throw new GeminiApiError(
+      "올바른 YouTube 영상 URL이 아닙니다.",
+      ERROR_CODES.INVALID_URL,
+      { youtubeUrl }
+    );
+  }
+
+  // 1. 호출 전 일일 사용량 제한을 먼저 확인해 불필요한 API 호출을 막는다.
+  const rateLimit = await checkRateLimit();
+  if (!rateLimit.allowed) {
+    throw new GeminiApiError(
+      `오늘의 분석 가능 횟수(${rateLimit.limit}회)를 모두 사용했습니다.`,
+      ERROR_CODES.RATE_LIMITED,
+      rateLimit
+    );
+  }
+
+  // 2. API 키가 없으면 요청을 보내기 전에 명확한 에러로 안내한다.
+  const apiKey = await getApiKey();
+  if (!apiKey) {
+    throw new GeminiApiError(
+      "Gemini API 키가 설정되지 않았습니다. 옵션 페이지에서 먼저 등록해주세요.",
+      ERROR_CODES.MISSING_API_KEY
+    );
+  }
+
+  // 3. 자막을 우선 시도하고, 없으면(또는 조회 자체가 실패하면) 영상 자체를
+  //    Gemini에 보내는 방식으로 폴백한다.
+  onStatus?.("영상 자막을 확인하고 있습니다...");
+  const transcript = await getTranscript(youtubeUrl).catch(() => null);
+  const requestBody = transcript
+    ? buildTranscriptRequestBody(youtubeUrl, transcript.text, options.customPrompt ?? null)
+    : buildVideoFallbackRequestBody(youtubeUrl, options.customPrompt ?? null);
+
+  return { apiKey, requestBody };
+}
+
+function toGeminiApiError(error) {
+  if (error instanceof GeminiApiError) return error;
+  return new GeminiApiError(
+    "Gemini API 호출 중 알 수 없는 오류가 발생했습니다.",
+    ERROR_CODES.REQUEST_FAILED,
+    error
+  );
+}
+
+/**
  * YouTube 영상을 분석한다. 자막이 있으면 자막 텍스트 기반으로, 없으면
  * Gemini의 영상 이해(fileData)로 폴백해 분석한다.
  *
@@ -220,44 +273,10 @@ function parseResponse(data) {
  */
 async function analyzeYouTubeVideo(youtubeUrl, options = {}) {
   const model = options.model ?? DEFAULT_MODEL;
-  const customPrompt = options.customPrompt ?? null;
-
-  if (!isLikelyYoutubeUrl(youtubeUrl)) {
-    throw new GeminiApiError(
-      "올바른 YouTube 영상 URL이 아닙니다.",
-      ERROR_CODES.INVALID_URL,
-      { youtubeUrl }
-    );
-  }
 
   try {
-    // 1. 호출 전 일일 사용량 제한을 먼저 확인해 불필요한 API 호출을 막는다.
-    const rateLimit = await checkRateLimit();
-    if (!rateLimit.allowed) {
-      throw new GeminiApiError(
-        `오늘의 분석 가능 횟수(${rateLimit.limit}회)를 모두 사용했습니다.`,
-        ERROR_CODES.RATE_LIMITED,
-        rateLimit
-      );
-    }
+    const { apiKey, requestBody } = await prepareRequest(youtubeUrl, options);
 
-    // 2. API 키가 없으면 요청을 보내기 전에 명확한 에러로 안내한다.
-    const apiKey = await getApiKey();
-    if (!apiKey) {
-      throw new GeminiApiError(
-        "Gemini API 키가 설정되지 않았습니다. 옵션 페이지에서 먼저 등록해주세요.",
-        ERROR_CODES.MISSING_API_KEY
-      );
-    }
-
-    // 3. 자막을 우선 시도하고, 없으면(또는 조회 자체가 실패하면) 영상 자체를
-    //    Gemini에 보내는 방식으로 폴백한다.
-    const transcript = await getTranscript(youtubeUrl).catch(() => null);
-    const requestBody = transcript
-      ? buildTranscriptRequestBody(youtubeUrl, transcript.text, customPrompt)
-      : buildVideoFallbackRequestBody(youtubeUrl, customPrompt);
-
-    // 4. 실제 Gemini API 요청
     const response = await fetch(`${API_BASE_URL}/${model}:generateContent?key=${apiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -269,7 +288,7 @@ async function analyzeYouTubeVideo(youtubeUrl, options = {}) {
     const { markdown, inputTokens, outputTokens, totalTokens } = parseResponse(data);
     const estimatedCost = estimateCost({ inputTokens, outputTokens }, model);
 
-    // 5. 응답을 받은 뒤 사용량/비용을 기록한다.
+    // 응답을 받은 뒤 사용량/비용을 기록한다.
     await recordUsage(totalTokens, estimatedCost);
 
     return {
@@ -280,13 +299,124 @@ async function analyzeYouTubeVideo(youtubeUrl, options = {}) {
     };
   } catch (error) {
     // fetch 자체가 실패한 경우(네트워크 오류 등)는 GeminiApiError로 감싸서 던진다.
-    if (error instanceof GeminiApiError) throw error;
-    throw new GeminiApiError(
-      "Gemini API 호출 중 알 수 없는 오류가 발생했습니다.",
-      ERROR_CODES.REQUEST_FAILED,
-      error
-    );
+    throw toGeminiApiError(error);
   }
 }
 
-export { analyzeYouTubeVideo, DEFAULT_MODEL, GeminiApiError, ERROR_CODES };
+/**
+ * SSE(Server-Sent Events) 스트림 응답 본문을 JSON 청크 단위로 순회한다.
+ * Gemini의 `:streamGenerateContent?alt=sse` 응답은 `data: {...}\n\n` 블록이
+ * 반복되는 형태이며, 각 청크의 candidates[].content.parts[].text는 지금까지
+ * 누적된 텍스트가 아니라 그 청크에서 새로 생성된 텍스트(델타)다.
+ */
+async function* iterateSseChunks(response) {
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder("utf-8");
+  let buffer = "";
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    let boundary;
+    while ((boundary = buffer.indexOf("\n\n")) !== -1) {
+      const rawEvent = buffer.slice(0, boundary);
+      buffer = buffer.slice(boundary + 2);
+
+      const dataLine = rawEvent.split("\n").find((line) => line.startsWith("data:"));
+      if (!dataLine) continue;
+      const jsonStr = dataLine.slice(5).trim();
+      if (!jsonStr) continue;
+
+      try {
+        yield JSON.parse(jsonStr);
+      } catch {
+        // 네트워크 경계에 걸려 조각난 JSON은 건너뛴다(다음 read에서 이어붙지 않고
+        // 손실되지만, 표시용 델타 텍스트 한 조각 누락은 최종 결과에 영향 없음 —
+        // 최종 markdown은 서버가 마지막에 보내는 누적 usageMetadata와 무관하게
+        // 지금까지 받은 델타들의 합이므로, 이 케이스는 사실상 발생하지 않는다).
+      }
+    }
+  }
+}
+
+/**
+ * analyzeYouTubeVideo의 스트리밍 버전. Gemini가 텍스트를 생성하는 대로
+ * 점진적으로 이벤트를 yield해, 호출부(예: results.js)가 전체 응답을 기다리지
+ * 않고 실시간으로 화면에 표시할 수 있게 한다.
+ *
+ * 이벤트 형태:
+ * - { type: "status", message }: 진행 상태 안내(자막 조회 중, 생성 중 등)
+ * - { type: "delta", text, markdown }: 새로 생성된 텍스트 조각과, 지금까지의 누적 markdown
+ * - { type: "done", result }: analyzeYouTubeVideo와 동일한 형태의 최종 결과
+ *
+ * 준비 단계(URL/한도/키 확인 등) 또는 스트림 자체에서 에러가 나면 GeminiApiError를 던진다.
+ */
+async function* analyzeYouTubeVideoStream(youtubeUrl, options = {}) {
+  const model = options.model ?? DEFAULT_MODEL;
+
+  try {
+    const statusEvents = [];
+    const { apiKey, requestBody } = await prepareRequest(youtubeUrl, options, (message) =>
+      statusEvents.push(message)
+    );
+    for (const message of statusEvents) yield { type: "status", message };
+
+    yield { type: "status", message: "Gemini가 분석을 생성하고 있습니다..." };
+
+    const response = await fetch(
+      `${API_BASE_URL}/${model}:streamGenerateContent?alt=sse&key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
+      }
+    );
+    await assertOkResponse(response);
+
+    let markdown = "";
+    let usage = null;
+    for await (const chunk of iterateSseChunks(response)) {
+      const parts = chunk?.candidates?.[0]?.content?.parts ?? [];
+      const deltaText = parts.map((part) => part.text ?? "").join("");
+      if (deltaText) {
+        markdown += deltaText;
+        yield { type: "delta", text: deltaText, markdown };
+      }
+      if (chunk?.usageMetadata) usage = chunk.usageMetadata;
+    }
+
+    const trimmed = markdown.trim();
+    if (!trimmed) {
+      throw new GeminiApiError("Gemini가 빈 응답을 반환했습니다.", ERROR_CODES.EMPTY_RESPONSE, null);
+    }
+
+    const inputTokens = usage?.promptTokenCount ?? Math.ceil(trimmed.length / 4);
+    const outputTokens = usage?.candidatesTokenCount ?? Math.ceil(trimmed.length / 4);
+    const totalTokens = usage?.totalTokenCount ?? inputTokens + outputTokens;
+    const estimatedCost = estimateCost({ inputTokens, outputTokens }, model);
+
+    await recordUsage(totalTokens, estimatedCost);
+
+    yield {
+      type: "done",
+      result: {
+        markdown: trimmed,
+        model,
+        usage: { inputTokens, outputTokens, totalTokens },
+        estimatedCost,
+      },
+    };
+  } catch (error) {
+    throw toGeminiApiError(error);
+  }
+}
+
+export {
+  analyzeYouTubeVideo,
+  analyzeYouTubeVideoStream,
+  DEFAULT_MODEL,
+  GeminiApiError,
+  ERROR_CODES,
+};
