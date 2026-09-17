@@ -34,13 +34,17 @@
     "#above-the-fold #top-row",
   ];
 
-  // 우측 추천 영상 영역의 컨테이너 후보. 이 컨테이너의 맨 앞에 버튼을 넣고,
-  // 폭은 100%로 채워 그 안의 추천 영상 박스들과 같은 폭이 되게 한다.
+  // 우측 영역의 최상위 컨테이너 후보. 실시간 스트림/프리미어 영상은 이
+  // 컨테이너 안에 추천 영상 목록(#related)보다 먼저 실시간 채팅창이 들어있어,
+  // #related/#items 안에만 넣으면 채팅창 아래에 표시되는 문제가 있었다.
+  // 항상 우측 영역 맨 위에 오도록 가장 바깥 컨테이너(#secondary-inner 또는
+  // #secondary)의 첫 번째 자식으로 넣는다. 폭은 100%로 채워, 그 안의
+  // 추천 영상 박스/채팅창 등과 같은 폭이 되게 한다.
   const SIDEBAR_CONTAINER_SELECTORS = [
+    "#secondary #secondary-inner",
+    "#secondary",
     "#secondary #related #items",
     "#secondary #related",
-    "ytd-watch-flexy #secondary ytd-watch-next-secondary-results-renderer",
-    "#secondary",
   ];
 
   let insertionScheduled = false;
