@@ -15,7 +15,11 @@
 (function () {
   const BUTTON_ID = "viewdigest-analyze-button";
   const STYLE_ID = "viewdigest-analyze-button-style";
-  const BUTTON_LABEL = "⚡ 초고밀도 분석 노트 생성";
+  // YouTube의 다른 액션 버튼(좋아요/공유/저장 등)과 나란히 들어가는 좁은
+  // flex 컨테이너에 삽입되므로, 라벨이 길면 그 버튼들을 다음 줄로 밀어낸다.
+  // 화면에는 짧은 라벨만 쓰고, 전체 설명은 title 툴팁으로 제공한다.
+  const BUTTON_LABEL = "⚡ 영상 분석";
+  const BUTTON_LABEL_FULL = "초고밀도 분석 노트 생성";
 
   // YouTube DOM 구조는 자주 바뀌므로, 우선순위대로 여러 삽입 지점을 시도한다.
   const INSERTION_SELECTORS = [
@@ -100,7 +104,8 @@
     if (button.disabled) return;
 
     button.disabled = true;
-    button.textContent = "⏳ Gemini가 분석 중...";
+    button.textContent = "⏳ 분석 중...";
+    button.title = "Gemini가 영상을 분석하고 있습니다";
 
     chrome.runtime.sendMessage(
       { action: "analyzeVideo", url: location.href },
@@ -110,17 +115,23 @@
         void chrome.runtime.lastError;
 
         // 성공/실패를 버튼에 잠시 표시해, 팝업을 열지 않아도 현재 상태를 바로 알 수 있게 한다.
+        // 라벨은 항상 짧게 유지하고(다른 액션 버튼을 밀어내지 않도록), 자세한 내용은
+        // title 툴팁으로 제공한다.
         if (response?.success) {
-          button.textContent = "✅ 분석 완료! 확장 아이콘을 눌러 확인하세요";
+          button.textContent = "✅ 분석 완료";
+          button.title = "확장 아이콘을 눌러 결과를 확인하세요";
         } else if (response?.error) {
-          button.textContent = `❌ ${truncate(response.error.message, 30)}`;
+          button.textContent = "❌ 분석 실패";
+          button.title = truncate(response.error.message, 200);
         } else {
           button.textContent = BUTTON_LABEL;
+          button.title = BUTTON_LABEL_FULL;
         }
 
         button.disabled = false;
         setTimeout(() => {
           button.textContent = BUTTON_LABEL;
+          button.title = BUTTON_LABEL_FULL;
         }, 3000);
       }
     );
@@ -131,6 +142,7 @@
     button.id = BUTTON_ID;
     button.type = "button";
     button.textContent = BUTTON_LABEL;
+    button.title = BUTTON_LABEL_FULL;
     button.addEventListener("click", handleAnalyzeClick);
     return button;
   }
