@@ -107,10 +107,6 @@ body {
   border-bottom: 1px solid var(--border-color);
 }
 
-.analyze-bar .primary-btn {
-  width: 100%;
-}
-
 .analyze-bar .state-hint {
   text-align: center;
 }
