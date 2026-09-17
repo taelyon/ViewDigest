@@ -294,20 +294,11 @@ async function* prepareRequestStream(youtubeUrl, options) {
   yield { type: "status", message: "영상 자막을 확인하고 있습니다..." };
   const transcript = await getTranscript(youtubeUrl).catch(() => null);
 
-  if (!transcript) {
-    // 폴백 경로는 영상 전체를 인식해야 해서 자막 경로보다 훨씬 오래 걸린다.
-    // 왜 갑자기 느려졌는지 알 수 있도록 미리 알린다.
-    yield {
-      type: "status",
-      message: "자막이 없는 영상이라 영상 자체를 분석합니다. 시간이 더 걸릴 수 있습니다...",
-    };
-  }
-
   const requestBody = transcript
     ? buildTranscriptRequestBody(youtubeUrl, transcript.text, options.customPrompt ?? null)
     : buildVideoFallbackRequestBody(youtubeUrl, options.customPrompt ?? null);
 
-  return { apiKey, requestBody };
+  return { apiKey, requestBody, usedTranscript: Boolean(transcript) };
 }
 
 /**
@@ -378,6 +369,23 @@ async function analyzeYouTubeVideo(youtubeUrl, options = {}) {
  * 반복되는 형태이며, 각 청크의 candidates[].content.parts[].text는 지금까지
  * 누적된 텍스트가 아니라 그 청크에서 새로 생성된 텍스트(델타)다.
  */
+function parseSseEvent(rawEvent) {
+  // SSE 명세상 한 이벤트가 여러 개의 data: 줄로 쪼개져 올 수 있으므로 전부 이어붙인다.
+  const payload = rawEvent
+    .split("\n")
+    .filter((line) => line.startsWith("data:"))
+    .map((line) => line.slice(5).trim())
+    .join("");
+
+  if (!payload || payload === "[DONE]") return null;
+
+  try {
+    return JSON.parse(payload);
+  } catch {
+    return null;
+  }
+}
+
 async function* iterateSseChunks(response) {
   const reader = response.body.getReader();
   const decoder = new TextDecoder("utf-8");
@@ -386,28 +394,26 @@ async function* iterateSseChunks(response) {
   while (true) {
     const { value, done } = await reader.read();
     if (done) break;
-    buffer += decoder.decode(value, { stream: true });
+    // 캐리지 리턴을 먼저 제거한다. 서버가 CRLF로 구분자를 보내면 "\n\n" 경계를
+    // 영원히 못 찾아 이벤트가 단 하나도 파싱되지 않고, 스트림이 조용히 끝나
+    // 원인을 알 수 없는 "빈 응답"이 된다. (JSON 문자열 안의 개행은 \r이 아니라
+    // 이스케이프된 두 글자라서 이 치환에 영향받지 않는다.)
+    buffer += decoder.decode(value, { stream: true }).replace(/\r/g, "");
 
     let boundary;
     while ((boundary = buffer.indexOf("\n\n")) !== -1) {
       const rawEvent = buffer.slice(0, boundary);
       buffer = buffer.slice(boundary + 2);
 
-      const dataLine = rawEvent.split("\n").find((line) => line.startsWith("data:"));
-      if (!dataLine) continue;
-      const jsonStr = dataLine.slice(5).trim();
-      if (!jsonStr) continue;
-
-      try {
-        yield JSON.parse(jsonStr);
-      } catch {
-        // 네트워크 경계에 걸려 조각난 JSON은 건너뛴다(다음 read에서 이어붙지 않고
-        // 손실되지만, 표시용 델타 텍스트 한 조각 누락은 최종 결과에 영향 없음 —
-        // 최종 markdown은 서버가 마지막에 보내는 누적 usageMetadata와 무관하게
-        // 지금까지 받은 델타들의 합이므로, 이 케이스는 사실상 발생하지 않는다).
-      }
+      const chunk = parseSseEvent(rawEvent);
+      if (chunk) yield chunk;
     }
   }
+
+  // 마지막 이벤트 뒤에 빈 줄이 없이 스트림이 끝나면 위 루프가 그 이벤트를
+  // 버퍼에 남긴 채 끝나므로, 남은 버퍼도 마저 처리한다.
+  const tail = parseSseEvent(buffer);
+  if (tail) yield tail;
 }
 
 /**
@@ -426,9 +432,17 @@ async function* analyzeYouTubeVideoStream(youtubeUrl, options = {}) {
   const model = options.model ?? DEFAULT_MODEL;
 
   try {
-    const { apiKey, requestBody } = yield* prepareRequestStream(youtubeUrl, options);
+    const { apiKey, requestBody, usedTranscript } = yield* prepareRequestStream(youtubeUrl, options);
 
-    yield { type: "status", message: "Gemini가 분석을 생성하고 있습니다..." };
+    // 폴백 경로는 영상 전체를 인식해야 해서 훨씬 오래 걸린다. 이를 별도 상태로
+    // 따로 내보내면 바로 뒤따르는 이 메시지가 같은 tick에 덮어써서 화면에 보이지
+    // 않으므로, 어느 경로인지를 이 메시지 자체에 담는다.
+    yield {
+      type: "status",
+      message: usedTranscript
+        ? "Gemini가 분석을 생성하고 있습니다..."
+        : "자막이 없는 영상이라 영상 자체를 분석하고 있습니다. 시간이 더 걸릴 수 있습니다...",
+    };
 
     const response = await fetch(
       `${API_BASE_URL}/${model}:streamGenerateContent?alt=sse&key=${apiKey}`,
@@ -443,7 +457,32 @@ async function* analyzeYouTubeVideoStream(youtubeUrl, options = {}) {
     let markdown = "";
     let usage = null;
     let finishReason = null;
+    let receivedChunks = 0;
     for await (const chunk of iterateSseChunks(response)) {
+      receivedChunks++;
+
+      // SSE 스트림은 200 OK로 시작한 뒤 본문 안에서 실패를 알릴 수 있다.
+      // assertOkResponse는 최초 상태 코드만 보므로, 여기서 걸러내지 않으면
+      // 이 오류 청크는 candidates가 없다는 이유로 조용히 버려지고 텍스트가
+      // 한 조각도 없는 채 스트림이 끝나 "빈 응답"으로 둔갑한다.
+      if (chunk?.error) {
+        throw new GeminiApiError(
+          `Gemini API 요청이 실패했습니다: ${chunk.error.message ?? "알 수 없는 오류"}`,
+          ERROR_CODES.REQUEST_FAILED,
+          chunk.error
+        );
+      }
+
+      // 요청 자체가 차단된 경우에도 candidates 없이 promptFeedback만 온다.
+      const blockReason = chunk?.promptFeedback?.blockReason;
+      if (blockReason) {
+        throw new GeminiApiError(
+          `Gemini가 이 영상에 대한 요청을 차단했습니다. (사유: ${blockReason})`,
+          ERROR_CODES.EMPTY_RESPONSE,
+          chunk.promptFeedback
+        );
+      }
+
       const candidate = chunk?.candidates?.[0];
       const parts = candidate?.content?.parts ?? [];
       const deltaText = parts.map((part) => part.text ?? "").join("");
@@ -457,9 +496,15 @@ async function* analyzeYouTubeVideoStream(youtubeUrl, options = {}) {
 
     const trimmed = markdown.trim();
     if (!trimmed) {
-      throw new GeminiApiError(describeEmptyResponse(finishReason), ERROR_CODES.EMPTY_RESPONSE, {
-        finishReason,
-      });
+      // 청크가 하나도 안 온 것과, 청크는 왔는데 텍스트가 없는 것은 원인이 전혀
+      // 다르므로(전자는 연결/파싱 문제, 후자는 모델 쪽 중단) 구분해서 알린다.
+      throw new GeminiApiError(
+        receivedChunks === 0
+          ? "Gemini가 응답 데이터를 전혀 보내지 않은 채 연결이 끝났습니다. 잠시 후 다시 시도해주세요."
+          : describeEmptyResponse(finishReason),
+        ERROR_CODES.EMPTY_RESPONSE,
+        { finishReason, receivedChunks, usage }
+      );
     }
 
     const inputTokens = usage?.promptTokenCount ?? Math.ceil(trimmed.length / 4);
