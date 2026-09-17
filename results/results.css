@@ -3,8 +3,10 @@
 @import url("../popup/popup.css");
 
 :root {
-  /* 소주제 강조색. 대주제가 쓰는 보라(--accent)와 한눈에 구분되도록 보색 계열의
-     밝은 앰버를 쓴다(어두운 배경 대비 약 10:1). */
+  /* 대주제/소주제 강조색. 서로도, 본문(거의 흰색)과도 한눈에 구분되도록 색상환에서
+     멀리 떨어진 둘을 쓴다. 어두운 배경 대비는 각각 약 8:1, 10:1. --accent(보라)는
+     버튼·뱃지 등 UI 요소가 계속 쓰므로 제목에는 다른 색을 준다. */
+  --chapter-accent: #38bdf8;
   --section-accent: #fbbf24;
 }
 
@@ -99,8 +101,12 @@ main {
    직접 넣는다. CSS 카운터로는 어느 제목이 대주제인지 알 수 없어, 리포트 제목과
    목차까지 챕터로 세거나 모델이 쓴 번호와 겹쳐 "1. 1."이 되는 문제가 있었다. */
 
-/* 대주제(h2)가 이미 보라색 강조라, 소주제는 눈에 띄면서도 구분되는 색을 쓴다.
-   소주제가 h3인지 h4인지는 리포트마다 다르므로 렌더러가 붙인 역할로 고른다. */
+/* 대주제/소주제가 h2·h3인지 h3·h4인지는 리포트마다 다르므로, 태그가 아니라
+   렌더러가 붙인 역할로 고른다. */
+#result-content.markdown-body .report-chapter {
+  color: var(--chapter-accent);
+}
+
 #result-content.markdown-body .report-section {
   color: var(--section-accent);
 }
