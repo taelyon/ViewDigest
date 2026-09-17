@@ -8,6 +8,50 @@ body {
   min-height: 100vh;
 }
 
+/* 글자 크기 한 단계 확대(약 1.1배). popup.css의 값을 그대로 쓰면 좁은 팝업에
+   맞춘 크기라 전체 페이지에서 읽기에 작다. popup.css를 고치면 팝업까지 같이
+   커지므로, 이 페이지에서 쓰는 요소만 여기서 덮어쓴다. */
+body {
+  font-size: 14px; /* 13px → 본문·목록·문단이 모두 이 값을 상속한다 */
+}
+
+.app-title {
+  font-size: 15px;
+}
+
+.result-submeta {
+  font-size: 12px;
+}
+
+.state-message {
+  font-size: 15px;
+}
+
+.state-hint {
+  font-size: 13px;
+}
+
+.secondary-btn {
+  font-size: 13px;
+}
+
+.markdown-body h1 {
+  font-size: 19px;
+}
+.markdown-body h2 {
+  font-size: 17px;
+}
+.markdown-body h3 {
+  font-size: 15px;
+}
+.markdown-body h4 {
+  font-size: 14px;
+}
+
+.markdown-body code {
+  font-size: 13px;
+}
+
 #app {
   height: auto;
   min-height: 100vh;
@@ -27,7 +71,7 @@ main {
 }
 
 .result-title {
-  font-size: 20px;
+  font-size: 22px;
   -webkit-line-clamp: unset;
   overflow: visible;
 }
