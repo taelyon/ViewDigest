@@ -1,13 +1,17 @@
 // ViewDigest - Gemini API 클라이언트
 //
-// Lilys AI와 동일한 원리로 동작한다: YouTube 자막(수동 업로드 또는 자동 생성)을
-// 먼저 추출해 텍스트만 Gemini에 넘기고, 자막이 없는 영상만 예외적으로 영상
-// 자체(fileData)를 Gemini에 보내 자체 인식(오디오/화면)에 맡긴다. 텍스트
-// 기반 분석은 영상 길이와 무관하게 토큰 비용이 훨씬 저렴하고 안정적이다.
+// 영상 URL(fileData)을 그대로 Gemini에 넘겨, Gemini 자체의 오디오/화면 인식으로
+// 분석한다.
+//
+// 한때는 YouTube 자막을 먼저 추출해 텍스트만 넘기고(더 싸고 빠르다) 자막이 없는
+// 영상만 이 방식으로 폴백했지만, 그 경로는 제거했다. YouTube의 자막 엔드포인트
+// (timedtext)가 플레이어가 생성하는 증명 토큰(pot) 없이는 본문 대신 빈 200을
+// 돌려주기 때문이다. 포맷(json3/xml), 쿠키 유무, 요청 출처, 영상 페이지를 보고
+// 있는 탭 안에서 동일 세션으로 호출하는 것까지 모두 시도했으나 결과는 동일했고,
+// 확장 프로그램이 그 토큰을 만들어낼 방법은 없다.
 
 import { getSystemInstruction, getUserPrompt } from "./prompt.js";
 import { checkRateLimit, estimateCost, recordUsage } from "./cost.js";
-import { getTranscript } from "./transcript.js";
 
 // 기본 분석 모델. options.model 로 호출 시 덮어쓸 수 있음
 const DEFAULT_MODEL = "gemini-3.7-flash";
@@ -41,20 +45,10 @@ const ERROR_CODES = {
   EMPTY_RESPONSE: "EMPTY_RESPONSE",
 };
 
-// 자막 경로: 요약할 원문(자막 전문)을 이미 손에 쥐고 있으므로, 본문을 쓰기 전에
-// 따로 조사할 것이 없다. thinkingBudget을 0으로 두면 모델이 프롬프트를 읽자마자
-// 리포트 본문을 흘려보내기 시작해, 스트리밍이 즉시 화면에 나타난다(추론 중에는
-// text가 없는 청크만 오기 때문에 thinking 시간이 곧 무반응 구간이 된다).
-// 덤으로, 추론이 출력 토큰 예산을 잠식해 finishReason MAX_TOKENS + 빈 응답으로
-// 끝나는 경우도 원천적으로 사라진다.
-const TRANSCRIPT_GENERATION_CONFIG = {
-  thinkingConfig: { thinkingBudget: 0 },
-};
-
-// 영상 폴백 경로: 자막이 없어 영상 자체를 인식해야 하므로 추론과 검색 그라운딩이
-// 실제로 필요하다. 다만 예산을 열어두면(동적/무제한) 그 추론이 출력 토큰을 전부
-// 소진해 리포트를 한 글자도 못 쓴 채 끝나므로 상한을 둔다.
-const VIDEO_GENERATION_CONFIG = {
+// 영상 자체를 인식해야 하므로 추론과 검색 그라운딩이 실제로 필요하다. 다만
+// 예산을 열어두면(동적/무제한) 그 추론이 출력 토큰을 전부 소진해 리포트를 한
+// 글자도 못 쓴 채 finishReason MAX_TOKENS로 끝나므로 상한을 둔다.
+const GENERATION_CONFIG = {
   thinkingConfig: { thinkingBudget: 8192 },
 };
 
@@ -89,45 +83,7 @@ function isLikelyYoutubeUrl(url) {
 }
 
 /**
- * 자막(Transcript)이 확보된 경우의 요청 바디. 영상 자체는 전혀 첨부하지
- * 않고, 자막 전문(타임스탬프 포함 텍스트)만 프롬프트에 이어붙여 전달한다.
- * 토큰 비용이 영상 길이와 무관하게 자막 분량에만 비례하므로, 1시간짜리
- * 영상도 저렴하고 안정적으로 처리할 수 있다 — Lilys AI의 핵심 동작 방식과
- * 동일하다.
- */
-function buildTranscriptRequestBody(youtubeUrl, transcriptText, customPrompt) {
-  return {
-    systemInstruction: {
-      parts: [{ text: getSystemInstruction() }],
-    },
-    contents: [
-      {
-        role: "user",
-        parts: [
-          {
-            text: `${getUserPrompt(customPrompt)}
-
-[분석 대상]
-영상 URL: ${youtubeUrl}
-아래는 이 영상의 자막 전문(타임스탬프 포함)이다. 화면에 무엇이 나오는지는 알 수 없으니, 이 자막 텍스트의 발언·수치·맥락을 근거로 위 요건에 맞는 리포트를 작성하라. 자막에 화자 구분이 없다면 문맥으로 판단하라.
-
-[자막 전문]
-${transcriptText}`,
-          },
-        ],
-      },
-    ],
-    // googleSearch 도구는 일부러 붙이지 않는다. SYSTEM_INSTRUCTION의 실시간 검색
-    // 조항은 "자막도 색인도 없는 신규 영상"을 위한 것이고, 자막 전문이 있는 지금은
-    // 근거가 이미 프롬프트 안에 다 들어있다. 도구를 붙이면 첫 토큰을 내보내기 전에
-    // 서버사이드 검색 왕복이 먼저 일어나 스트리밍 시작이 그만큼 늦어진다.
-    generationConfig: TRANSCRIPT_GENERATION_CONFIG,
-  };
-}
-
-/**
- * 자막을 구할 수 없는 영상(자막 미제공 등)에 대한 폴백 요청 바디.
- * fileData.fileUri 로 YouTube URL을 그대로 전달해, Gemini 자체의
+ * 분석 요청 바디. fileData.fileUri 로 YouTube URL을 그대로 전달해, Gemini 자체의
  * 오디오/화면 인식(자체 STT에 해당)에 맡긴다.
  * - `mediaProcessing: "AGENTIC"` 은 의도적으로 사용하지 않는다. SYSTEM_INSTRUCTION이
  *   "영상의 모든 순간을 빠짐없이" 다루도록 요구하는 초고밀도 프롬프트인데,
@@ -139,7 +95,7 @@ ${transcriptText}`,
  * - `mediaResolution: { level: "media_resolution_low" }` 로 프레임당 토큰
  *   사용량을 낮춘다.
  */
-function buildVideoFallbackRequestBody(youtubeUrl, customPrompt) {
+function buildRequestBody(youtubeUrl, customPrompt) {
   return {
     systemInstruction: {
       parts: [{ text: getSystemInstruction() }],
@@ -157,7 +113,7 @@ function buildVideoFallbackRequestBody(youtubeUrl, customPrompt) {
       },
     ],
     tools: [{ googleSearch: {} }],
-    generationConfig: VIDEO_GENERATION_CONFIG,
+    generationConfig: GENERATION_CONFIG,
   };
 }
 
@@ -252,16 +208,10 @@ function parseResponse(data) {
 
 /**
  * analyzeYouTubeVideo와 analyzeYouTubeVideoStream이 공유하는 준비 단계:
- * URL 검증 → 일일 한도 확인 → API 키 확인 → 자막 조회(또는 폴백) → 요청 바디 구성.
+ * URL 검증 → 일일 한도 확인 → API 키 확인 → 요청 바디 구성.
  * 이 단계에서 던지는 에러는 항상 GeminiApiError이다.
- *
- * 진행 상태를 콜백이 아니라 yield로 내보내는 이유: 제너레이터는 콜백 안에서
- * yield할 수 없어서, 콜백 방식으로는 상태 메시지를 배열에 모아뒀다가 이 함수가
- * "끝난 뒤에야" 한꺼번에 내보낼 수밖에 없다. 그러면 정작 자막을 조회하는 몇 초
- * 동안 화면이 초기 상태로 멈춰 있게 된다. 호출부는 `yield*`로 이 제너레이터를
- * 위임해 상태를 실시간으로 흘려보내고, 반환값으로 요청 재료를 받는다.
  */
-async function* prepareRequestStream(youtubeUrl, options) {
+async function prepareRequest(youtubeUrl, options) {
   if (!isLikelyYoutubeUrl(youtubeUrl)) {
     throw new GeminiApiError(
       "올바른 YouTube 영상 URL이 아닙니다.",
@@ -289,27 +239,7 @@ async function* prepareRequestStream(youtubeUrl, options) {
     );
   }
 
-  // 3. 자막을 우선 시도하고, 없으면(또는 조회 자체가 실패하면) 영상 자체를
-  //    Gemini에 보내는 방식으로 폴백한다.
-  yield { type: "status", message: "영상 자막을 확인하고 있습니다..." };
-  const transcript = await getTranscript(youtubeUrl).catch(() => null);
-
-  const requestBody = transcript
-    ? buildTranscriptRequestBody(youtubeUrl, transcript.text, options.customPrompt ?? null)
-    : buildVideoFallbackRequestBody(youtubeUrl, options.customPrompt ?? null);
-
-  return { apiKey, requestBody, usedTranscript: Boolean(transcript) };
-}
-
-/**
- * 스트리밍이 아닌 호출부(background.js의 채널 자동 분석 등)를 위한 래퍼.
- * 표시할 화면이 없으므로 진행 상태는 흘려버리고 최종 결과만 받는다.
- */
-async function prepareRequest(youtubeUrl, options) {
-  const steps = prepareRequestStream(youtubeUrl, options);
-  let step = await steps.next();
-  while (!step.done) step = await steps.next();
-  return step.value;
+  return { apiKey, requestBody: buildRequestBody(youtubeUrl, options.customPrompt ?? null) };
 }
 
 function toGeminiApiError(error) {
@@ -322,8 +252,7 @@ function toGeminiApiError(error) {
 }
 
 /**
- * YouTube 영상을 분석한다. 자막이 있으면 자막 텍스트 기반으로, 없으면
- * Gemini의 영상 이해(fileData)로 폴백해 분석한다.
+ * YouTube 영상을 Gemini의 영상 이해(fileData)로 분석한다.
  *
  * @param {string} youtubeUrl 분석할 YouTube 영상 URL
  * @param {object} [options]
@@ -422,7 +351,7 @@ async function* iterateSseChunks(response) {
  * 않고 실시간으로 화면에 표시할 수 있게 한다.
  *
  * 이벤트 형태:
- * - { type: "status", message }: 진행 상태 안내(자막 조회 중, 생성 중 등)
+ * - { type: "status", message }: 진행 상태 안내(분석 생성 중 등)
  * - { type: "delta", text, markdown }: 새로 생성된 텍스트 조각과, 지금까지의 누적 markdown
  * - { type: "done", result }: analyzeYouTubeVideo와 동일한 형태의 최종 결과
  *
@@ -432,16 +361,13 @@ async function* analyzeYouTubeVideoStream(youtubeUrl, options = {}) {
   const model = options.model ?? DEFAULT_MODEL;
 
   try {
-    const { apiKey, requestBody, usedTranscript } = yield* prepareRequestStream(youtubeUrl, options);
+    const { apiKey, requestBody } = await prepareRequest(youtubeUrl, options);
 
-    // 폴백 경로는 영상 전체를 인식해야 해서 훨씬 오래 걸린다. 이를 별도 상태로
-    // 따로 내보내면 바로 뒤따르는 이 메시지가 같은 tick에 덮어써서 화면에 보이지
-    // 않으므로, 어느 경로인지를 이 메시지 자체에 담는다.
+    // 영상 전체를 인식한 뒤에야 첫 글자가 나오므로, 여기서 한참 머무르는 것이
+    // 정상이라는 점을 문구에 담는다.
     yield {
       type: "status",
-      message: usedTranscript
-        ? "Gemini가 분석을 생성하고 있습니다..."
-        : "자막이 없는 영상이라 영상 자체를 분석하고 있습니다. 시간이 더 걸릴 수 있습니다...",
+      message: "Gemini가 영상을 분석하고 있습니다. 첫 내용이 나오기까지 시간이 걸릴 수 있습니다...",
     };
 
     const response = await fetch(

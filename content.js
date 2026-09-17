@@ -231,72 +231,9 @@
   // 초기화
   // ---------------------------------------------------------------------
 
-  // ---------------------------------------------------------------------
-  // 자막 추출 지원
-  //
-  // 자막 URL(timedtext)은 그것을 발급한 세션에 묶여 있어서, 확장 페이지가 따로
-  // 받아온 페이지에서 뽑은 URL로 호출하면 YouTube가 빈 200을 돌려준다. 반면 이
-  // content script는 사용자가 실제로 보고 있는 그 페이지 안에서 돌기 때문에,
-  // 여기서 읽은 URL과 여기서 보내는 요청은 같은 세션·같은 출처다. 그래서 자막
-  // 추출의 두 단계(트랙 목록 읽기, 본문 받아오기)만 여기서 대신 수행하고,
-  // 파싱은 그대로 utils/transcript.js가 맡는다.
-  // ---------------------------------------------------------------------
-
-  const CAPTION_TRACKS_MARKER = '"captionTracks":';
-  const CAPTION_SLICE_LIMIT = 500000;
-  const TIMEDTEXT_PREFIX = "https://www.youtube.com/api/timedtext";
-
-  function readCaptionTracksSlice() {
-    const html = document.documentElement.innerHTML;
-    const index = html.indexOf(CAPTION_TRACKS_MARKER);
-    if (index === -1) {
-      return { html: null, reason: "이 페이지에 captionTracks가 없습니다(자막이 없는 영상일 수 있습니다)." };
-    }
-    // 트랙 목록은 길어야 수 KB이므로, 페이지 전체(수 MB)를 메시지로 넘기지 않고
-    // 그 지점부터 넉넉히 잘라 보낸다.
-    return { html: html.slice(index, index + CAPTION_SLICE_LIMIT) };
-  }
-
-  async function fetchCaptionBody(url) {
-    // 이 메시지는 확장 내부에서만 올 수 있지만, 그래도 이 브리지가 임의의 주소를
-    // 대신 호출해주는 통로가 되지 않도록 자막 엔드포인트로만 제한한다.
-    if (typeof url !== "string" || !url.startsWith(TIMEDTEXT_PREFIX)) {
-      return { error: "허용되지 않은 요청 주소입니다." };
-    }
-
-    try {
-      const response = await fetch(url, { credentials: "include" });
-      return { ok: response.ok, status: response.status, body: await response.text() };
-    } catch (error) {
-      return { error: error?.message ?? String(error) };
-    }
-  }
-
-  function setupCaptionBridge() {
-    // 확장을 업데이트/재설치하면 이미 열려 있던 탭의 content script는 컨텍스트가
-    // 무효화되어 chrome.runtime 접근이 실패한다. 그때 여기서 예외가 나면 뒤따르는
-    // 버튼 삽입까지 통째로 멈추므로, 자막 브리지는 없으면 없는 대로 넘어간다.
-    if (!chrome.runtime?.onMessage) return;
-
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-      if (message?.action === "readCaptionTracks") {
-        sendResponse(readCaptionTracksSlice());
-        return false;
-      }
-
-      if (message?.action === "fetchCaptionBody") {
-        fetchCaptionBody(message.url).then(sendResponse);
-        return true; // 비동기 응답
-      }
-
-      return false;
-    });
-  }
-
   function init() {
     injectStyles();
     setupNavigationWatchers();
-    setupCaptionBridge();
     scheduleEnsureButton();
   }
 
