@@ -13,11 +13,12 @@
 (function () {
   const BUTTON_ID = "viewdigest-analyze-button";
   const STYLE_ID = "viewdigest-analyze-button-style";
-  // YouTube의 다른 액션 버튼(좋아요/공유/저장 등)과 나란히 들어가는 좁은
-  // flex 컨테이너에 삽입되므로, 라벨이 길면 그 버튼들을 다음 줄로 밀어낸다.
-  // 화면에는 짧은 라벨만 쓰고, 전체 설명은 title 툴팁으로 제공한다.
-  const BUTTON_LABEL = "⚡ 영상 분석";
-  const BUTTON_LABEL_FULL = "초고밀도 분석 노트 생성";
+  // YouTube의 다른 액션 버튼(좋아요/공유/저장 등)과 나란히 들어가는 아주 좁은
+  // flex 컨테이너에 삽입된다. 텍스트 라벨을 아무리 줄여도 폭이 빠듯하면 다른
+  // 버튼들을 다음 줄로 밀어낼 수 있으므로, YouTube의 원형 아이콘 버튼과 같은
+  // 크기의 아이콘 전용 버튼으로 만들고 설명은 title 툴팁으로만 제공한다.
+  const BUTTON_ICON = "⚡";
+  const BUTTON_LABEL_FULL = "영상 분석 (초고밀도 분석 노트 생성)";
 
   // YouTube DOM 구조는 자주 바뀌므로, 우선순위대로 여러 삽입 지점을 시도한다.
   const INSERTION_SELECTORS = [
@@ -61,16 +62,18 @@
       #${BUTTON_ID} {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        justify-content: center;
+        flex-shrink: 0;
         margin: 8px 8px 8px 0;
-        padding: 0 16px;
+        width: 36px;
         height: 36px;
+        padding: 0;
         border: none;
-        border-radius: 18px;
+        border-radius: 50%;
         background: linear-gradient(135deg, #5B21B6, #7C3AED);
         color: #ffffff;
-        font-size: 14px;
-        font-weight: 600;
+        font-size: 16px;
+        line-height: 1;
         font-family: "Roboto", "Noto Sans KR", Arial, sans-serif;
         cursor: pointer;
         box-shadow: 0 2px 6px rgba(91, 33, 182, 0.4);
@@ -105,10 +108,10 @@
       (response) => {
         void chrome.runtime.lastError;
         if (!response?.success) {
-          button.textContent = "❌ 열기 실패";
+          button.textContent = "❌";
           button.title = response?.error?.message ?? "새 탭을 여는 중 오류가 발생했습니다.";
           setTimeout(() => {
-            button.textContent = BUTTON_LABEL;
+            button.textContent = BUTTON_ICON;
             button.title = BUTTON_LABEL_FULL;
           }, 3000);
         }
@@ -121,8 +124,9 @@
     const button = document.createElement("button");
     button.id = BUTTON_ID;
     button.type = "button";
-    button.textContent = BUTTON_LABEL;
+    button.textContent = BUTTON_ICON;
     button.title = BUTTON_LABEL_FULL;
+    button.setAttribute("aria-label", BUTTON_LABEL_FULL);
     button.addEventListener("click", handleAnalyzeClick);
     return button;
   }
