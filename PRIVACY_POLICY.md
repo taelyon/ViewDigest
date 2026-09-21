@@ -1,6 +1,10 @@
 # ViewDigest 개인정보처리방침
 
-최종 수정일: 2026-09-16
+최종 수정일: 2026-09-21
+
+> 스토어에 등록된 공식 주소는 <https://taelyon.github.io/ViewDigest/privacy-policy.html> 이며,
+> 그 페이지의 원본은 [`docs/privacy-policy.html`](./docs/privacy-policy.html)입니다.
+> 이 문서를 수정할 때는 그 파일도 함께 고쳐 내용이 어긋나지 않게 해주세요.
 
 ViewDigest("이 확장프로그램")는 별도의 백엔드 서버를 운영하지 않으며, 개발자는 사용자의 API 키, 분석
 내용, 시청 기록을 어떤 형태로도 수집·저장·전송받지 않습니다. 모든 데이터는 사용자의 브라우저 안에만

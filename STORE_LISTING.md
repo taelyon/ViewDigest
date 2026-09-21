@@ -86,9 +86,23 @@ YouTube 영상 페이지에서 해당 영상을 Google Gemini API로 분석해 �
 
 개인정보처리방침 URL:
 
+> ⚠️ **로그인하지 않은 상태에서 열리는 주소여야 합니다.**
+> 첫 제출은 이 항목 때문에 거부됐습니다(위반 참조 ID: Purple Nickel).
+> 저장소가 비공개라서 `github.com/taelyon/ViewDigest/blob/...` 링크가 심사자에게 404로
+> 보였기 때문입니다. 저장소 안의 파일 경로를 그대로 쓰면 안 되고, 공개 호스팅 주소를
+> 넣어야 합니다.
+>
+> **제출 직전에 반드시 시크릿 창(로그아웃 상태)에서 링크를 열어 확인하세요.**
+
+확정된 주소:
+
 ```
-https://github.com/taelyon/ViewDigest/blob/main/PRIVACY_POLICY.md
+https://taelyon.github.io/ViewDigest/privacy-policy.html
 ```
+
+이 주소가 살아나려면 저장소를 공개로 전환하고 GitHub Pages를 켜야 합니다(아래 "거부 후 재제출 절차" 참고).
+페이지 원본은 `docs/privacy-policy.html`이며, 외부 CSS/JS 없이 자체 완결되어 있어 다른 호스팅으로 옮겨도
+그대로 동작합니다.
 
 ## 심사자 노트 (테스트 안내)
 
@@ -107,11 +121,41 @@ https://github.com/taelyon/ViewDigest/blob/main/PRIVACY_POLICY.md
 API 키가 없으면 옵션 페이지에 키 등록을 안내하는 오류 메시지가 표시됩니다.
 ```
 
+## 거부 후 재제출 절차
+
+2026-09-21 첫 제출이 개인정보처리방침 링크 문제로 거부되었습니다(위반 참조 ID: Purple Nickel).
+원인은 정책 내용이 아니라 **링크가 비공개 저장소를 가리켜 심사자에게 404로 보인 것**이므로,
+이의신청이 아니라 링크를 고쳐 재제출하는 것이 맞습니다.
+
+1. **저장소를 공개로 전환**
+   GitHub 저장소 → Settings → General → 맨 아래 Danger Zone → *Change repository visibility* →
+   Make public.
+
+2. **GitHub Pages 켜기**
+   Settings → Pages → Source를 *Deploy from a branch*로 두고, Branch를 `main` / 폴더를 `/docs`로
+   지정한 뒤 Save. 첫 배포까지 1~2분 걸립니다.
+
+3. **로그아웃 상태에서 링크 확인** ← 이번 거부의 핵심
+   시크릿 창(또는 로그아웃한 브라우저)에서 아래 주소를 열어 페이지가 실제로 보이는지 확인합니다.
+   방침 안의 문의 링크(GitHub 이슈)도 같이 열어봅니다.
+   ```
+   https://taelyon.github.io/ViewDigest/privacy-policy.html
+   ```
+
+4. **대시보드에서 URL 교체**
+   개발자 대시보드 → 해당 항목 → 개인정보 보호 탭 → 개인정보처리방침 URL을 위 주소로 교체합니다.
+
+5. **재제출**
+   빌드 → 패키지 탭에서 심사 제출. 패키지 자체는 바뀐 것이 없으므로 zip을 다시 올릴 필요는 없지만,
+   그 사이 코드가 변경됐다면 새 zip을 올리고 버전을 올립니다.
+
 ## 제출 자산 체크리스트
 
 - [x] 패키지 zip (`manifest.json`이 최상위)
 - [x] 스크린샷 1280×800 3장 (분석 리포트 / 팝업 / 옵션 페이지)
 - [x] 스토어 아이콘 128×128 (`icons/icon128.png`)
-- [x] 개인정보처리방침 공개 URL
-- [ ] 개발자 계정 등록 및 최초 등록비 결제
-- [ ] EEA 판매자(trader) 여부 신고
+- [x] 개발자 계정 등록 및 최초 등록비 결제
+- [x] EEA 판매자(trader) 여부 신고
+- [ ] 저장소 공개 전환 + GitHub Pages 활성화
+- [ ] 개인정보처리방침 URL이 **로그아웃 상태에서** 열리는지 확인
+- [ ] 대시보드에 URL 교체 후 재제출
