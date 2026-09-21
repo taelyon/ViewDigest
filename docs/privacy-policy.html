@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ViewDigest 개인정보처리방침</title>
+<meta name="description" content="ViewDigest Chrome 확장프로그램의 개인정보처리방침" />
+<style>
+  :root {
+    --text: #1f2430;
+    --muted: #5b6474;
+    --line: #e3e6ec;
+    --accent: #5b21b6;
+    --bg: #ffffff;
+    --bg-soft: #f7f8fa;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 48px 20px 80px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+    font-size: 16px;
+    line-height: 1.75;
+  }
+  main { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 28px; margin: 0 0 6px; letter-spacing: -0.3px; }
+  h2 {
+    font-size: 19px;
+    margin: 40px 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .updated { color: var(--muted); font-size: 14px; margin: 0 0 32px; }
+  .lead {
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin: 0 0 8px;
+  }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 15px; }
+  th, td { text-align: left; padding: 10px 12px; border: 1px solid var(--line); vertical-align: top; }
+  th { background: var(--bg-soft); font-weight: 600; }
+  code {
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 14px;
+  }
+  a { color: var(--accent); }
+  ul { padding-left: 22px; }
+  li { margin: 6px 0; }
+  footer { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+  @media (max-width: 600px) {
+    body { padding: 32px 16px 64px; font-size: 15px; }
+    h1 { font-size: 24px; }
+    table { font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>ViewDigest 개인정보처리방침</h1>
+  <p class="updated">최종 수정일: 2026년 9월 21일</p>
+
+  <p class="lead">
+    ViewDigest(&ldquo;이 확장프로그램&rdquo;)는 별도의 백엔드 서버를 운영하지 않으며, 개발자는 사용자의
+    API 키, 분석 내용, 시청 기록을 어떤 형태로도 수집·저장·전송받지 않습니다. 모든 데이터는 사용자의
+    브라우저 안에만 머무르거나, 사용자 본인의 API 키를 통해 Google(Gemini API)로 직접 전송됩니다.
+  </p>
+
+  <h2>1. 수집하는 정보와 저장 위치</h2>
+  <table>
+    <thead>
+      <tr><th>정보</th><th>저장 위치</th><th>설명</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Gemini API 키</td>
+        <td><code>chrome.storage.sync</code></td>
+        <td>사용자가 직접 입력합니다. 개발자 서버로 전송되지 않으며, Chrome 동기화를 사용하는 경우 사용자 본인의 Google 계정에 동기화됩니다.</td>
+      </tr>
+      <tr>
+        <td>분석 리포트, 영상 제목/URL, 생성 시각, 예상 비용</td>
+        <td><code>chrome.storage.local</code></td>
+        <td>최대 50개까지 이 브라우저에만 보관되는 분석 히스토리입니다.</td>
+      </tr>
+      <tr>
+        <td>구독 채널 목록</td>
+        <td><code>chrome.storage.local</code></td>
+        <td>사용자가 등록한 채널 URL/ID와 마지막 확인 시각입니다.</td>
+      </tr>
+      <tr>
+        <td>사용량 로그 (분석 횟수, 토큰 수, 예상 비용)</td>
+        <td><code>chrome.storage.local</code></td>
+        <td>일일 사용 한도 계산과 비용 추정에만 사용됩니다.</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    이 확장프로그램은 애널리틱스, 광고 SDK, 트래킹 픽셀을 포함하지 않으며, 사용자 행동을 개발자에게
+    전송하지 않습니다.
+  </p>
+
+  <h2>2. 제3자(Google Gemini API)로 전송되는 정보</h2>
+  <p>
+    &ldquo;영상 분석&rdquo;을 실행하면, 브라우저는 <strong>사용자 본인의 API 키</strong>를 사용해 다음
+    정보를 Google의 Generative Language API(<code>generativelanguage.googleapis.com</code>)로
+    <strong>직접</strong> 전송합니다.
+  </p>
+  <ul>
+    <li>분석하려는 YouTube 영상의 URL</li>
+    <li>분석 리포트 생성을 위한 프롬프트(고정 지침 텍스트)</li>
+  </ul>
+  <p>
+    이 요청은 사용자의 브라우저에서 Google로 곧장 전송되며, 개발자가 운영하는 서버를 거치지 않습니다.
+    따라서 개발자는 어떤 영상을 분석했는지 알 수 없습니다. 이 데이터가 Google에서 어떻게 처리되는지는
+    <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google 개인정보처리방침</a> 및
+    <a href="https://ai.google.dev/gemini-api/terms" target="_blank" rel="noopener">Gemini API 이용약관</a>을
+    참고하세요.
+  </p>
+
+  <h2>3. YouTube 페이지에서의 동작</h2>
+  <p>이 확장프로그램은 <code>youtube.com</code>에서만 동작하며, 다음 정보만 읽습니다.</p>
+  <ul>
+    <li>현재 페이지의 URL (영상 ID 추출용)</li>
+    <li>탭 제목 (분석 리포트의 기본 제목으로 사용)</li>
+  </ul>
+  <p>그 외 페이지 콘텐츠(댓글, 시청 기록, 로그인 정보 등)는 읽거나 수집하지 않습니다.</p>
+
+  <h2>4. 채널 구독(자동 분석) 기능</h2>
+  <p>
+    채널을 구독하면, 확장프로그램은 주기적으로 YouTube가 공개 제공하는 RSS 피드
+    (<code>youtube.com/feeds/videos.xml</code>)를 조회해 새 영상 유무만 확인합니다. 이 과정에서 별도의
+    개인정보는 전송되지 않습니다.
+  </p>
+
+  <h2>5. 데이터 보관 및 삭제</h2>
+  <ul>
+    <li>분석 히스토리, 구독 채널, 사용량 로그는 팝업/설정 페이지에서 언제든 개별 또는 전체 삭제할 수 있습니다.</li>
+    <li>확장프로그램을 제거하거나 브라우저 프로필 데이터를 삭제하면 로컬에 저장된 모든 정보가 함께 삭제됩니다.</li>
+    <li>API 키는 <code>chrome.storage.sync</code>에 저장되므로, Chrome 동기화를 사용 중이라면 Google 계정 설정에서 동기화 데이터를 별도로 삭제할 수 있습니다.</li>
+  </ul>
+
+  <h2>6. 아동 개인정보</h2>
+  <p>
+    이 확장프로그램은 만 14세 미만 아동을 대상으로 하지 않으며, 아동으로부터 의도적으로 개인정보를
+    수집하지 않습니다.
+  </p>
+
+  <h2>7. 변경 고지</h2>
+  <p>이 방침이 변경되면 이 페이지의 최종 수정일을 갱신합니다.</p>
+
+  <h2>8. 문의</h2>
+  <p>
+    문의사항은
+    <a href="https://github.com/taelyon/ViewDigest/issues" target="_blank" rel="noopener">GitHub 저장소 이슈</a>로
+    남겨주세요.
+  </p>
+
+  <footer>ViewDigest — YouTube 영상 분석 Chrome 확장프로그램</footer>
+</main>
+</body>
+</html>
