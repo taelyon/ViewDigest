@@ -11,6 +11,7 @@
 import { analyzeYouTubeVideoStream, GeminiApiError } from "../utils/gemini.js";
 import { getSettings, saveAnalysis, getHistory, removeUnseenIds } from "../utils/storage.js";
 import { renderMarkdown } from "../utils/markdown.js";
+import { fetchVideoChannelName } from "../utils/channels.js";
 import { t, localizePage } from "../utils/i18n.js";
 import { refreshBadge } from "../utils/badge.js";
 
@@ -141,6 +142,8 @@ async function runFromHistory(id) {
 async function runNewAnalysis() {
   const videoId = extractVideoId(videoUrl);
   const initialTitle = videoTitle || videoId || t("untitled");
+  // 히스토리에 채널 이름을 함께 남긴다. 분석이 한참 걸리므로 그동안 미리 알아 둔다.
+  const channelTitlePromise = fetchVideoChannelName(videoUrl);
   document.title = `${initialTitle} - ViewDigest`;
   els.title.textContent = initialTitle;
 
@@ -160,6 +163,7 @@ async function runNewAnalysis() {
         const savedEntry = await saveAnalysis({
           videoId,
           title: initialTitle,
+          channelTitle: await channelTitlePromise,
           url: videoUrl,
           markdown: event.result.markdown,
           model: event.result.model,

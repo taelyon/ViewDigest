@@ -44,6 +44,10 @@ Generative Language API(`generativelanguage.googleapis.com`)로 **직접** 전�
 
 그 외 페이지 콘텐츠(댓글, 시청 기록, 로그인 정보 등)는 읽거나 수집하지 않습니다.
 
+분석 기록에 채널 이름을 표시하기 위해, 분석한 영상의 URL로 YouTube의 공개 oEmbed 주소
+(`youtube.com/oembed`)를 로그인 정보(쿠키) 없이 조회해 채널 이름을 받아옵니다. 받아온 채널 이름은
+분석 히스토리와 함께 이 브라우저에만 저장됩니다.
+
 ## 4. 채널 구독(자동 분석) 기능
 
 채널을 구독하면, 확장프로그램은 주기적으로 YouTube가 공개 제공하는 RSS 피드
