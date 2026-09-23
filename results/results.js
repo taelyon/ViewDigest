@@ -9,9 +9,10 @@
 //    저장된 분석 결과를 그대로 불러와 즉시 렌더링한다(재분석하지 않음).
 
 import { analyzeYouTubeVideoStream, GeminiApiError } from "../utils/gemini.js";
-import { getSettings, saveAnalysis, getHistory } from "../utils/storage.js";
+import { getSettings, saveAnalysis, getHistory, removeUnseenIds } from "../utils/storage.js";
 import { renderMarkdown } from "../utils/markdown.js";
 import { t, localizePage } from "../utils/i18n.js";
+import { refreshBadge } from "../utils/badge.js";
 
 localizePage();
 
@@ -123,6 +124,8 @@ async function runFromHistory(id) {
   }
 
   finalEntry = entry;
+  // 알림을 눌러 연 채널 자동 분석 리포트라면, 이제 본 것이므로 아이콘 배지에서 뺀다.
+  removeUnseenIds([id]).then(refreshBadge);
   document.title = `${entry.title ?? t("untitled")} - ViewDigest`;
   els.title.textContent = entry.title ?? t("untitled");
   els.metaLine.textContent = t("resultsMeta", entry.model ?? "-", formatCost(entry.estimatedCost));

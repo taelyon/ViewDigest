@@ -39,6 +39,7 @@ ViewDigest는 YouTube 영상을 Google Gemini API로 분석해, 영상을 보지
 
 ■ 채널 구독 (선택)
 관심 채널을 등록하면 공개 RSS 피드로 새 영상을 주기적으로 확인해 자동으로 분석합니다.
+분석이 끝나면 알림과 툴바 아이콘의 숫자로 알려 줍니다. 아이콘을 툴바에 고정해 두세요.
 
 ■ 개인정보
 별도의 백엔드 서버가 없습니다. 분석 요청은 사용자의 브라우저에서 Google로 직접 전송되며,
@@ -88,7 +89,8 @@ so you can understand a video without watching it.
 
 ■ Channel subscriptions (optional)
 Add channels you follow, and new uploads are checked periodically through YouTube's public RSS feed and
-analyzed automatically.
+analyzed automatically. You're told by a notification and a count on the toolbar icon (pin the icon to
+see it).
 
 ■ Privacy
 There is no backend server. Analysis requests go directly from your browser to Google, and the developer
@@ -127,7 +129,7 @@ YouTube 영상 페이지에서 해당 영상을 Google Gemini API로 분석해 �
 | `storage` | 사용자의 Gemini API 키, 분석 히스토리, 구독 채널, 일일 사용량 기록을 브라우저에 저장하기 위해 필요합니다. |
 | `tabs` | 분석 결과를 표시할 새 탭을 열고, 현재 열려 있는 YouTube 탭의 URL과 제목을 읽어 분석 대상을 식별하기 위해 필요합니다. |
 | `alarms` | 구독한 채널에 새 영상이 올라왔는지 주기적으로 확인하기 위해 필요합니다. |
-| `notifications` | 채널 자동 분석이 완료되었을 때 사용자에게 알리기 위해 필요합니다. |
+| `notifications` | 채널 자동 분석이 완료되거나 실패했을 때 사용자에게 알리고, 알림을 누르면 해당 리포트나 설정 페이지를 열기 위해 필요합니다. |
 | 호스트 `https://www.youtube.com/*` | 영상 시청 페이지에 분석 버튼을 삽입하고, 구독 채널의 공개 RSS 피드를 조회하기 위해 필요합니다. |
 | 호스트 `https://generativelanguage.googleapis.com/*` | 사용자의 API 키로 Gemini API에 분석을 요청하기 위해 필요합니다. |
 | 원격 코드 사용 | 사용하지 않습니다. 모든 코드가 패키지에 포함되어 있습니다. |
@@ -235,6 +237,16 @@ API 키가 없으면 옵션 페이지에 키 등록을 안내하는 오류 메�
 3. **한국어 스크린샷은 선택.** 기존 3장도 여전히 정확합니다. 설정 페이지 사진에 새 "리포트 언어"
    항목이 없을 뿐입니다.
 4. **권한 변경 없음.** 기존 사용자에게 권한 경고가 뜨지 않습니다.
+
+## v1.1.1 제출 메모 (새 분석 알림·배지)
+
+- **권한 변경 없음.** 배지는 manifest에 이미 있는 `action`을, 알림은 기존 `notifications`
+  권한을 씁니다.
+- **등록정보 설명 갱신.** 한국어·영어 자세한 설명의 "채널 구독" 항목에 알림·배지 문장이
+  추가됐습니다(위 문구). 두 언어 모두 대시보드에 다시 붙여 넣습니다.
+- `notifications` 권한 사유는 그대로 유효하지만, 더 정확히 하려면 이렇게 바꿉니다:
+  "채널 자동 분석이 완료되거나 실패했을 때 사용자에게 알리고, 알림을 누르면 해당 리포트나
+  설정 페이지를 열기 위해 필요합니다."
 
 ## 업데이트 배포 절차
 

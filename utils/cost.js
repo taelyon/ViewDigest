@@ -113,6 +113,7 @@ async function getUsageStats() {
 
 export {
   MODEL_PRICING,
+  getDateKey,
   DEFAULT_DAILY_LIMIT,
   estimateCost,
   checkRateLimit,

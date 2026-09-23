@@ -260,6 +260,24 @@
   "bgNotificationTitle": {
     "message": "New video analyzed"
   },
+  "actionTitleUnseen": {
+    "message": "ViewDigest - New analyses: $1"
+  },
+  "popupNewBadge": {
+    "message": "NEW"
+  },
+  "bgAnalysisFailedTitle": {
+    "message": "Couldn't analyze a new video"
+  },
+  "bgMissingKeyBody": {
+    "message": "No Gemini API key is set, so new videos from your channels weren't analyzed. Click to add a key; they'll be analyzed at the next check."
+  },
+  "bgRateLimitedTitle": {
+    "message": "Daily analysis limit reached"
+  },
+  "bgRateLimitedBody": {
+    "message": "You've used all of today's analyses ($1 per day). New videos from your channels will be analyzed tomorrow. Click to change the limit."
+  },
   "geminiKeyLoadError": {
     "message": "Couldn't load the API key."
   },
