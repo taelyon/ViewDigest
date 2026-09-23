@@ -11,6 +11,8 @@ import {
   saveAnalysis,
   getHistory,
   patchHistoryEntries,
+  removeDuplicateHistory,
+  getAnalysesInProgress,
   getChannels,
   updateChannel,
   addUnseenId,
@@ -73,14 +75,16 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     }
   }
   await setupChannelCheckAlarm();
+  await removeDuplicateHistory();
   await refreshBadge();
   await backfillChannelTitles();
 });
 
 // 서비스 워커가 유휴 상태에서 깨어날 때(브라우저 재시작 등)도 알람이 등록되어 있는지 보장한다.
 // 배지 글자는 브라우저를 다시 켜면 지워지므로 저장된 개수로 다시 그린다.
-chrome.runtime.onStartup.addListener(() => {
+chrome.runtime.onStartup.addListener(async () => {
   setupChannelCheckAlarm();
+  await removeDuplicateHistory();
   refreshBadge();
   backfillChannelTitles();
 });
@@ -343,6 +347,13 @@ async function checkChannel(channel) {
   const advanceTo = (video) => updateChannel(channel.channelId, { lastVideoId: video.videoId });
 
   for (const video of toAnalyze) {
+    // 사용자가 결과 탭에서 같은 영상을 지금 분석 중이면 끝날 때까지 미룬다(기준선을 두면
+    // 다음 확인에서 다시 만나고, 그때는 히스토리에 있어서 건너뛴다).
+    if ((await getAnalysesInProgress())[video.videoId]) {
+      console.warn(`[직접 분석 중인 영상, 다음 확인으로 미룸] ${channel.title}: ${video.title}`);
+      break;
+    }
+
     const history = await getHistory();
     if (history.some((entry) => entry.videoId === video.videoId)) {
       console.warn(`[이미 분석한 영상 건너뜀] ${channel.title}: ${video.title}`);

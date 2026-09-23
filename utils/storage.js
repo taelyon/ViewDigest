@@ -5,7 +5,11 @@ const STORAGE_KEYS = {
   SETTINGS: "settings",
   CHANNELS: "subscribedChannels",
   UNSEEN: "unseenAutoAnalysisIds",
+  IN_PROGRESS: "manualAnalysesInProgress",
 };
+
+// 결과 탭이 분석 도중 닫히면 "진행 중" 표시가 남는다. 이보다 오래된 표시는 무시한다.
+const IN_PROGRESS_TTL_MS = 15 * 60 * 1000;
 
 const MAX_HISTORY_ITEMS = 50;
 
@@ -46,7 +50,8 @@ async function getHistory() {
 }
 
 /**
- * 분석 결과를 히스토리 맨 앞에 저장하고, 최대 개수를 넘으면 오래된 항목부터 삭제
+ * 분석 결과를 히스토리 맨 앞에 저장하고, 최대 개수를 넘으면 오래된 항목부터 삭제.
+ * 히스토리에는 영상 하나당 한 항목만 둔다. 같은 영상을 다시 분석하면 이전 결과를 새 결과로 바꾼다.
  */
 async function saveAnalysis(result) {
   const entry = {
@@ -64,9 +69,48 @@ async function saveAnalysis(result) {
   };
 
   const history = await getHistory();
-  const updated = [entry, ...history].slice(0, MAX_HISTORY_ITEMS);
+  const others = entry.videoId ? history.filter((item) => item.videoId !== entry.videoId) : history;
+  const updated = [entry, ...others].slice(0, MAX_HISTORY_ITEMS);
   await chrome.storage.local.set({ [STORAGE_KEYS.HISTORY]: updated });
   return entry;
+}
+
+/**
+ * 같은 영상의 항목이 여러 개면 가장 최근 것만 남긴다(한 영상당 한 항목 규칙 이전에 쌓인 중복 정리).
+ * @returns {Promise<number>} 지운 항목 수
+ */
+async function removeDuplicateHistory() {
+  const history = await getHistory();
+  const seen = new Set();
+  const kept = history.filter((entry) => {
+    if (!entry.videoId) return true;
+    if (seen.has(entry.videoId)) return false;
+    seen.add(entry.videoId);
+    return true;
+  });
+  if (kept.length !== history.length) {
+    await chrome.storage.local.set({ [STORAGE_KEYS.HISTORY]: kept });
+  }
+  return history.length - kept.length;
+}
+
+/**
+ * 결과 탭에서 직접 분석 중인 영상. 채널 자동 분석이 같은 영상을 동시에 분석해
+ * 비용이 두 번 나가지 않도록, 자동 분석은 이 목록에 있는 영상을 다음 확인으로 미룬다.
+ */
+async function getAnalysesInProgress() {
+  const { [STORAGE_KEYS.IN_PROGRESS]: map } = await chrome.storage.local.get(STORAGE_KEYS.IN_PROGRESS);
+  const now = Date.now();
+  return Object.fromEntries(
+    Object.entries(map ?? {}).filter(([, startedAt]) => now - startedAt < IN_PROGRESS_TTL_MS)
+  );
+}
+
+async function setAnalysisInProgress(videoId, inProgress) {
+  const map = await getAnalysesInProgress();
+  if (inProgress) map[videoId] = Date.now();
+  else delete map[videoId];
+  await chrome.storage.local.set({ [STORAGE_KEYS.IN_PROGRESS]: map });
 }
 
 /**
@@ -183,6 +227,9 @@ export {
   setSettings,
   getHistory,
   saveAnalysis,
+  removeDuplicateHistory,
+  getAnalysesInProgress,
+  setAnalysisInProgress,
   patchHistoryEntries,
   deleteAnalysis,
   clearHistory,

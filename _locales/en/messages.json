@@ -245,6 +245,12 @@
   "resultsDownload": {
     "message": "⬇️ Download Markdown"
   },
+  "resultsReanalyze": {
+    "message": "🔄 Analyze again"
+  },
+  "resultsAlreadyAnalyzed": {
+    "message": "You already analyzed this video ($1), so here is the saved report. Analyzing again costs another analysis."
+  },
   "resultsMeta": {
     "message": "$1 · Est. cost $2"
   },

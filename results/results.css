@@ -157,6 +157,27 @@ body {
   padding: 10px 14px;
 }
 
+/* 이미 분석한 영상이라 저장된 리포트를 보여줄 때의 안내 */
+.saved-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.saved-notice .secondary-btn {
+  flex-shrink: 0;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
 #result-actions {
   justify-content: flex-end;
 }
