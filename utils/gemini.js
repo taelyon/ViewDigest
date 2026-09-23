@@ -10,8 +10,9 @@
 // 있는 탭 안에서 동일 세션으로 호출하는 것까지 모두 시도했으나 결과는 동일했고,
 // 확장 프로그램이 그 토큰을 만들어낼 방법은 없다.
 
-import { getSystemInstruction, getUserPrompt } from "./prompt.js";
+import { getSystemInstruction, getUserPrompt, resolveReportLanguage } from "./prompt.js";
 import { checkRateLimit, estimateCost, recordUsage } from "./cost.js";
+import { t } from "./i18n.js";
 
 // 기본 분석 모델. options.model 로 호출 시 덮어쓸 수 있음
 const DEFAULT_MODEL = "gemini-3.7-flash";
@@ -62,7 +63,7 @@ function getApiKey() {
       if (chrome.runtime.lastError) {
         reject(
           new GeminiApiError(
-            "API 키를 불러오는 중 오류가 발생했습니다.",
+            t("geminiKeyLoadError"),
             ERROR_CODES.REQUEST_FAILED,
             chrome.runtime.lastError
           )
@@ -95,16 +96,16 @@ function isLikelyYoutubeUrl(url) {
  * - `mediaResolution: { level: "media_resolution_low" }` 로 프레임당 토큰
  *   사용량을 낮춘다.
  */
-function buildRequestBody(youtubeUrl, customPrompt) {
+function buildRequestBody(youtubeUrl, customPrompt, language) {
   return {
     systemInstruction: {
-      parts: [{ text: getSystemInstruction() }],
+      parts: [{ text: getSystemInstruction(language) }],
     },
     contents: [
       {
         role: "user",
         parts: [
-          { text: getUserPrompt(customPrompt) },
+          { text: getUserPrompt(customPrompt, language) },
           {
             fileData: { fileUri: youtubeUrl, mimeType: "video/mp4" },
             mediaResolution: { level: "media_resolution_low" },
@@ -141,15 +142,15 @@ async function assertOkResponse(response) {
   // 보여주면 사용자가 재시도해도 소용없는 상황임을 알기 어렵다.
   if (apiMessage && /exceeds the maximum number of tokens/i.test(apiMessage)) {
     throw new GeminiApiError(
-      "이 영상은 길이가 너무 길어 Gemini가 한 번에 분석할 수 있는 한도(입력 토큰)를 초과합니다. 더 짧은 영상으로 시도해주세요.",
+      t("geminiVideoTooLong"),
       ERROR_CODES.REQUEST_FAILED,
       { status: response.status, body: details }
     );
   }
 
   const message = apiMessage
-    ? `Gemini API 요청이 실패했습니다: ${apiMessage}`
-    : `Gemini API 요청이 실패했습니다. (HTTP ${response.status})`;
+    ? t("geminiRequestFailed", apiMessage)
+    : t("geminiRequestFailedStatus", response.status);
 
   throw new GeminiApiError(message, ERROR_CODES.REQUEST_FAILED, {
     status: response.status,
@@ -164,16 +165,16 @@ async function assertOkResponse(response) {
 function describeEmptyResponse(finishReason) {
   switch (finishReason) {
     case "MAX_TOKENS":
-      return "Gemini가 리포트 본문을 만들지 못한 채 최대 출력 토큰 한도에 도달해 응답이 끊겼습니다. 영상이 매우 길거나 다루는 정보가 방대할 수 있습니다. 잠시 후 다시 시도해주세요.";
+      return t("geminiMaxTokens");
     case "SAFETY":
     case "PROHIBITED_CONTENT":
     case "BLOCKLIST":
     case "SPII":
-      return "Gemini의 안전 정책에 의해 이 영상에 대한 응답이 차단되었습니다.";
+      return t("geminiSafety");
     case "RECITATION":
-      return "Gemini가 원본 콘텐츠와의 유사도 문제로 응답 생성을 중단했습니다.";
+      return t("geminiRecitation");
     default:
-      return "Gemini가 빈 응답을 반환했습니다.";
+      return t("geminiEmpty");
   }
 }
 
@@ -214,7 +215,7 @@ function parseResponse(data) {
 async function prepareRequest(youtubeUrl, options) {
   if (!isLikelyYoutubeUrl(youtubeUrl)) {
     throw new GeminiApiError(
-      "올바른 YouTube 영상 URL이 아닙니다.",
+      t("geminiInvalidUrl"),
       ERROR_CODES.INVALID_URL,
       { youtubeUrl }
     );
@@ -224,7 +225,7 @@ async function prepareRequest(youtubeUrl, options) {
   const rateLimit = await checkRateLimit();
   if (!rateLimit.allowed) {
     throw new GeminiApiError(
-      `오늘의 분석 가능 횟수(${rateLimit.limit}회)를 모두 사용했습니다.`,
+      t("rateLimited", rateLimit.limit),
       ERROR_CODES.RATE_LIMITED,
       rateLimit
     );
@@ -234,18 +235,22 @@ async function prepareRequest(youtubeUrl, options) {
   const apiKey = await getApiKey();
   if (!apiKey) {
     throw new GeminiApiError(
-      "Gemini API 키가 설정되지 않았습니다. 옵션 페이지에서 먼저 등록해주세요.",
+      t("geminiMissingKey"),
       ERROR_CODES.MISSING_API_KEY
     );
   }
 
-  return { apiKey, requestBody: buildRequestBody(youtubeUrl, options.customPrompt ?? null) };
+  const language = resolveReportLanguage(options.reportLanguage, chrome.i18n.getUILanguage());
+  return {
+    apiKey,
+    requestBody: buildRequestBody(youtubeUrl, options.customPrompt ?? null, language),
+  };
 }
 
 function toGeminiApiError(error) {
   if (error instanceof GeminiApiError) return error;
   return new GeminiApiError(
-    "Gemini API 호출 중 알 수 없는 오류가 발생했습니다.",
+    t("geminiUnknownError"),
     ERROR_CODES.REQUEST_FAILED,
     error
   );
@@ -258,6 +263,7 @@ function toGeminiApiError(error) {
  * @param {object} [options]
  * @param {string} [options.model] 사용할 모델명 (기본값: DEFAULT_MODEL)
  * @param {string} [options.customPrompt] 기본 프롬프트 대신 사용할 커스텀 프롬프트
+ * @param {string} [options.reportLanguage] 리포트 언어 설정("auto" / "ko" / "en", 기본 "auto")
  * @returns {Promise<{markdown: string, model: string, usage: {inputTokens: number, outputTokens: number, totalTokens: number}, estimatedCost: number}>}
  */
 async function analyzeYouTubeVideo(youtubeUrl, options = {}) {
@@ -367,7 +373,7 @@ async function* analyzeYouTubeVideoStream(youtubeUrl, options = {}) {
     // 정상이라는 점을 문구에 담는다.
     yield {
       type: "status",
-      message: "Gemini가 영상을 분석하고 있습니다. 첫 내용이 나오기까지 시간이 걸릴 수 있습니다...",
+      message: t("geminiAnalyzing"),
     };
 
     const response = await fetch(
@@ -393,7 +399,7 @@ async function* analyzeYouTubeVideoStream(youtubeUrl, options = {}) {
       // 한 조각도 없는 채 스트림이 끝나 "빈 응답"으로 둔갑한다.
       if (chunk?.error) {
         throw new GeminiApiError(
-          `Gemini API 요청이 실패했습니다: ${chunk.error.message ?? "알 수 없는 오류"}`,
+          t("geminiRequestFailed", chunk.error.message ?? t("unknownErrorShort")),
           ERROR_CODES.REQUEST_FAILED,
           chunk.error
         );
@@ -403,7 +409,7 @@ async function* analyzeYouTubeVideoStream(youtubeUrl, options = {}) {
       const blockReason = chunk?.promptFeedback?.blockReason;
       if (blockReason) {
         throw new GeminiApiError(
-          `Gemini가 이 영상에 대한 요청을 차단했습니다. (사유: ${blockReason})`,
+          t("geminiBlocked", blockReason),
           ERROR_CODES.EMPTY_RESPONSE,
           chunk.promptFeedback
         );
@@ -426,7 +432,7 @@ async function* analyzeYouTubeVideoStream(youtubeUrl, options = {}) {
       // 다르므로(전자는 연결/파싱 문제, 후자는 모델 쪽 중단) 구분해서 알린다.
       throw new GeminiApiError(
         receivedChunks === 0
-          ? "Gemini가 응답 데이터를 전혀 보내지 않은 채 연결이 끝났습니다. 잠시 후 다시 시도해주세요."
+          ? t("geminiNoData")
           : describeEmptyResponse(finishReason),
         ERROR_CODES.EMPTY_RESPONSE,
         { finishReason, receivedChunks, usage }

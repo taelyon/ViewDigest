@@ -50,6 +50,69 @@ ViewDigest는 YouTube 영상을 Google Gemini API로 분석해, 영상을 보지
 - 리포트는 원본 영상의 2차 저작물이므로, 외부 공유 시 원저작권을 준수하세요.
 ```
 
+## 영어 등록정보 (English listing)
+
+v1.1.0부터 화면이 한국어·영어를 지원합니다. 대시보드의 **스토어 등록정보** 탭 상단 언어 선택에서
+English를 고르고 아래 문구를 넣습니다. 이름은 두 언어 모두 `ViewDigest`입니다.
+
+### Short description (132자 제한)
+
+`_locales/en/messages.json`의 `extDescription`과 같은 문장입니다. 대시보드는 이 값을 패키지에서 읽어
+오므로, 문구를 바꾸려면 messages.json을 고쳐 새 버전을 올려야 합니다.
+
+```
+Analyzes YouTube videos with the Gemini API into a report with a table of contents and chapter-by-chapter breakdown (own API key)
+```
+
+### Detailed description
+
+```
+ViewDigest analyzes YouTube videos with the Google Gemini API and turns them into structured reports,
+so you can understand a video without watching it.
+
+■ How to use
+1. Get your own Gemini API key from Google AI Studio (https://aistudio.google.com/apikey).
+2. Enter the key on the extension's options page and click "Test connection".
+3. On any YouTube video page, click the "⚡ Analyze video" button. The report is written live in a new tab.
+
+■ What the report contains
+- A table of contents with chapters (1.) and sections (1-1.)
+- Specific points for each section: who said what, how events unfolded, and the key figures
+- Copy to clipboard or download as a Markdown file
+- Reports in English or Korean, whatever language the video is in (set it on the options page)
+
+■ Cost control
+- The estimated cost of each analysis is recorded, based on the tokens actually used.
+- A daily analysis limit (20 by default) prevents unexpected charges.
+- The popup shows today's and this month's usage and estimated cost.
+
+■ Channel subscriptions (optional)
+Add channels you follow, and new uploads are checked periodically through YouTube's public RSS feed and
+analyzed automatically.
+
+■ Privacy
+There is no backend server. Analysis requests go directly from your browser to Google, and the developer
+never receives your API key or your analyses. History is stored only in your browser.
+
+■ Notes
+- API usage is billed to your own Google account. The amounts shown are estimates.
+- Private or age-restricted videos may not be analyzable.
+- Reports are derivative works of the original videos; respect the original copyright when sharing them.
+```
+
+### 스크린샷
+
+영어 등록정보에는 영어 화면 스크린샷(1280×800) 3장을 올립니다: 분석 리포트 / 팝업 / 설정 페이지.
+
+### 개인정보처리방침 (영어판)
+
+```
+https://taelyon.github.io/ViewDigest/privacy-policy.en.html
+```
+
+대시보드의 개인정보처리방침 URL 칸은 하나이므로 기존 한국어 주소를 그대로 둡니다. 두 페이지 맨 위에
+서로를 가리키는 언어 전환 링크가 있습니다.
+
 ## 단일 목적 설명
 
 ```
@@ -159,6 +222,19 @@ API 키가 없으면 옵션 페이지에 키 등록을 안내하는 오류 메�
 - [x] 저장소 공개 전환 + GitHub Pages 활성화
 - [x] 개인정보처리방침 URL이 **로그아웃 상태에서** 열리는지 확인
 - [x] 대시보드에 URL 교체 후 재제출 → 게시됨 (v1.0.0)
+
+## v1.1.0 제출 메모 (한국어·영어 지원)
+
+일반 업데이트 절차(아래)에 더해 이번에만 확인할 것:
+
+1. **패키지 업로드 후 언어 목록 확인.** 이번 버전부터 `manifest.json`에 `default_locale: "en"`과
+   `_locales/`가 생깁니다. 업로드한 뒤 **스토어 등록정보** 탭 상단의 언어 선택에 한국어와 English가
+   모두 보이는지 확인합니다. 기본 언어가 English로 바뀌어 보이더라도 한국어 등록정보는 그대로
+   남아 있어야 합니다. 비어 있다면 이 문서의 한국어 문구를 다시 넣습니다.
+2. **English 등록정보 채우기.** 위 "영어 등록정보" 섹션의 자세한 설명과 영어 스크린샷 3장을 넣습니다.
+3. **한국어 스크린샷은 선택.** 기존 3장도 여전히 정확합니다. 설정 페이지 사진에 새 "리포트 언어"
+   항목이 없을 뿐입니다.
+4. **권한 변경 없음.** 기존 사용자에게 권한 경고가 뜨지 않습니다.
 
 ## 업데이트 배포 절차
 

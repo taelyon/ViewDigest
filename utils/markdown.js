@@ -44,9 +44,10 @@ const HEADING_RE = /^(#{1,6})\s+(.*)$/;
 const HEADING_NUMBER_PREFIX_RE = /^\s*(?:chapter|section)?\s*\d+(?:\s*[-.–]\s*\d+)*\s*[.):]?\s+/i;
 
 // 리포트를 구성하는 껍데기 제목. 내용을 담는 장(章)이 아니라 구획을 나누는
-// 이름표이므로 번호에서 제외한다(프롬프트가 "목차"와 "상세 분석"을 요구한다).
+// 이름표이므로 번호에서 제외한다(프롬프트가 "목차"와 "상세 분석", 영어 리포트는
+// "Table of Contents"와 "Detailed Analysis"를 요구한다).
 const WRAPPER_HEADING_RE =
-  /^(목차|차례|목록|상세\s*분석|분석\s*내용|table of contents|contents)$/i;
+  /^(목차|차례|목록|상세\s*분석|분석\s*내용|table of contents|contents|outline|(detailed|in-depth)\s+analysis|analysis)$/i;
 
 function stripHeadingNumber(text) {
   return text.replace(HEADING_NUMBER_PREFIX_RE, "").trim();

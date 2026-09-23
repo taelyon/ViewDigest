@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ViewDigest Privacy Policy</title>
+<meta name="description" content="Privacy policy of the ViewDigest Chrome extension" />
+<style>
+  :root {
+    --text: #1f2430;
+    --muted: #5b6474;
+    --line: #e3e6ec;
+    --accent: #5b21b6;
+    --bg: #ffffff;
+    --bg-soft: #f7f8fa;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 48px 20px 80px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+    font-size: 16px;
+    line-height: 1.75;
+  }
+  main { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 28px; margin: 0 0 6px; letter-spacing: -0.3px; }
+  h2 {
+    font-size: 19px;
+    margin: 40px 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .updated { color: var(--muted); font-size: 14px; margin: 0 0 32px; }
+  .lang-switch { color: var(--muted); font-size: 14px; margin: 0 0 20px; }
+  .lead {
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin: 0 0 8px;
+  }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 15px; }
+  th, td { text-align: left; padding: 10px 12px; border: 1px solid var(--line); vertical-align: top; }
+  th { background: var(--bg-soft); font-weight: 600; }
+  code {
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 14px;
+  }
+  a { color: var(--accent); }
+  ul { padding-left: 22px; }
+  li { margin: 6px 0; }
+  footer { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+  @media (max-width: 600px) {
+    body { padding: 32px 16px 64px; font-size: 15px; }
+    h1 { font-size: 24px; }
+    table { font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <p class="lang-switch"><a href="privacy-policy.html" lang="ko">한국어</a> · <strong>English</strong></p>
+  <h1>ViewDigest Privacy Policy</h1>
+  <p class="updated">Last updated: September 21, 2026</p>
+
+  <p class="lead">
+    ViewDigest (&ldquo;the extension&rdquo;) does not run a backend server, and the developer does not collect,
+    store, or receive your API key, your analyses, or your viewing history in any form. All data either stays
+    in your browser or is sent directly to Google (the Gemini API) using your own API key.
+  </p>
+
+  <h2>1. Information stored and where</h2>
+  <table>
+    <thead>
+      <tr><th>Information</th><th>Stored in</th><th>Details</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Gemini API key</td>
+        <td><code>chrome.storage.sync</code></td>
+        <td>Entered by you. It is never sent to the developer. If you use Chrome sync, it is synced to your own Google account.</td>
+      </tr>
+      <tr>
+        <td>Analysis reports, video titles/URLs, creation time, estimated cost</td>
+        <td><code>chrome.storage.local</code></td>
+        <td>Your analysis history, up to 50 entries, kept only in this browser.</td>
+      </tr>
+      <tr>
+        <td>Subscribed channels</td>
+        <td><code>chrome.storage.local</code></td>
+        <td>The channel URLs/IDs you added and when each was last checked.</td>
+      </tr>
+      <tr>
+        <td>Usage log (number of analyses, token counts, estimated cost)</td>
+        <td><code>chrome.storage.local</code></td>
+        <td>Used only to enforce the daily limit and estimate costs.</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    The extension contains no analytics, advertising SDKs, or tracking pixels, and does not send your activity
+    to the developer.
+  </p>
+
+  <h2>2. Information sent to a third party (Google Gemini API)</h2>
+  <p>
+    When you run an analysis, your browser sends the following to Google&rsquo;s Generative Language API
+    (<code>generativelanguage.googleapis.com</code>) <strong>directly</strong>, using <strong>your own API
+    key</strong>:
+  </p>
+  <ul>
+    <li>The URL of the YouTube video you are analyzing</li>
+    <li>The prompt used to generate the report (fixed instruction text)</li>
+  </ul>
+  <p>
+    This request goes straight from your browser to Google and never passes through a server run by the
+    developer, so the developer cannot know which videos you analyze. For how Google handles this data, see the
+    <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google Privacy Policy</a> and the
+    <a href="https://ai.google.dev/gemini-api/terms" target="_blank" rel="noopener">Gemini API Terms of Service</a>.
+  </p>
+
+  <h2>3. What the extension does on YouTube pages</h2>
+  <p>The extension runs only on <code>youtube.com</code> and reads only:</p>
+  <ul>
+    <li>The current page URL (to get the video ID)</li>
+    <li>The tab title (used as the default report title)</li>
+  </ul>
+  <p>It does not read or collect any other page content, such as comments, watch history, or sign-in information.</p>
+
+  <h2>4. Channel subscriptions (automatic analysis)</h2>
+  <p>
+    When you subscribe to a channel, the extension periodically fetches YouTube&rsquo;s public RSS feed
+    (<code>youtube.com/feeds/videos.xml</code>) only to check for new videos. No personal information is sent in
+    the process.
+  </p>
+
+  <h2>5. Retention and deletion</h2>
+  <ul>
+    <li>You can delete your analysis history, subscribed channels, and usage log individually or all at once from the popup or the options page at any time.</li>
+    <li>Removing the extension or clearing your browser profile data deletes everything stored locally.</li>
+    <li>Because the API key is stored in <code>chrome.storage.sync</code>, if you use Chrome sync you can also delete synced data separately in your Google account settings.</li>
+  </ul>
+
+  <h2>6. Children&rsquo;s privacy</h2>
+  <p>
+    The extension is not directed at children under 14 and does not knowingly collect personal information from
+    children.
+  </p>
+
+  <h2>7. Changes</h2>
+  <p>If this policy changes, the &ldquo;Last updated&rdquo; date on this page will be updated.</p>
+
+  <h2>8. Contact</h2>
+  <p>
+    Please send questions through
+    <a href="https://github.com/taelyon/ViewDigest/issues" target="_blank" rel="noopener">GitHub issues</a>.
+  </p>
+
+  <footer>ViewDigest — a Chrome extension that analyzes YouTube videos</footer>
+</main>
+</body>
+</html>

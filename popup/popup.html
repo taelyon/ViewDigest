@@ -12,29 +12,29 @@
         <img src="../icons/icon32.png" alt="" class="app-logo" />
         <span>ViewDigest</span>
       </div>
-      <button id="open-options-btn" class="icon-btn" title="설정 열기" type="button">⚙</button>
+      <button id="open-options-btn" class="icon-btn" data-i18n-title="popupOpenSettings" title="설정 열기" type="button">⚙</button>
     </header>
 
     <div class="analyze-bar">
-      <button id="start-analyze-btn" class="primary-btn" type="button" disabled>
+      <button id="start-analyze-btn" class="primary-btn" type="button" data-i18n="popupAnalyzeNow" disabled>
         🔍 지금 분석하기
       </button>
       <p id="idle-hint" class="state-hint"></p>
     </div>
 
     <nav class="tabs" role="tablist">
-      <button class="tab-btn active" data-tab="history" role="tab" type="button">히스토리</button>
-      <button class="tab-btn" data-tab="usage" role="tab" type="button">사용량</button>
+      <button class="tab-btn active" data-tab="history" role="tab" type="button" data-i18n="popupTabHistory">히스토리</button>
+      <button class="tab-btn" data-tab="usage" role="tab" type="button" data-i18n="popupTabUsage">사용량</button>
     </nav>
 
     <main class="panels">
       <!-- 히스토리 탭 -->
       <section id="history-panel" class="panel active" data-panel="history">
         <div class="history-header">
-          <button id="clear-history-btn" class="danger-btn" type="button">🗑 전체 삭제</button>
+          <button id="clear-history-btn" class="danger-btn" type="button" data-i18n="popupClearHistory">🗑 전체 삭제</button>
         </div>
         <div id="history-empty" class="state-view hidden">
-          <p class="state-message">아직 분석한 영상이 없습니다.</p>
+          <p class="state-message" data-i18n="popupHistoryEmpty">아직 분석한 영상이 없습니다.</p>
         </div>
         <ul id="history-list" class="history-list scroll-area"></ul>
       </section>
@@ -43,26 +43,26 @@
       <section id="usage-panel" class="panel" data-panel="usage">
         <div class="usage-grid">
           <div class="usage-stat">
-            <span class="usage-stat-label">오늘 분석</span>
+            <span class="usage-stat-label" data-i18n="popupUsageToday">오늘 분석</span>
             <span class="usage-stat-value" id="usage-today-count">-</span>
           </div>
           <div class="usage-stat">
-            <span class="usage-stat-label">이번 달 분석</span>
+            <span class="usage-stat-label" data-i18n="popupUsageMonth">이번 달 분석</span>
             <span class="usage-stat-value" id="usage-month-count">-</span>
           </div>
           <div class="usage-stat">
-            <span class="usage-stat-label">오늘 예상 비용</span>
+            <span class="usage-stat-label" data-i18n="popupCostToday">오늘 예상 비용</span>
             <span class="usage-stat-value" id="usage-today-cost">-</span>
           </div>
           <div class="usage-stat">
-            <span class="usage-stat-label">이번 달 예상 비용</span>
+            <span class="usage-stat-label" data-i18n="popupCostMonth">이번 달 예상 비용</span>
             <span class="usage-stat-value" id="usage-month-cost">-</span>
           </div>
         </div>
 
         <div class="rate-limit-section">
           <div class="rate-limit-label">
-            <span>오늘의 일일 한도</span>
+            <span data-i18n="popupDailyLimit">오늘의 일일 한도</span>
             <span id="rate-limit-text">- / -</span>
           </div>
           <div class="rate-limit-bar">

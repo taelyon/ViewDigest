@@ -24,6 +24,7 @@ YouTube 시청 페이지에 분석 버튼을 추가해 원클릭으로 리포트
 - 🗂 **히스토리 관리**: 분석 결과를 최대 50개까지 자동 저장, 언제든 다시 열람·삭제
 - 💰 **비용/사용량 추적**: 모델별 예상 비용 계산, 일일 사용 횟수 제한(rate limit)으로 과금 폭탄 방지
 - 🌙 **다크 모드 UI**: 긴 리포트도 눈이 편하게, 팝업/옵션 페이지 모두 다크 테마 기본 적용
+- 🌐 **한국어·영어 지원**: 화면은 브라우저 언어를 따르고, 리포트 언어는 설정에서 고를 수 있음
 
 ## 2. 설치 방법
 
@@ -150,6 +151,22 @@ YouTube 시청 페이지(`youtube.com/watch?v=...`)를 열면 제목 아래와 �
   한도를 독점하는 것을 방지하기 위함이며, 3개를 넘는 나머지는 소급 분석되지
   않습니다.)
 
+### 4.7 화면 언어와 리포트 언어
+
+- **화면 언어**(버튼, 메뉴, 설정, 오류 메시지)는 브라우저 언어를 따릅니다. 한국어 브라우저에서는
+  한국어, 그 밖의 언어에서는 영어로 표시됩니다. 문구는 `_locales/ko`와 `_locales/en`의
+  `messages.json`에 있습니다.
+- **리포트 언어**는 옵션 페이지의 "리포트 언어"에서 고릅니다.
+
+| 설정 | 리포트 언어 |
+|---|---|
+| 자동 (기본값) | 브라우저 언어가 한국어면 한국어, 그 밖에는 영어 |
+| 한국어 | 항상 한국어 |
+| English | 항상 영어 |
+
+영상에서 쓰인 언어와는 관계없습니다. 영어 영상을 한국어 리포트로, 한국어 영상을 영어 리포트로
+받을 수 있습니다. 언어마다 프롬프트 전체가 따로 있습니다(`utils/prompt.js`).
+
 ## 5. 사용 시 주의사항
 
 - **API 키는 사용자 본인 소유**입니다. 이 확장프로그램은 별도의 백엔드 서버 없이 브라우저에서
@@ -178,7 +195,10 @@ YouTube 시청 페이지(`youtube.com/watch?v=...`)를 열면 제목 아래와 �
 
 ```
 ViewDigest/
-├── manifest.json            # Manifest V3 설정
+├── manifest.json            # Manifest V3 설정 (default_locale: en)
+├── _locales/
+│   ├── ko/messages.json       # 한국어 화면 문구
+│   └── en/messages.json       # 영어 화면 문구 (지원하지 않는 언어일 때도 사용)
 ├── background.js            # 메시지 라우팅, 분석 파이프라인 조율, 채널 자동 확인(alarms)
 ├── content.js                # YouTube 페이지에 분석 버튼 삽입
 ├── popup/
@@ -190,7 +210,8 @@ ViewDigest/
 │   ├── options.js
 │   └── options.css
 ├── utils/
-│   ├── prompt.js              # Gemini 시스템/사용자 프롬프트 상수
+│   ├── prompt.js              # Gemini 시스템/사용자 프롬프트 (한국어/영어), 리포트 언어 결정
+│   ├── i18n.js                # 화면 문구 조회, HTML 문구 채우기, 날짜 형식
 │   ├── gemini.js               # Gemini API 호출 (영상 이해 + 스트리밍)
 │   ├── storage.js               # chrome.storage.local 래퍼 (설정/히스토리/구독 채널)
 │   ├── cost.js                   # 비용 추정, 사용량 기록, rate limit
@@ -199,7 +220,8 @@ ViewDigest/
 ├── scripts/
 │   └── package.sh             # 스토어 업로드용 zip 생성 (dist/viewdigest-<버전>.zip)
 ├── docs/
-│   └── privacy-policy.html    # 개인정보처리방침 (GitHub Pages로 공개)
+│   ├── privacy-policy.html    # 개인정보처리방침 (GitHub Pages로 공개)
+│   └── privacy-policy.en.html # 개인정보처리방침 영어판
 └── README.md
 ```
 
@@ -225,5 +247,9 @@ ViewDigest/
   `checkChannelsNow` / `refreshChannelCheckAlarm`(options → background).
 - `utils/channels.js`는 background.js(service worker, DOMParser 없음)에서도 동작해야 하므로
   채널 페이지 HTML과 RSS XML을 정규식으로 직접 파싱합니다.
+- 화면 문구를 추가할 때는 `_locales/ko`와 `_locales/en`의 `messages.json` 두 곳에 같은 키로
+  넣습니다. HTML은 `data-i18n="키"`(텍스트), `data-i18n-title`, `data-i18n-placeholder`,
+  `data-i18n-html`(링크가 든 문장) 속성으로 표시하면 `localizePage()`가 채웁니다. JS에서는
+  `t("키", 치환값…)`을 씁니다. `content.js`는 모듈이 아니므로 `chrome.i18n.getMessage`를 직접 씁니다.
 - 스토어에 업데이트를 배포하는 절차(버전 올리기, `scripts/package.sh`, 대시보드 제출, 태그)는
   `STORE_LISTING.md`의 "업데이트 배포 절차"에 있습니다.

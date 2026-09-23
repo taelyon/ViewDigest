@@ -85,6 +85,11 @@ body {
   color: var(--accent);
 }
 
+/* 입력칸 바로 아래 붙는 보충 설명 */
+.card-desc.field-hint {
+  margin: 6px 0 0;
+}
+
 .field-label {
   display: block;
   margin: 14px 0 6px;

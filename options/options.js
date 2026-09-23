@@ -10,6 +10,9 @@ import {
 } from "../utils/storage.js";
 import { DEFAULT_DAILY_LIMIT } from "../utils/cost.js";
 import { resolveChannelId } from "../utils/channels.js";
+import { t, localizePage, formatDateTime } from "../utils/i18n.js";
+
+localizePage();
 
 // gemini.js가 읽는 것과 동일한 storage 영역/키. API 키는 기기 간 동기화되는
 // chrome.storage.sync에 저장하므로, 로컬 설정/히스토리를 다루는
@@ -54,19 +57,6 @@ function showFeedback(el, message, type) {
   el.className = `feedback${type ? ` ${type}` : ""}`;
 }
 
-function formatDate(iso) {
-  if (!iso) return "";
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleString("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 // ---------------------------------------------------------------------
 // API 키 섹션
 // ---------------------------------------------------------------------
@@ -81,7 +71,7 @@ const testApiKeyBtn = document.getElementById("test-api-key-btn");
 
 async function refreshApiKeyStatus() {
   const key = await getSyncApiKey();
-  apiKeyStatus.textContent = key ? `저장된 키: ${maskApiKey(key)}` : "저장된 API 키가 없습니다.";
+  apiKeyStatus.textContent = key ? t("optionsSavedKey", maskApiKey(key)) : t("optionsNoSavedKey");
 }
 
 function setupApiKeySection() {
@@ -94,7 +84,7 @@ function setupApiKeySection() {
   saveApiKeyBtn.addEventListener("click", async () => {
     const value = apiKeyInput.value.trim();
     if (!value) {
-      showFeedback(apiKeyFeedback, "API 키를 입력해주세요.", "error");
+      showFeedback(apiKeyFeedback, t("optionsEnterApiKey"), "error");
       return;
     }
 
@@ -102,10 +92,10 @@ function setupApiKeySection() {
     try {
       await setSyncApiKey(value);
       apiKeyInput.value = "";
-      showFeedback(apiKeyFeedback, "API 키가 저장되었습니다.", "success");
+      showFeedback(apiKeyFeedback, t("optionsApiKeySaved"), "success");
       await refreshApiKeyStatus();
     } catch (error) {
-      showFeedback(apiKeyFeedback, `저장에 실패했습니다: ${error.message}`, "error");
+      showFeedback(apiKeyFeedback, t("optionsSaveFailed", error.message), "error");
     } finally {
       saveApiKeyBtn.disabled = false;
     }
@@ -116,12 +106,12 @@ function setupApiKeySection() {
     const keyToTest = typed || (await getSyncApiKey());
 
     if (!keyToTest) {
-      showFeedback(testResultEl, "테스트할 API 키가 없습니다. 먼저 입력해주세요.", "error");
+      showFeedback(testResultEl, t("optionsNoKeyToTest"), "error");
       return;
     }
 
     testApiKeyBtn.disabled = true;
-    showFeedback(testResultEl, "확인 중...", null);
+    showFeedback(testResultEl, t("optionsChecking"), null);
 
     try {
       // 실제 분석 없이 가벼운 모델 목록 조회로 키 유효성만 확인한다 (비용 발생 없음).
@@ -130,12 +120,12 @@ function setupApiKeySection() {
       );
 
       if (response.ok) {
-        showFeedback(testResultEl, "✅ 유효한 API 키입니다.", "success");
+        showFeedback(testResultEl, t("optionsKeyValid"), "success");
       } else {
-        showFeedback(testResultEl, `❌ 유효하지 않은 API 키입니다. (HTTP ${response.status})`, "error");
+        showFeedback(testResultEl, t("optionsKeyInvalid", response.status), "error");
       }
     } catch {
-      showFeedback(testResultEl, "❌ 네트워크 오류로 확인하지 못했습니다.", "error");
+      showFeedback(testResultEl, t("optionsKeyNetworkError"), "error");
     } finally {
       testApiKeyBtn.disabled = false;
     }
@@ -143,10 +133,11 @@ function setupApiKeySection() {
 }
 
 // ---------------------------------------------------------------------
-// 분석 설정 섹션 (모델 / 일일 한도)
+// 분석 설정 섹션 (모델 / 리포트 언어 / 일일 한도)
 // ---------------------------------------------------------------------
 
 const modelSelect = document.getElementById("model-select");
+const reportLanguageSelect = document.getElementById("report-language-select");
 const dailyLimitInput = document.getElementById("daily-limit-input");
 const settingsFeedback = document.getElementById("settings-feedback");
 const saveSettingsBtn = document.getElementById("save-settings-btn");
@@ -154,6 +145,7 @@ const saveSettingsBtn = document.getElementById("save-settings-btn");
 async function loadSettingsForm() {
   const settings = await getSettings();
   modelSelect.value = settings.model ?? DEFAULT_MODEL;
+  reportLanguageSelect.value = settings.reportLanguage ?? "auto";
   dailyLimitInput.value = settings.dailyLimit ?? DEFAULT_DAILY_LIMIT;
 }
 
@@ -161,7 +153,7 @@ function setupSettingsSection() {
   saveSettingsBtn.addEventListener("click", async () => {
     const dailyLimit = Number(dailyLimitInput.value);
     if (!Number.isFinite(dailyLimit) || dailyLimit < 1) {
-      showFeedback(settingsFeedback, "일일 최대 분석 횟수는 1 이상의 숫자여야 합니다.", "error");
+      showFeedback(settingsFeedback, t("optionsDailyLimitInvalid"), "error");
       return;
     }
 
@@ -169,8 +161,12 @@ function setupSettingsSection() {
     try {
       // setSettings()는 chrome.storage.local에 즉시 반영되며, background.js/cost.js는
       // 매 분석 요청마다 최신 설정을 새로 읽으므로 별도 새로고침 없이 바로 적용된다.
-      await setSettings({ model: modelSelect.value, dailyLimit });
-      showFeedback(settingsFeedback, "설정이 저장되었습니다.", "success");
+      await setSettings({
+        model: modelSelect.value,
+        reportLanguage: reportLanguageSelect.value,
+        dailyLimit,
+      });
+      showFeedback(settingsFeedback, t("optionsSettingsSaved"), "success");
     } finally {
       saveSettingsBtn.disabled = false;
     }
@@ -215,8 +211,8 @@ async function refreshChannelList() {
     const meta = document.createElement("div");
     meta.className = "channel-item-meta";
     meta.textContent = channel.lastCheckedAt
-      ? `마지막 확인: ${formatDate(channel.lastCheckedAt)}`
-      : "아직 확인 전";
+      ? t("optionsLastChecked", formatDateTime(channel.lastCheckedAt))
+      : t("optionsNotCheckedYet");
 
     main.append(title, meta);
 
@@ -228,12 +224,12 @@ async function refreshChannelList() {
     toggle.addEventListener("change", async () => {
       await updateChannel(channel.channelId, { enabled: toggle.checked });
     });
-    toggleLabel.append(toggle, document.createTextNode("자동 분석"));
+    toggleLabel.append(toggle, document.createTextNode(t("optionsAutoAnalyze")));
 
     const removeBtn = document.createElement("button");
     removeBtn.className = "channel-remove-btn";
     removeBtn.type = "button";
-    removeBtn.title = "구독 해제";
+    removeBtn.title = t("optionsUnsubscribe");
     removeBtn.textContent = "🗑";
     removeBtn.addEventListener("click", async () => {
       await removeChannel(channel.channelId);
@@ -261,17 +257,17 @@ function setupChannelSection() {
   addChannelBtn.addEventListener("click", async () => {
     const value = channelInput.value.trim();
     if (!value) {
-      showFeedback(channelAddFeedback, "채널 URL, @핸들 또는 채널 ID를 입력해주세요.", "error");
+      showFeedback(channelAddFeedback, t("optionsEnterChannel"), "error");
       return;
     }
 
     addChannelBtn.disabled = true;
-    showFeedback(channelAddFeedback, "채널 정보를 확인하는 중...", null);
+    showFeedback(channelAddFeedback, t("optionsResolvingChannel"), null);
     try {
       const resolved = await resolveChannelId(value);
       await addChannel(resolved);
       channelInput.value = "";
-      showFeedback(channelAddFeedback, `"${resolved.title}" 채널을 구독했습니다.`, "success");
+      showFeedback(channelAddFeedback, t("optionsChannelSubscribed", resolved.title), "success");
       await refreshChannelList();
     } catch (error) {
       showFeedback(channelAddFeedback, error.message, "error");
@@ -283,7 +279,7 @@ function setupChannelSection() {
   saveChannelIntervalBtn.addEventListener("click", async () => {
     const minutes = Number(channelIntervalInput.value);
     if (!Number.isFinite(minutes) || minutes < 5) {
-      showFeedback(channelIntervalFeedback, "확인 주기는 5분 이상이어야 합니다.", "error");
+      showFeedback(channelIntervalFeedback, t("optionsIntervalInvalid"), "error");
       return;
     }
 
@@ -291,7 +287,7 @@ function setupChannelSection() {
     try {
       await setSettings({ channelCheckIntervalMinutes: minutes });
       refreshChannelCheckAlarm();
-      showFeedback(channelIntervalFeedback, "확인 주기가 저장되었습니다.", "success");
+      showFeedback(channelIntervalFeedback, t("optionsIntervalSaved"), "success");
     } finally {
       saveChannelIntervalBtn.disabled = false;
     }
@@ -299,12 +295,12 @@ function setupChannelSection() {
 
   checkChannelsNowBtn.addEventListener("click", () => {
     checkChannelsNowBtn.disabled = true;
-    checkChannelsNowBtn.textContent = "확인 중...";
+    checkChannelsNowBtn.textContent = t("optionsChecking");
 
     chrome.runtime.sendMessage({ action: "checkChannelsNow" }, async () => {
       void chrome.runtime.lastError;
       checkChannelsNowBtn.disabled = false;
-      checkChannelsNowBtn.textContent = "지금 확인";
+      checkChannelsNowBtn.textContent = t("optionsCheckNow");
       await refreshChannelList();
     });
   });

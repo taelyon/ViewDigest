@@ -13,6 +13,7 @@ import {
   updateChannel,
 } from "./utils/storage.js";
 import { fetchLatestVideos } from "./utils/channels.js";
+import { t } from "./utils/i18n.js";
 
 // 동시에 같은 영상이 중복 분석되는 것을 막기 위한 진행 중 URL 집합.
 // 서비스 워커가 유휴 상태에서 재시작되면 초기화되지만, 그 경우 이전 요청도
@@ -74,8 +75,8 @@ function extractVideoId(url) {
 function extractTitle(tab, videoId) {
   // 탭 제목은 보통 "영상 제목 - YouTube" 형식이므로 접미사를 제거한다.
   const rawTitle = tab?.title;
-  if (!rawTitle) return videoId ?? "제목 없음";
-  return rawTitle.replace(/\s*-\s*YouTube\s*$/, "").trim() || (videoId ?? "제목 없음");
+  if (!rawTitle) return videoId ?? t("untitled");
+  return rawTitle.replace(/\s*-\s*YouTube\s*$/, "").trim() || (videoId ?? t("untitled"));
 }
 
 /**
@@ -86,7 +87,7 @@ function normalizeError(error) {
   if (error instanceof GeminiApiError) {
     return { code: error.code, message: error.message };
   }
-  return { code: "UNKNOWN_ERROR", message: error?.message ?? "알 수 없는 오류가 발생했습니다." };
+  return { code: "UNKNOWN_ERROR", message: error?.message ?? t("unknownError") };
 }
 
 /**
@@ -109,7 +110,7 @@ async function handleAnalyzeVideo(url, { tab, titleOverride } = {}) {
   // 들어온 두 번째 analyzeVideo 요청이 첫 번째 요청의 등록을 확실히 보고 걸러진다.
   // (add()를 비동기 작업 뒤로 미루면 그 틈에 두 요청이 모두 통과하는 경쟁 조건이 생긴다.)
   if (analysesInProgress.has(url)) {
-    return { success: false, error: { code: "ALREADY_ANALYZING", message: "이미 이 영상을 분석하고 있습니다." } };
+    return { success: false, error: { code: "ALREADY_ANALYZING", message: t("bgAlreadyAnalyzing") } };
   }
   analysesInProgress.add(url);
 
@@ -120,7 +121,7 @@ async function handleAnalyzeVideo(url, { tab, titleOverride } = {}) {
     if (!rateLimit.allowed) {
       const error = {
         code: "RATE_LIMITED",
-        message: `오늘의 분석 가능 횟수(${rateLimit.limit}회)를 모두 사용했습니다.`,
+        message: t("rateLimited", rateLimit.limit),
       };
       notifyPopup({ action: "analysisError", url, error });
       return { success: false, error };
@@ -130,6 +131,7 @@ async function handleAnalyzeVideo(url, { tab, titleOverride } = {}) {
     const result = await analyzeYouTubeVideo(url, {
       model: settings.model,
       customPrompt: settings.customPrompt,
+      reportLanguage: settings.reportLanguage,
     });
 
     const videoId = extractVideoId(url);
@@ -186,7 +188,7 @@ function notifyNewVideoAnalyzed(channel, video) {
   chrome.notifications.create(`viewdigest-analysis-${video.videoId}`, {
     type: "basic",
     iconUrl: "icons/icon128.png",
-    title: "새 영상 분석 완료",
+    title: t("bgNotificationTitle"),
     message: `${channel.title}\n${video.title}`,
   });
 }

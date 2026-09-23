@@ -17,8 +17,9 @@
   const TITLE_BUTTON_ID = "viewdigest-analyze-button";
   const SIDEBAR_BUTTON_ID = "viewdigest-analyze-button-sidebar";
   const STYLE_ID = "viewdigest-analyze-button-style";
-  const BUTTON_LABEL = "⚡ 영상 분석";
-  const BUTTON_LABEL_FULL = "영상 분석 (초고밀도 분석 노트 생성)";
+  // 모듈이 아니라 utils/i18n.js를 import할 수 없으므로 chrome.i18n을 직접 쓴다.
+  const BUTTON_LABEL = chrome.i18n.getMessage("contentButton");
+  const BUTTON_LABEL_FULL = chrome.i18n.getMessage("contentButtonFull");
 
   // 좋아요/공유/다운로드 등 모든 네이티브 액션 버튼은 #actions-inner 안에서
   // 실질적으로 #menu 라는 단일 블록(ytd-menu-renderer)에 다 뭉쳐 들어있고,
@@ -141,8 +142,9 @@
       (response) => {
         void chrome.runtime.lastError;
         if (!response?.success) {
-          button.textContent = "❌ 열기 실패";
-          button.title = response?.error?.message ?? "새 탭을 여는 중 오류가 발생했습니다.";
+          button.textContent = chrome.i18n.getMessage("contentOpenFailed");
+          button.title =
+            response?.error?.message ?? chrome.i18n.getMessage("contentOpenFailedDetail");
           setTimeout(() => {
             button.textContent = BUTTON_LABEL;
             button.title = BUTTON_LABEL_FULL;

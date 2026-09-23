@@ -4,6 +4,8 @@
 // RSS 피드 XML을 모두 정규식으로 직접 파싱한다. YouTube의 채널 RSS 피드는
 // API 키 없이 누구나 호출할 수 있는 공개 엔드포인트다.
 
+import { t } from "./i18n.js";
+
 const CHANNEL_ID_RE = /^UC[0-9A-Za-z_-]{22}$/;
 
 function decodeHtmlEntities(text) {
@@ -33,7 +35,7 @@ function buildChannelPageUrl(input) {
  */
 async function resolveChannelId(input) {
   if (!input || !input.trim()) {
-    throw new Error("채널 URL 또는 ID를 입력해주세요.");
+    throw new Error(t("channelEnterInput"));
   }
 
   const trimmed = input.trim();
@@ -48,7 +50,7 @@ async function resolveChannelId(input) {
   const pageUrl = buildChannelPageUrl(trimmed);
   const response = await fetch(pageUrl, { credentials: "omit" });
   if (!response.ok) {
-    throw new Error(`채널 페이지를 불러오지 못했습니다. (HTTP ${response.status})`);
+    throw new Error(t("channelPageFailed", response.status));
   }
   const html = await response.text();
 
@@ -56,7 +58,7 @@ async function resolveChannelId(input) {
     html.match(/"channelId":"(UC[0-9A-Za-z_-]{22})"/) ??
     html.match(/youtube\.com\/channel\/(UC[0-9A-Za-z_-]{22})/);
   if (!idMatch) {
-    throw new Error("채널 ID를 찾을 수 없습니다. 채널 URL이 올바른지 확인해주세요.");
+    throw new Error(t("channelIdNotFound"));
   }
   const channelId = idMatch[1];
 
@@ -98,7 +100,7 @@ async function fetchLatestVideos(channelId, maxResults = 5) {
     `https://www.youtube.com/feeds/videos.xml?channel_id=${encodeURIComponent(channelId)}`
   );
   if (!response.ok) {
-    throw new Error(`RSS 피드를 불러오지 못했습니다. (HTTP ${response.status})`);
+    throw new Error(t("channelFeedFailed", response.status));
   }
   const xml = await response.text();
   return parseVideoEntries(xml).slice(0, maxResults);
