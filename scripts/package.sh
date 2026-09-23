@@ -15,7 +15,7 @@ cd "$(dirname "$0")/.."
 # 확장프로그램 실행에 필요한 것만 담는다. docs/, *.md, scripts/는 넣지 않는다.
 # 최상위에 새 파일·폴더를 추가했다면 여기에도 추가해야 한다. 빠뜨리면 아래의
 # 참조 검사가 잡아낸다.
-INCLUDE=(manifest.json background.js content.js icons popup options results utils)
+INCLUDE=(manifest.json background.js content.js _locales icons popup options results utils)
 
 fail() { echo "✗ $*" >&2; exit 1; }
 warn() { echo "! $*" >&2; }
@@ -114,6 +114,20 @@ while IFS= read -r -d '' file; do
     check_ref "$file" "$ref"
   done < <(grep -oE 'url\([^)]*\)' "$file" | sed -E 's/^url\(["'"'"']?([^"'"'"')]*)["'"'"']?\)$/\1/')
 done < <(find "$staging" -name '*.css' -print0)
+
+# manifest의 __MSG_키__ 문구는 default_locale의 messages.json에 있어야 한다.
+# 없으면 Chrome이 확장프로그램을 아예 불러오지 않는다.
+default_locale=$(sed -n 's/^[[:space:]]*"default_locale"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$staging/manifest.json" | head -n 1)
+if [ -n "$default_locale" ]; then
+  messages="$staging/_locales/$default_locale/messages.json"
+  if [ ! -f "$messages" ]; then
+    missing+=("manifest.json → _locales/$default_locale/messages.json")
+  else
+    while read -r key; do
+      grep -q "\"$key\"[[:space:]]*:" "$messages" || missing+=("manifest.json → __MSG_${key}__ (_locales/$default_locale/messages.json)")
+    done < <(grep -oE '__MSG_[A-Za-z0-9_]+__' "$staging/manifest.json" | sed -E 's/^__MSG_(.*)__$/\1/' | sort -u)
+  fi
+fi
 
 if [ ${#missing[@]} -gt 0 ]; then
   echo "✗ 패키지에 없는 파일을 참조합니다. 경로 오타이거나, 위 INCLUDE에서 빠진 파일입니다:" >&2

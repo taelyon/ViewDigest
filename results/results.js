@@ -11,6 +11,9 @@
 import { analyzeYouTubeVideoStream, GeminiApiError } from "../utils/gemini.js";
 import { getSettings, saveAnalysis, getHistory } from "../utils/storage.js";
 import { renderMarkdown } from "../utils/markdown.js";
+import { t, localizePage } from "../utils/i18n.js";
+
+localizePage();
 
 const params = new URLSearchParams(location.search);
 const videoUrl = params.get("url");
@@ -87,7 +90,7 @@ async function copyMarkdown() {
     textarea.remove();
   }
   const original = els.copyBtn.textContent;
-  els.copyBtn.textContent = "✅ 복사됨";
+  els.copyBtn.textContent = t("resultsCopied");
   setTimeout(() => {
     els.copyBtn.textContent = original;
   }, 1500);
@@ -115,14 +118,14 @@ async function runFromHistory(id) {
   const history = await getHistory();
   const entry = history.find((e) => e.id === id);
   if (!entry) {
-    showError("저장된 분석 결과를 찾을 수 없습니다. 삭제되었을 수 있습니다.");
+    showError(t("resultsNotFound"));
     return;
   }
 
   finalEntry = entry;
-  document.title = `${entry.title ?? "제목 없음"} - ViewDigest`;
-  els.title.textContent = entry.title ?? "제목 없음";
-  els.metaLine.textContent = `${entry.model ?? "-"} · 예상 비용 ${formatCost(entry.estimatedCost)}`;
+  document.title = `${entry.title ?? t("untitled")} - ViewDigest`;
+  els.title.textContent = entry.title ?? t("untitled");
+  els.metaLine.textContent = t("resultsMeta", entry.model ?? "-", formatCost(entry.estimatedCost));
   els.metaLine.classList.remove("hidden");
   renderReport(entry.markdown ?? "");
   els.actions.classList.remove("hidden");
@@ -134,7 +137,7 @@ async function runFromHistory(id) {
 
 async function runNewAnalysis() {
   const videoId = extractVideoId(videoUrl);
-  const initialTitle = videoTitle || videoId || "제목 없음";
+  const initialTitle = videoTitle || videoId || t("untitled");
   document.title = `${initialTitle} - ViewDigest`;
   els.title.textContent = initialTitle;
 
@@ -144,6 +147,7 @@ async function runNewAnalysis() {
     for await (const event of analyzeYouTubeVideoStream(videoUrl, {
       model: settings.model,
       customPrompt: settings.customPrompt,
+      reportLanguage: settings.reportLanguage,
     })) {
       if (event.type === "status") {
         showStatus(event.message);
@@ -163,7 +167,7 @@ async function runNewAnalysis() {
         finalEntry = savedEntry;
         document.title = `${savedEntry.title} - ViewDigest`;
         els.title.textContent = savedEntry.title;
-        els.metaLine.textContent = `${savedEntry.model} · 예상 비용 ${formatCost(savedEntry.estimatedCost)}`;
+        els.metaLine.textContent = t("resultsMeta", savedEntry.model, formatCost(savedEntry.estimatedCost));
         els.metaLine.classList.remove("hidden");
         els.actions.classList.remove("hidden");
 
@@ -178,7 +182,7 @@ async function runNewAnalysis() {
     const message =
       error instanceof GeminiApiError
         ? error.message
-        : "분석 중 알 수 없는 오류가 발생했습니다.";
+        : t("resultsUnknownError");
     showError(message);
   }
 }
@@ -190,7 +194,7 @@ async function run() {
   }
 
   if (!videoUrl) {
-    showError("분석할 영상 URL을 찾을 수 없습니다. 이 페이지는 ViewDigest 확장프로그램의 분석 버튼을 통해서만 열 수 있습니다.");
+    showError(t("resultsNoUrl"));
     return;
   }
 

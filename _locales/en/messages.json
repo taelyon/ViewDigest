@@ -1,0 +1,317 @@
+{
+  "htmlLang": {
+    "message": "en"
+  },
+  "extDescription": {
+    "message": "Analyzes YouTube videos with the Gemini API into a report with a table of contents and chapter-by-chapter breakdown (own API key)"
+  },
+  "untitled": {
+    "message": "Untitled"
+  },
+  "unknownError": {
+    "message": "An unknown error occurred."
+  },
+  "unknownErrorShort": {
+    "message": "unknown error"
+  },
+  "rateLimited": {
+    "message": "You've used all of today's analyses ($1 per day)."
+  },
+  "popupOpenSettings": {
+    "message": "Open settings"
+  },
+  "popupAnalyzeNow": {
+    "message": "🔍 Analyze now"
+  },
+  "popupWatchPageOnly": {
+    "message": "Open a YouTube video page to analyze it."
+  },
+  "popupTabHistory": {
+    "message": "History"
+  },
+  "popupTabUsage": {
+    "message": "Usage"
+  },
+  "popupClearHistory": {
+    "message": "🗑 Clear all"
+  },
+  "popupClearHistoryConfirm": {
+    "message": "Delete all? Click again"
+  },
+  "popupHistoryEmpty": {
+    "message": "No analyzed videos yet."
+  },
+  "popupDelete": {
+    "message": "Delete"
+  },
+  "popupUsageToday": {
+    "message": "Analyses today"
+  },
+  "popupUsageMonth": {
+    "message": "Analyses this month"
+  },
+  "popupCostToday": {
+    "message": "Est. cost today"
+  },
+  "popupCostMonth": {
+    "message": "Est. cost this month"
+  },
+  "popupDailyLimit": {
+    "message": "Today's daily limit"
+  },
+  "popupCount": {
+    "message": "$1"
+  },
+  "popupRemaining": {
+    "message": "Analyses left today: $1"
+  },
+  "popupLimitReached": {
+    "message": "You've reached today's analysis limit. Try again tomorrow."
+  },
+  "optionsPageTitle": {
+    "message": "ViewDigest - Settings"
+  },
+  "optionsSubtitle": {
+    "message": "Settings"
+  },
+  "optionsApiKeyHeading": {
+    "message": "Gemini API key"
+  },
+  "optionsApiKeyDescHtml": {
+    "message": "Enter an API key issued from <a href=\"https://aistudio.google.com/app/apikey\" target=\"_blank\" rel=\"noopener noreferrer\">Google AI Studio</a>. The key is kept in storage that syncs across your devices (chrome.storage.sync)."
+  },
+  "optionsChecking": {
+    "message": "Checking..."
+  },
+  "optionsApiKeyPlaceholder": {
+    "message": "Enter a new API key"
+  },
+  "optionsToggleVisibility": {
+    "message": "Show/hide key"
+  },
+  "optionsSaveApiKey": {
+    "message": "Save API key"
+  },
+  "optionsTestApiKey": {
+    "message": "Test connection"
+  },
+  "optionsSavedKey": {
+    "message": "Saved key: $1"
+  },
+  "optionsNoSavedKey": {
+    "message": "No API key saved."
+  },
+  "optionsEnterApiKey": {
+    "message": "Please enter an API key."
+  },
+  "optionsApiKeySaved": {
+    "message": "API key saved."
+  },
+  "optionsSaveFailed": {
+    "message": "Couldn't save: $1"
+  },
+  "optionsNoKeyToTest": {
+    "message": "There's no API key to test. Enter one first."
+  },
+  "optionsKeyValid": {
+    "message": "✅ The API key is valid."
+  },
+  "optionsKeyInvalid": {
+    "message": "❌ The API key is invalid. (HTTP $1)"
+  },
+  "optionsKeyNetworkError": {
+    "message": "❌ Couldn't check because of a network error."
+  },
+  "optionsAnalysisHeading": {
+    "message": "Analysis settings"
+  },
+  "optionsModelLabel": {
+    "message": "Model"
+  },
+  "optionsModelDefault": {
+    "message": "Gemini 3.7 Flash (default, balanced)"
+  },
+  "optionsModelHigh": {
+    "message": "Gemini 3.8 Flash (high performance)"
+  },
+  "optionsModelLite": {
+    "message": "Gemini 3.5 Flash Lite (economy)"
+  },
+  "optionsReportLanguageLabel": {
+    "message": "Report language"
+  },
+  "optionsReportLanguageAuto": {
+    "message": "Automatic (browser language)"
+  },
+  "optionsReportLanguageHint": {
+    "message": "Automatic writes in Korean when your browser is set to Korean, and in English otherwise. The language spoken in the video doesn't matter."
+  },
+  "optionsDailyLimitLabel": {
+    "message": "Maximum analyses per day"
+  },
+  "optionsSaveSettings": {
+    "message": "Save settings"
+  },
+  "optionsDailyLimitInvalid": {
+    "message": "The daily limit must be a number of 1 or more."
+  },
+  "optionsSettingsSaved": {
+    "message": "Settings saved."
+  },
+  "optionsChannelsHeading": {
+    "message": "Channel subscriptions (auto-analyze new videos)"
+  },
+  "optionsChannelsDesc": {
+    "message": "Once you add a channel, only videos uploaded after that are analyzed automatically. (Videos already on the channel when you add it are not.) Channels are checked only while the browser is open."
+  },
+  "optionsChannelInputLabel": {
+    "message": "Channel URL, @handle, or channel ID"
+  },
+  "optionsChannelPlaceholder": {
+    "message": "https://www.youtube.com/@channelhandle"
+  },
+  "optionsAddChannel": {
+    "message": "Add channel"
+  },
+  "optionsIntervalLabel": {
+    "message": "Check interval (minutes)"
+  },
+  "optionsSaveInterval": {
+    "message": "Save interval"
+  },
+  "optionsCheckNow": {
+    "message": "Check now"
+  },
+  "optionsNoChannels": {
+    "message": "No subscribed channels yet."
+  },
+  "optionsLastChecked": {
+    "message": "Last checked: $1"
+  },
+  "optionsNotCheckedYet": {
+    "message": "Not checked yet"
+  },
+  "optionsAutoAnalyze": {
+    "message": "Auto-analyze"
+  },
+  "optionsUnsubscribe": {
+    "message": "Unsubscribe"
+  },
+  "optionsEnterChannel": {
+    "message": "Enter a channel URL, @handle, or channel ID."
+  },
+  "optionsResolvingChannel": {
+    "message": "Looking up the channel..."
+  },
+  "optionsChannelSubscribed": {
+    "message": "Subscribed to \"$1\"."
+  },
+  "optionsIntervalInvalid": {
+    "message": "The check interval must be at least 5 minutes."
+  },
+  "optionsIntervalSaved": {
+    "message": "Check interval saved."
+  },
+  "resultsPageTitle": {
+    "message": "ViewDigest Analysis"
+  },
+  "resultsPreparing": {
+    "message": "Preparing analysis..."
+  },
+  "resultsStarting": {
+    "message": "Starting..."
+  },
+  "resultsCopy": {
+    "message": "📋 Copy"
+  },
+  "resultsCopied": {
+    "message": "✅ Copied"
+  },
+  "resultsDownload": {
+    "message": "⬇️ Download Markdown"
+  },
+  "resultsMeta": {
+    "message": "$1 · Est. cost $2"
+  },
+  "resultsNotFound": {
+    "message": "Couldn't find this saved analysis. It may have been deleted."
+  },
+  "resultsUnknownError": {
+    "message": "An unknown error occurred during the analysis."
+  },
+  "resultsNoUrl": {
+    "message": "No video URL to analyze. This page can only be opened from a ViewDigest analyze button."
+  },
+  "contentButton": {
+    "message": "⚡ Analyze video"
+  },
+  "contentButtonFull": {
+    "message": "Analyze video (generate a detailed report)"
+  },
+  "contentOpenFailed": {
+    "message": "❌ Couldn't open"
+  },
+  "contentOpenFailedDetail": {
+    "message": "An error occurred while opening a new tab."
+  },
+  "bgAlreadyAnalyzing": {
+    "message": "This video is already being analyzed."
+  },
+  "bgNotificationTitle": {
+    "message": "New video analyzed"
+  },
+  "geminiKeyLoadError": {
+    "message": "Couldn't load the API key."
+  },
+  "geminiVideoTooLong": {
+    "message": "This video is too long for Gemini to analyze in one request (it exceeds the input token limit). Try a shorter video."
+  },
+  "geminiRequestFailed": {
+    "message": "Gemini API request failed: $1"
+  },
+  "geminiRequestFailedStatus": {
+    "message": "Gemini API request failed. (HTTP $1)"
+  },
+  "geminiMaxTokens": {
+    "message": "Gemini hit its maximum output token limit before writing the report, so the response was cut off. The video may be very long or cover a lot of information. Please try again in a moment."
+  },
+  "geminiSafety": {
+    "message": "Gemini's safety policy blocked the response for this video."
+  },
+  "geminiRecitation": {
+    "message": "Gemini stopped generating because the output was too similar to the original content."
+  },
+  "geminiEmpty": {
+    "message": "Gemini returned an empty response."
+  },
+  "geminiNoData": {
+    "message": "The connection closed before Gemini sent any data. Please try again in a moment."
+  },
+  "geminiBlocked": {
+    "message": "Gemini blocked the request for this video. (Reason: $1)"
+  },
+  "geminiInvalidUrl": {
+    "message": "This isn't a valid YouTube video URL."
+  },
+  "geminiMissingKey": {
+    "message": "No Gemini API key is set. Add one on the options page first."
+  },
+  "geminiUnknownError": {
+    "message": "An unknown error occurred while calling the Gemini API."
+  },
+  "geminiAnalyzing": {
+    "message": "Gemini is analyzing the video. It may take a while before the first text appears..."
+  },
+  "channelEnterInput": {
+    "message": "Enter a channel URL or ID."
+  },
+  "channelPageFailed": {
+    "message": "Couldn't load the channel page. (HTTP $1)"
+  },
+  "channelIdNotFound": {
+    "message": "Couldn't find the channel ID. Check that the channel URL is correct."
+  },
+  "channelFeedFailed": {
+    "message": "Couldn't load the RSS feed. (HTTP $1)"
+  }
+}

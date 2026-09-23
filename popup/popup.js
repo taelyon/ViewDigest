@@ -5,6 +5,9 @@
 
 import { getHistory, deleteAnalysis, clearHistory } from "../utils/storage.js";
 import { getUsageStats, checkRateLimit } from "../utils/cost.js";
+import { t, localizePage, formatDateTime } from "../utils/i18n.js";
+
+localizePage();
 
 const YOUTUBE_WATCH_RE = /^https:\/\/(www\.)?youtube\.com\/watch\?.*v=/;
 
@@ -24,19 +27,6 @@ function switchTab(tabName) {
 function setupTabs() {
   document.querySelectorAll(".tab-btn").forEach((btn) => {
     btn.addEventListener("click", () => switchTab(btn.dataset.tab));
-  });
-}
-
-function formatDate(iso) {
-  if (!iso) return "";
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleString("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
   });
 }
 
@@ -74,7 +64,7 @@ async function initAnalyzeButton() {
   const hint = document.getElementById("idle-hint");
 
   startBtn.disabled = !tab;
-  hint.textContent = tab ? "" : "YouTube 영상 시청 페이지에서만 분석할 수 있어요.";
+  hint.textContent = tab ? "" : t("popupWatchPageOnly");
 }
 
 function setupAnalyzeButton() {
@@ -109,11 +99,11 @@ async function refreshHistory() {
 
     const title = document.createElement("div");
     title.className = "history-item-title";
-    title.textContent = entry.title ?? "제목 없음";
+    title.textContent = entry.title ?? t("untitled");
 
     const meta = document.createElement("div");
     meta.className = "history-item-meta";
-    meta.innerHTML = `<span>${formatDate(entry.createdAt)}</span><span class="model-badge">${
+    meta.innerHTML = `<span>${formatDateTime(entry.createdAt)}</span><span class="model-badge">${
       entry.model ?? "-"
     }</span>`;
 
@@ -122,7 +112,7 @@ async function refreshHistory() {
     const deleteBtn = document.createElement("button");
     deleteBtn.className = "history-delete-btn";
     deleteBtn.type = "button";
-    deleteBtn.title = "삭제";
+    deleteBtn.title = t("popupDelete");
     deleteBtn.textContent = "🗑";
     deleteBtn.addEventListener("click", async (e) => {
       e.stopPropagation();
@@ -157,7 +147,7 @@ function setupClearHistoryButton() {
   btn.addEventListener("click", async () => {
     if (!armed) {
       armed = true;
-      btn.textContent = "정말 삭제할까요? 다시 클릭";
+      btn.textContent = t("popupClearHistoryConfirm");
       resetTimer = setTimeout(reset, 3000);
       return;
     }
@@ -175,8 +165,8 @@ function setupClearHistoryButton() {
 async function refreshUsage() {
   const [stats, rateLimit] = await Promise.all([getUsageStats(), checkRateLimit()]);
 
-  document.getElementById("usage-today-count").textContent = `${stats.today.count}회`;
-  document.getElementById("usage-month-count").textContent = `${stats.month.count}회`;
+  document.getElementById("usage-today-count").textContent = t("popupCount", stats.today.count);
+  document.getElementById("usage-month-count").textContent = t("popupCount", stats.month.count);
   document.getElementById("usage-today-cost").textContent = formatCost(stats.today.cost);
   document.getElementById("usage-month-cost").textContent = formatCost(stats.month.cost);
 
@@ -189,8 +179,8 @@ async function refreshUsage() {
 
   const status = document.getElementById("rate-limit-status");
   status.textContent = rateLimit.allowed
-    ? `오늘 ${rateLimit.remaining}회 더 분석할 수 있어요.`
-    : "오늘의 분석 한도를 모두 사용했습니다. 내일 다시 시도해주세요.";
+    ? t("popupRemaining", rateLimit.remaining)
+    : t("popupLimitReached");
 }
 
 // ---------------------------------------------------------------------

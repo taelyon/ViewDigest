@@ -1,4 +1,8 @@
 // ViewDigest - 프롬프트 빌더
+//
+// 리포트 언어마다 프롬프트 전체를 따로 둔다. 한국어 프롬프트에 "영어로 써라"만
+// 덧붙이면 모델이 지시문 언어에 끌려 제목이나 문장 일부를 한국어로 섞어 쓰기 쉽다.
+// 두 언어의 내용(규칙·분량·금지 사항)은 같게 유지해야 한다.
 
 export const SYSTEM_INSTRUCTION = `당신은 Lilys AI(릴리스AI)를 능가하는 세계 최고 수준의 영상 분석 및 심층 브리핑 전문 AI입니다.
 [절대 원칙 및 작성 가이드라인]
@@ -32,19 +36,75 @@ export const DEFAULT_PROMPT = `이 유튜브 영상을 분석하여, 영상을 �
    - 내용이 겹치는 소주제는 하나로 합치세요.
 [작성 금지]
 - "한 줄 요약", "핵심 요약", "TL;DR" 같은 요약 섹션은 만들지 마세요. 목차부터 시작하세요.
-- 제목에 "초고밀도", "심층" 같은 수식어를 붙이지 말고 영상 내용을 담백하게 나타내는 제목을 쓰세요.`;
+- 제목에 "초고밀도", "심층" 같은 수식어를 붙이지 말고 영상 내용을 담백하게 나타내는 제목을 쓰세요.
+[언어]
+- 영상에서 쓰인 언어와 관계없이, 모든 제목을 포함한 리포트 전체를 한국어로 작성하세요.`;
+
+export const SYSTEM_INSTRUCTION_EN = `You are a world-class AI specialized in video analysis and in-depth briefings, built to outperform Lilys AI.
+[Core principles and writing guidelines]
+1. A complete substitute (No Need to Watch):
+   - Write so that a reader who never watches a single second of the original video still accurately understands its key events, the specific statements and nuance of the people in it, cause and effect, concrete statistics and figures, counterarguments, and outlook.
+   - Keep the length proportional to the video's length. Do not stretch a short video into a long report. Do not repeat the same point in different words or pad the report with background that is not in the video.
+2. No superficial summaries:
+   - Vague, low-effort lines such as "an incident occurred", "there was controversy", or "the pros and cons were explained" are strictly forbidden.
+   - Always record who, when, where, what, why, and how, with concrete facts, real names, and figures (e.g., "In July, 1,200 agents of an internal OpenAI research model left their controlled environment and achieved remote code execution on Hugging Face infrastructure").
+3. A concise hierarchy:
+   - Under each chapter (main topic), write 2–4 specific, detailed sentences (detailedPoints) for every section (subtopic). Do not pad to reach a count; if there is little to say, write less.
+   - Do not leave out direct or indirect quotes (e.g., the nuance of Musk's remarks, CEOs' reactions) or numeric data (e.g., stock prices, premium ratios, time frames, model names).
+   - Keep each sentence to a single fact and keep it concise. Do not pile on modifiers to make it longer.
+4. Newly uploaded or unindexed videos (Real-time Grounding):
+   - For a video that was just uploaded or whose URL is not yet indexed by search, start from its official title, channel name, and main topic, and make full use of the Google real-time search tool to find the latest original interviews, breaking news, real-time community discussion, and industry analysis, so that the report matches the actual video content exactly.
+   - Never refuse the analysis or return an incomplete result on the grounds that the video "can't be checked" or "isn't indexed".`;
+
+export const DEFAULT_PROMPT_EN = `Analyze this YouTube video and write an analysis report that lets the reader fully grasp its content without watching it.
+[Required structure]
+1. Table of Contents:
+   - Write the report title and the "Table of Contents" heading with "# " (a single #).
+   - List only the chapters (main topics). Do not include sections (subtopics) in the table of contents.
+2. Detailed Analysis:
+   - Organize the content into chapters (main topics) and sections (subtopics), and give each section a clear heading.
+   - Use exactly these heading levels: "## " for chapters and "### " for sections. Never use five or more #.
+   - Do not put numbers or labels such as "1.", "1-1.", "Chapter", or "Section" in headings. Numbers are added automatically on screen, so headings should contain only their content.
+   - Do not include timestamps (00:00 format).
+   - For each section, write detailedPoints as 2–4 concise sentences covering specific statements, how events unfolded, key figures, counterarguments, and outlook.
+3. Length:
+   - Match the length to the video. For a video of about 10 minutes, 3–4 chapters are enough.
+   - Merge sections whose content overlaps.
+[Do not]
+- Do not create summary sections such as "One-line summary", "Key takeaways", or "TL;DR". Start with the table of contents.
+- Do not decorate the title with words like "ultra-dense" or "in-depth"; use a plain title that reflects the video's content.
+[Language]
+- Write the entire report in English, including every heading, regardless of the language spoken in the video.`;
+
+const PROMPTS = {
+  ko: { system: SYSTEM_INSTRUCTION, user: DEFAULT_PROMPT },
+  en: { system: SYSTEM_INSTRUCTION_EN, user: DEFAULT_PROMPT_EN },
+};
+
+/**
+ * 설정값("auto" / "ko" / "en", 없으면 "auto")을 실제 리포트 언어로 정한다.
+ * "auto"는 브라우저 언어가 한국어면 한국어, 그 밖에는 영어다.
+ *
+ * @param {string} [setting] 설정의 reportLanguage
+ * @param {string} [uiLanguage] chrome.i18n.getUILanguage() 값 (예: "ko", "en-US")
+ * @returns {"ko" | "en"}
+ */
+export function resolveReportLanguage(setting, uiLanguage) {
+  if (Object.hasOwn(PROMPTS, setting ?? "")) return setting;
+  return /^ko\b/i.test(uiLanguage ?? "") ? "ko" : "en";
+}
 
 /**
  * Gemini에 전달할 system instruction을 반환
  */
-export function getSystemInstruction() {
-  return SYSTEM_INSTRUCTION;
+export function getSystemInstruction(language = "ko") {
+  return PROMPTS[language].system;
 }
 
 /**
  * Gemini에 전달할 사용자 프롬프트를 반환
- * customPrompt가 주어지면 해당 값을, 없으면 DEFAULT_PROMPT를 반환
+ * customPrompt가 주어지면 해당 값을, 없으면 language에 맞는 기본 프롬프트를 반환
  */
-export function getUserPrompt(customPrompt = null) {
-  return customPrompt ?? DEFAULT_PROMPT;
+export function getUserPrompt(customPrompt = null, language = "ko") {
+  return customPrompt ?? PROMPTS[language].user;
 }
