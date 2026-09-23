@@ -194,6 +194,18 @@
   "optionsNotCheckedYet": {
     "message": "Not checked yet"
   },
+  "optionsCheckFailed": {
+    "message": "Check failed ($1): $2"
+  },
+  "optionsLastSuccess": {
+    "message": "Last successful check: $1"
+  },
+  "optionsReadFromPage": {
+    "message": "read from the channel page instead of RSS"
+  },
+  "optionsNextCheck": {
+    "message": "Next automatic check: $1"
+  },
   "optionsAutoAnalyze": {
     "message": "Auto-analyze"
   },
@@ -332,7 +344,16 @@
   "channelIdNotFound": {
     "message": "Couldn't find the channel ID. Check that the channel URL is correct."
   },
-  "channelFeedFailed": {
-    "message": "Couldn't load the RSS feed. (HTTP $1)"
+  "channelVideosFailed": {
+    "message": "Couldn't load the latest videos. ($1)"
+  },
+  "channelSourceHttp": {
+    "message": "$1 HTTP $2"
+  },
+  "channelSourcePage": {
+    "message": "channel page"
+  },
+  "channelPageNoVideos": {
+    "message": "no videos found on the channel page"
   }
 }

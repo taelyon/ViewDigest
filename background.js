@@ -46,10 +46,17 @@ const NOTIFICATION_PREFIX = {
 // 설치/업데이트/시작 초기화
 // ---------------------------------------------------------------------
 
-async function setupChannelCheckAlarm() {
+/**
+ * 채널 확인 알람을 등록한다. 브라우저를 켤 때나 확장프로그램을 업데이트할 때마다
+ * 새로 만들면 다음 확인이 그때부터 다시 한 주기 뒤로 밀리므로, 같은 주기의 알람이
+ * 이미 있으면 그대로 둔다. 사용자가 주기를 바꿨을 때만(reschedule) 새로 잡는다.
+ */
+async function setupChannelCheckAlarm({ reschedule = false } = {}) {
   const settings = await getSettings();
   const interval = settings.channelCheckIntervalMinutes ?? DEFAULT_CHANNEL_CHECK_INTERVAL_MINUTES;
-  chrome.alarms.create(CHANNEL_CHECK_ALARM_NAME, {
+  const existing = await chrome.alarms.get(CHANNEL_CHECK_ALARM_NAME);
+  if (!reschedule && existing?.periodInMinutes === interval) return;
+  await chrome.alarms.create(CHANNEL_CHECK_ALARM_NAME, {
     periodInMinutes: interval,
     delayInMinutes: interval,
   });
@@ -259,8 +266,12 @@ chrome.notifications.onClicked.addListener((notificationId) => {
   }
 });
 
+// 기준 영상을 찾기 위해 한 번에 살펴보는 최신 영상 수. 분석은 이 중 최대
+// MAX_NEW_VIDEOS_PER_CHECK개만 한다.
+const VIDEOS_TO_SCAN = 15;
+
 /**
- * 채널 하나의 RSS 피드를 확인해, 구독 등록 이후 새로 올라온 영상만 자동 분석한다.
+ * 채널 하나의 최신 영상 목록을 확인해, 구독 등록 이후 새로 올라온 영상만 자동 분석한다.
  *
  * - lastVideoId가 없으면(=방금 구독) 지금 최신 영상을 기준선으로만 저장하고,
  *   그 영상 자체는 분석하지 않는다. (구독 즉시 과거 영상까지 소급 분석되는 것을 방지)
@@ -269,10 +280,19 @@ chrome.notifications.onClicked.addListener((notificationId) => {
  *   이 둘은 하루 한 번만 알린다.
  * - 그 외 사유로 분석에 실패한 영상은 계속 재시도해도 성공할 가능성이 낮으므로 건너뛰고,
  *   영상마다 실패를 알린다.
+ * - RSS가 막혀 채널 "동영상" 탭에서 읽은 경우, 그 목록에는 쇼츠·라이브가 없어 기준 영상이
+ *   빠져 있을 수 있다. 이때 "전부 새 영상"으로 보면 예전 영상까지 분석해 비용이 나가므로,
+ *   분석하지 않고 기준선만 지금 최신 영상으로 다시 잡는다.
  */
 async function checkChannel(channel) {
-  const videos = await fetchLatestVideos(channel.channelId, MAX_NEW_VIDEOS_PER_CHECK + 1);
-  await updateChannel(channel.channelId, { lastCheckedAt: new Date().toISOString() });
+  const { source, videos } = await fetchLatestVideos(channel.channelId, VIDEOS_TO_SCAN);
+  const now = new Date().toISOString();
+  await updateChannel(channel.channelId, {
+    lastCheckedAt: now,
+    lastSuccessAt: now,
+    lastCheckError: null,
+    lastCheckSource: source,
+  });
   if (videos.length === 0) return;
 
   if (!channel.lastVideoId) {
@@ -281,7 +301,12 @@ async function checkChannel(channel) {
   }
 
   const lastIndex = videos.findIndex((v) => v.videoId === channel.lastVideoId);
-  // lastVideoId가 이번 피드에 없다면(그 사이 매우 많은 영상이 올라온 경우) 전부 새 영상으로 간주한다.
+  if (lastIndex === -1 && source === "page") {
+    console.warn(`[채널 기준선 재설정] ${channel.title}: 기준 영상이 채널 페이지 목록에 없음`);
+    await updateChannel(channel.channelId, { lastVideoId: videos[0].videoId });
+    return;
+  }
+  // RSS에 lastVideoId가 없다면(그 사이 매우 많은 영상이 올라온 경우) 전부 새 영상으로 간주한다.
   const newVideos = lastIndex === -1 ? videos : videos.slice(0, lastIndex);
   if (newVideos.length === 0) return;
 
@@ -316,7 +341,18 @@ async function checkAllChannels() {
       await checkChannel(channel);
     } catch (error) {
       // 한 채널의 네트워크 오류 등이 나머지 채널 확인을 막지 않도록 채널별로 격리한다.
+      // 실패도 시각과 사유를 남겨, 설정 화면에서 "확인이 멈춘 것"과 구분되게 한다.
       console.error(`[채널 확인 실패] ${channel.title ?? channel.channelId}:`, error);
+      const patch = {
+        lastCheckedAt: new Date().toISOString(),
+        lastCheckError: error?.message ?? String(error),
+      };
+      // 예전 버전은 성공했을 때만 lastCheckedAt을 남겼다. 그 값을 덮어쓰기 전에 마지막
+      // 성공 시각으로 옮겨 둔다(업데이트 직후 첫 실패에서 성공 기록이 사라지지 않게).
+      if (!channel.lastSuccessAt && !channel.lastCheckError && channel.lastCheckedAt) {
+        patch.lastSuccessAt = channel.lastCheckedAt;
+      }
+      await updateChannel(channel.channelId, patch);
     }
   }
 }
@@ -348,7 +384,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return true; // 비동기 응답
 
     case "refreshChannelCheckAlarm":
-      setupChannelCheckAlarm().then(() => sendResponse({ success: true }));
+      setupChannelCheckAlarm({ reschedule: true }).then(() => sendResponse({ success: true }));
       return true; // 비동기 응답
 
     default:

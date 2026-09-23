@@ -194,6 +194,18 @@
   "optionsNotCheckedYet": {
     "message": "아직 확인 전"
   },
+  "optionsCheckFailed": {
+    "message": "확인 실패 ($1): $2"
+  },
+  "optionsLastSuccess": {
+    "message": "마지막 성공: $1"
+  },
+  "optionsReadFromPage": {
+    "message": "RSS 대신 채널 페이지에서 읽음"
+  },
+  "optionsNextCheck": {
+    "message": "다음 자동 확인: $1"
+  },
   "optionsAutoAnalyze": {
     "message": "자동 분석"
   },
@@ -332,7 +344,16 @@
   "channelIdNotFound": {
     "message": "채널 ID를 찾을 수 없습니다. 채널 URL이 올바른지 확인해주세요."
   },
-  "channelFeedFailed": {
-    "message": "RSS 피드를 불러오지 못했습니다. (HTTP $1)"
+  "channelVideosFailed": {
+    "message": "최신 영상 목록을 불러오지 못했습니다. ($1)"
+  },
+  "channelSourceHttp": {
+    "message": "$1 HTTP $2"
+  },
+  "channelSourcePage": {
+    "message": "채널 페이지"
+  },
+  "channelPageNoVideos": {
+    "message": "채널 페이지에서 영상을 찾지 못함"
   }
 }
