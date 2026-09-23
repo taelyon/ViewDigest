@@ -248,23 +248,24 @@ body {
   border-color: var(--accent);
 }
 
-.danger-btn {
-  padding: 6px 12px;
-  border: 1px solid var(--danger);
+/* 되돌릴 수 없는 동작이지만 자주 쓰지 않으므로 평소에는 조용한 글자 버튼으로 두고,
+   마우스를 올렸을 때와 한 번 더 누르면 삭제되는 확인 단계에서만 위험 색을 띤다. */
+.quiet-danger-btn {
+  padding: 3px 8px;
+  margin-right: -8px; /* 글자 끝을 아래 목록의 오른쪽 가장자리에 맞춘다 */
+  border: none;
   border-radius: var(--radius-sm);
-  background: var(--danger-soft);
-  color: var(--danger);
+  background: transparent;
+  color: var(--text-muted);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: color 0.15s ease, background 0.15s ease;
 }
-.danger-btn:hover:not(:disabled) {
-  background: rgba(248, 113, 113, 0.25);
-}
-.danger-btn:disabled {
-  opacity: 0.4;
-  cursor: default;
+.quiet-danger-btn:hover,
+.quiet-danger-btn.armed {
+  color: var(--danger);
+  background: var(--danger-soft);
 }
 
 /* 결과 뷰 (popup.html에는 더 이상 없지만, results.css가 그대로 재사용한다) */
@@ -411,7 +412,14 @@ body {
 .history-header {
   flex-shrink: 0;
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: -4px; /* 머리 줄은 목록의 일부이므로 패널 간격보다 조금 붙인다 */
+}
+
+.history-count {
+  font-size: 12px;
+  color: var(--text-muted);
 }
 .history-header.hidden {
   display: none;
