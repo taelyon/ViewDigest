@@ -33,10 +33,13 @@
     "message": "사용량"
   },
   "popupClearHistory": {
-    "message": "🗑 전체 삭제"
+    "message": "전체 삭제"
   },
   "popupClearHistoryConfirm": {
     "message": "정말 삭제할까요? 다시 클릭"
+  },
+  "popupHistoryCount": {
+    "message": "저장된 분석 $1개"
   },
   "popupHistoryEmpty": {
     "message": "아직 분석한 영상이 없습니다."

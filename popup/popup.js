@@ -107,6 +107,7 @@ async function refreshHistory() {
   list.innerHTML = "";
   empty.classList.toggle("hidden", history.length > 0);
   document.querySelector(".history-header").classList.toggle("hidden", history.length === 0);
+  document.getElementById("history-count").textContent = t("popupHistoryCount", history.length);
 
   for (const entry of history) {
     const li = document.createElement("li");
@@ -163,12 +164,14 @@ function setupClearHistoryButton() {
     armed = false;
     clearTimeout(resetTimer);
     btn.textContent = originalLabel;
+    btn.classList.remove("armed");
   }
 
   btn.addEventListener("click", async () => {
     if (!armed) {
       armed = true;
       btn.textContent = t("popupClearHistoryConfirm");
+      btn.classList.add("armed");
       resetTimer = setTimeout(reset, 3000);
       return;
     }

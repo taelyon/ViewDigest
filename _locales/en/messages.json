@@ -33,10 +33,13 @@
     "message": "Usage"
   },
   "popupClearHistory": {
-    "message": "🗑 Clear all"
+    "message": "Clear all"
   },
   "popupClearHistoryConfirm": {
     "message": "Delete all? Click again"
+  },
+  "popupHistoryCount": {
+    "message": "Saved analyses: $1"
   },
   "popupHistoryEmpty": {
     "message": "No analyzed videos yet."
