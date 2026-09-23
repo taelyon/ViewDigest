@@ -68,6 +68,16 @@ function renderReport(markdown) {
   els.content.innerHTML = renderMarkdown(markdown);
 }
 
+/**
+ * 제목 아래 줄에는 영상의 채널 이름을 보여준다. 모델과 예상 비용은 그 줄에 마우스를
+ * 올리면 보인다. 채널 이름을 모르면(예전 기록, 비공개·삭제된 영상) 줄을 숨긴다.
+ */
+function showMeta({ channelTitle, model, estimatedCost }) {
+  els.metaLine.textContent = channelTitle ?? "";
+  els.metaLine.title = model ? t("resultsMeta", model, formatCost(estimatedCost)) : "";
+  els.metaLine.classList.toggle("hidden", !channelTitle);
+}
+
 function formatCost(usd) {
   if (typeof usd !== "number" || Number.isNaN(usd)) return "$0.0000";
   return `$${usd.toFixed(4)}`;
@@ -129,8 +139,7 @@ async function runFromHistory(id) {
   removeUnseenIds([id]).then(refreshBadge);
   document.title = `${entry.title ?? t("untitled")} - ViewDigest`;
   els.title.textContent = entry.title ?? t("untitled");
-  els.metaLine.textContent = t("resultsMeta", entry.model ?? "-", formatCost(entry.estimatedCost));
-  els.metaLine.classList.remove("hidden");
+  showMeta(entry);
   renderReport(entry.markdown ?? "");
   els.actions.classList.remove("hidden");
 }
@@ -144,6 +153,10 @@ async function runNewAnalysis() {
   const initialTitle = videoTitle || videoId || t("untitled");
   // 히스토리에 채널 이름을 함께 남긴다. 분석이 한참 걸리므로 그동안 미리 알아 둔다.
   const channelTitlePromise = fetchVideoChannelName(videoUrl);
+  // 분석은 한참 걸리므로, 채널 이름은 알게 되는 즉시 보여준다.
+  channelTitlePromise.then((channelTitle) => {
+    if (channelTitle && !finalEntry) showMeta({ channelTitle });
+  });
   document.title = `${initialTitle} - ViewDigest`;
   els.title.textContent = initialTitle;
 
@@ -174,8 +187,7 @@ async function runNewAnalysis() {
         finalEntry = savedEntry;
         document.title = `${savedEntry.title} - ViewDigest`;
         els.title.textContent = savedEntry.title;
-        els.metaLine.textContent = t("resultsMeta", savedEntry.model, formatCost(savedEntry.estimatedCost));
-        els.metaLine.classList.remove("hidden");
+        showMeta(savedEntry);
         els.actions.classList.remove("hidden");
 
         // popup이 열려있다면 히스토리/사용량을 즉시 갱신할 수 있도록 알린다.
