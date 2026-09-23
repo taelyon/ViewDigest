@@ -1,6 +1,6 @@
 # ViewDigest 개인정보처리방침
 
-최종 수정일: 2026-09-21
+최종 수정일: 2026-09-23
 
 > 스토어에 등록된 공식 주소는 <https://taelyon.github.io/ViewDigest/privacy-policy.html> 이며,
 > 그 페이지의 원본은 [`docs/privacy-policy.html`](./docs/privacy-policy.html)입니다.
@@ -47,8 +47,9 @@ Generative Language API(`generativelanguage.googleapis.com`)로 **직접** 전�
 ## 4. 채널 구독(자동 분석) 기능
 
 채널을 구독하면, 확장프로그램은 주기적으로 YouTube가 공개 제공하는 RSS 피드
-(`youtube.com/feeds/videos.xml`)를 조회해 새 영상 유무만 확인합니다. 이 과정에서 별도의 개인정보는
-전송되지 않습니다.
+(`youtube.com/feeds/videos.xml`)를 조회해 새 영상 유무만 확인합니다. RSS 피드를 불러올 수 없을 때는
+같은 목적으로 그 채널의 공개 동영상 페이지(`youtube.com/channel/…/videos`)를 로그인 정보(쿠키) 없이
+조회합니다. 이 과정에서 별도의 개인정보는 전송되지 않습니다.
 
 ## 5. 데이터 보관 및 삭제
 

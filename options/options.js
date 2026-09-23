@@ -186,6 +186,47 @@ const channelIntervalFeedback = document.getElementById("channel-interval-feedba
 const checkChannelsNowBtn = document.getElementById("check-channels-now-btn");
 const channelListEl = document.getElementById("channel-list");
 const channelListEmptyEl = document.getElementById("channel-list-empty");
+const channelNextCheckEl = document.getElementById("channel-next-check");
+const CHANNEL_CHECK_ALARM_NAME = "checkChannels"; // background.js와 동일
+
+/**
+ * 채널 항목 아래 줄. 확인에 실패했으면 그 시각과 사유(와 마지막 성공 시각)를,
+ * 성공했으면 마지막 확인 시각을 보여준다. RSS 대신 채널 페이지로 읽었으면 덧붙인다.
+ * (예전 버전은 성공했을 때만 lastCheckedAt을 남겼으므로 lastSuccessAt이 없을 수 있다.)
+ */
+function renderChannelMeta(meta, channel) {
+  if (!channel.lastCheckedAt) {
+    meta.textContent = t("optionsNotCheckedYet");
+    return;
+  }
+
+  if (channel.lastCheckError) {
+    const failed = document.createElement("div");
+    failed.className = "channel-item-error";
+    failed.textContent = t("optionsCheckFailed", formatDateTime(channel.lastCheckedAt), channel.lastCheckError);
+    meta.appendChild(failed);
+    if (channel.lastSuccessAt) {
+      const lastSuccess = document.createElement("div");
+      lastSuccess.textContent = t("optionsLastSuccess", formatDateTime(channel.lastSuccessAt));
+      meta.appendChild(lastSuccess);
+    }
+    return;
+  }
+
+  let text = t("optionsLastChecked", formatDateTime(channel.lastCheckedAt));
+  if (channel.lastCheckSource === "page") text += ` · ${t("optionsReadFromPage")}`;
+  meta.textContent = text;
+}
+
+async function refreshNextCheck() {
+  const alarm = await chrome.alarms.get(CHANNEL_CHECK_ALARM_NAME);
+  const channels = await getChannels();
+  const show = Boolean(alarm) && channels.some((c) => c.enabled);
+  channelNextCheckEl.classList.toggle("hidden", !show);
+  if (show) {
+    channelNextCheckEl.textContent = t("optionsNextCheck", formatDateTime(new Date(alarm.scheduledTime).toISOString()));
+  }
+}
 
 async function refreshChannelList() {
   const channels = await getChannels();
@@ -210,9 +251,7 @@ async function refreshChannelList() {
 
     const meta = document.createElement("div");
     meta.className = "channel-item-meta";
-    meta.textContent = channel.lastCheckedAt
-      ? t("optionsLastChecked", formatDateTime(channel.lastCheckedAt))
-      : t("optionsNotCheckedYet");
+    renderChannelMeta(meta, channel);
 
     main.append(title, meta);
 
@@ -250,8 +289,18 @@ function refreshChannelCheckAlarm() {
   // background.js에 즉시 새 주기로 알람을 다시 등록하도록 알린다.
   chrome.runtime.sendMessage({ action: "refreshChannelCheckAlarm" }, () => {
     void chrome.runtime.lastError;
+    refreshNextCheck();
   });
 }
+
+// 백그라운드의 자동 확인이 채널 상태를 바꾸면, 이 페이지가 열려 있어도 바로 반영한다.
+// (예전에는 페이지를 연 순간의 값이 그대로 남아 확인이 멈춘 것처럼 보였다.)
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "local" && changes.subscribedChannels) {
+    refreshChannelList();
+    refreshNextCheck();
+  }
+});
 
 function setupChannelSection() {
   addChannelBtn.addEventListener("click", async () => {
@@ -319,4 +368,5 @@ document.addEventListener("DOMContentLoaded", () => {
   loadSettingsForm();
   loadChannelIntervalForm();
   refreshChannelList();
+  refreshNextCheck();
 });
