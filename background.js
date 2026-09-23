@@ -9,11 +9,13 @@ import {
   getSettings,
   setSettings,
   saveAnalysis,
+  getHistory,
+  patchHistoryEntries,
   getChannels,
   updateChannel,
   addUnseenId,
 } from "./utils/storage.js";
-import { fetchLatestVideos } from "./utils/channels.js";
+import { fetchLatestVideos, fetchVideoChannelName } from "./utils/channels.js";
 import { t } from "./utils/i18n.js";
 import { refreshBadge } from "./utils/badge.js";
 
@@ -72,6 +74,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   }
   await setupChannelCheckAlarm();
   await refreshBadge();
+  await backfillChannelTitles();
 });
 
 // 서비스 워커가 유휴 상태에서 깨어날 때(브라우저 재시작 등)도 알람이 등록되어 있는지 보장한다.
@@ -79,7 +82,25 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 chrome.runtime.onStartup.addListener(() => {
   setupChannelCheckAlarm();
   refreshBadge();
+  backfillChannelTitles();
 });
+
+/**
+ * 채널 이름을 저장하지 않던 버전에서 만든 히스토리 항목에 채널 이름을 채워 넣는다.
+ * YouTube가 모른다고 답한 항목(비공개·삭제된 영상)은 null로 남겨 다시 묻지 않고,
+ * 네트워크 오류로 못 알아낸 항목은 그대로 두어 다음 기회에 다시 시도한다.
+ */
+async function backfillChannelTitles() {
+  const missing = (await getHistory()).filter((entry) => entry.channelTitle === undefined && entry.url);
+  if (missing.length === 0) return;
+
+  const patches = new Map();
+  for (const entry of missing) {
+    const channelTitle = await fetchVideoChannelName(entry.url);
+    if (channelTitle !== undefined) patches.set(entry.id, { channelTitle });
+  }
+  if (patches.size > 0) await patchHistoryEntries(patches);
+}
 
 // ---------------------------------------------------------------------
 // 유틸리티
@@ -130,7 +151,7 @@ function notifyPopup(message) {
 // analyzeVideo 처리
 // ---------------------------------------------------------------------
 
-async function handleAnalyzeVideo(url, { tab, titleOverride } = {}) {
+async function handleAnalyzeVideo(url, { tab, titleOverride, channelTitle } = {}) {
   // has() 확인과 add()를 그 사이에 await 없이(동기적으로) 수행해야, 거의 동시에
   // 들어온 두 번째 analyzeVideo 요청이 첫 번째 요청의 등록을 확실히 보고 걸러진다.
   // (add()를 비동기 작업 뒤로 미루면 그 틈에 두 요청이 모두 통과하는 경쟁 조건이 생긴다.)
@@ -163,6 +184,7 @@ async function handleAnalyzeVideo(url, { tab, titleOverride } = {}) {
     const savedEntry = await saveAnalysis({
       videoId,
       title: titleOverride ?? extractTitle(tab, videoId),
+      channelTitle,
       url,
       markdown: result.markdown,
       model: result.model,
@@ -315,7 +337,10 @@ async function checkChannel(channel) {
 
   let advanceTo = channel.lastVideoId;
   for (const video of toAnalyze) {
-    const response = await handleAnalyzeVideo(video.url, { titleOverride: video.title });
+    const response = await handleAnalyzeVideo(video.url, {
+      titleOverride: video.title,
+      channelTitle: channel.title,
+    });
     if (response.success) {
       advanceTo = video.videoId;
       await notifyNewVideoAnalyzed(channel, video, response.result.id);

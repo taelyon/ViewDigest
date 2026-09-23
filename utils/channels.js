@@ -225,4 +225,37 @@ async function fetchLatestVideos(channelId, maxResults = 15) {
   throw new Error(t("channelVideosFailed", [...new Set(failures)].join(" · ")));
 }
 
-export { CHANNEL_ID_RE, resolveChannelId, fetchLatestVideos, extractInitialData, collectPageVideos };
+/**
+ * 영상 URL로 그 영상의 채널 이름을 알아낸다. YouTube의 공개 oEmbed 주소를 쓰므로 API 키가
+ * 필요 없고, 로그인 정보(쿠키)도 보내지 않는다.
+ *
+ * @returns {Promise<string | null | undefined>} 채널 이름. YouTube가 모른다고 답하면(비공개·
+ *   삭제된 영상 등) null, 네트워크 오류처럼 나중에 다시 시도할 만하면 undefined.
+ */
+async function fetchVideoChannelName(videoUrl) {
+  let response;
+  try {
+    response = await fetch(
+      `https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(videoUrl)}`,
+      { credentials: "omit" }
+    );
+  } catch {
+    return undefined;
+  }
+  if (!response.ok) return null;
+  try {
+    const name = (await response.json())?.author_name;
+    return typeof name === "string" && name.trim() ? name.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
+export {
+  CHANNEL_ID_RE,
+  resolveChannelId,
+  fetchLatestVideos,
+  fetchVideoChannelName,
+  extractInitialData,
+  collectPageVideos,
+};

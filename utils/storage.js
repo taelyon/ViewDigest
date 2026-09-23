@@ -53,6 +53,8 @@ async function saveAnalysis(result) {
     id: result.id ?? generateId(),
     videoId: result.videoId,
     title: result.title,
+    // 채널 이름을 알아내지 못했으면 undefined로 둔다(저장되지 않음). 나중에 다시 채울 수 있다.
+    channelTitle: result.channelTitle,
     url: result.url,
     markdown: result.markdown,
     createdAt: result.createdAt ?? new Date().toISOString(),
@@ -65,6 +67,18 @@ async function saveAnalysis(result) {
   const updated = [entry, ...history].slice(0, MAX_HISTORY_ITEMS);
   await chrome.storage.local.set({ [STORAGE_KEYS.HISTORY]: updated });
   return entry;
+}
+
+/**
+ * 여러 히스토리 항목을 id별로 부분 수정한다. patches: Map<id, patch>
+ * 그 사이 삭제된 항목은 건드리지 않는다.
+ */
+async function patchHistoryEntries(patches) {
+  const history = await getHistory();
+  const updated = history.map((entry) =>
+    patches.has(entry.id) ? { ...entry, ...patches.get(entry.id) } : entry
+  );
+  await chrome.storage.local.set({ [STORAGE_KEYS.HISTORY]: updated });
 }
 
 /**
@@ -169,6 +183,7 @@ export {
   setSettings,
   getHistory,
   saveAnalysis,
+  patchHistoryEntries,
   deleteAnalysis,
   clearHistory,
   getChannels,

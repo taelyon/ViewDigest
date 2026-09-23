@@ -295,6 +295,7 @@ body {
 
 /* 채널 자동 분석으로 새로 생겨 아직 확인하지 않은 항목 */
 .new-badge {
+  flex-shrink: 0;
   background: var(--accent);
   color: #ffffff;
   padding: 0 5px;
@@ -304,7 +305,16 @@ body {
   letter-spacing: 0.3px;
 }
 
-.model-badge {
+.history-item-date {
+  flex-shrink: 0;
+}
+
+/* 채널 이름. 길면 줄 끝에서 말줄임표로 자른다(전체 이름은 마우스를 올리면 보인다). */
+.channel-badge {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   background: var(--accent-soft);
   color: var(--accent);
   padding: 1px 6px;

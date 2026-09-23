@@ -99,6 +99,13 @@ async function takeUnseenEntries() {
   await refreshBadge();
 }
 
+function textSpan(className, text) {
+  const span = document.createElement("span");
+  span.className = className;
+  span.textContent = text;
+  return span;
+}
+
 async function refreshHistory() {
   const history = await getHistory();
   const list = document.getElementById("history-list");
@@ -122,12 +129,14 @@ async function refreshHistory() {
 
     const meta = document.createElement("div");
     meta.className = "history-item-meta";
-    const newBadge = newEntryIds.has(entry.id)
-      ? `<span class="new-badge">${t("popupNewBadge")}</span>`
-      : "";
-    meta.innerHTML = `${newBadge}<span>${formatDateTime(entry.createdAt)}</span><span class="model-badge">${
-      entry.model ?? "-"
-    }</span>`;
+    if (newEntryIds.has(entry.id)) meta.append(textSpan("new-badge", t("popupNewBadge")));
+    meta.append(textSpan("history-item-date", formatDateTime(entry.createdAt)));
+    // 채널 이름은 외부(YouTube)에서 온 글자이므로 HTML이 아니라 텍스트로 넣는다.
+    if (entry.channelTitle) {
+      const channel = textSpan("channel-badge", entry.channelTitle);
+      channel.title = entry.channelTitle;
+      meta.append(channel);
+    }
 
     main.append(title, meta);
 
