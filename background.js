@@ -4,16 +4,18 @@
 // manifest.json의 background.type이 "module"이므로 ES import를 사용할 수 있다.
 
 import { analyzeYouTubeVideo, GeminiApiError } from "./utils/gemini.js";
-import { checkRateLimit } from "./utils/cost.js";
+import { checkRateLimit, getDateKey } from "./utils/cost.js";
 import {
   getSettings,
   setSettings,
   saveAnalysis,
   getChannels,
   updateChannel,
+  addUnseenId,
 } from "./utils/storage.js";
 import { fetchLatestVideos } from "./utils/channels.js";
 import { t } from "./utils/i18n.js";
+import { refreshBadge } from "./utils/badge.js";
 
 // 동시에 같은 영상이 중복 분석되는 것을 막기 위한 진행 중 URL 집합.
 // 서비스 워커가 유휴 상태에서 재시작되면 초기화되지만, 그 경우 이전 요청도
@@ -26,6 +28,19 @@ const DEFAULT_CHANNEL_CHECK_INTERVAL_MINUTES = 30;
 // 브라우저가 오래 꺼져있다가 켜져서 한 채널에 영상이 왕창 쌓여있어도
 // 일일 사용 한도가 한 채널에 전부 소진되지 않도록 막는다.
 const MAX_NEW_VIDEOS_PER_CHECK = 3;
+
+// 채널 자동 분석을 막는 원인 중, 영상마다가 아니라 전체에 걸리는 것. 채널·영상마다
+// 알리면 알림이 쏟아지므로 하루 한 번만 알리고, 기준선을 전진시키지 않아 원인이
+// 해결된 뒤 다음 확인 때 같은 영상부터 다시 분석한다.
+const BLOCKING_ERROR_CODES = ["RATE_LIMITED", "MISSING_API_KEY"];
+const NOTICE_DATES_KEY = "blockingNoticeDates";
+
+// 알림 id 접두어. 알림을 눌렀을 때 무엇을 열지 id로 구분한다.
+const NOTIFICATION_PREFIX = {
+  ENTRY: "viewdigest-entry:", // 분석 완료 → 그 리포트
+  SETUP: "viewdigest-setup:", // API 키 없음·한도 초과 → 설정 페이지
+  VIDEO: "viewdigest-video:", // 그 밖의 실패 → YouTube 영상(버튼으로 다시 시도)
+};
 
 // ---------------------------------------------------------------------
 // 설치/업데이트/시작 초기화
@@ -49,11 +64,14 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     }
   }
   await setupChannelCheckAlarm();
+  await refreshBadge();
 });
 
 // 서비스 워커가 유휴 상태에서 깨어날 때(브라우저 재시작 등)도 알람이 등록되어 있는지 보장한다.
+// 배지 글자는 브라우저를 다시 켜면 지워지므로 저장된 개수로 다시 그린다.
 chrome.runtime.onStartup.addListener(() => {
   setupChannelCheckAlarm();
+  refreshBadge();
 });
 
 // ---------------------------------------------------------------------
@@ -184,23 +202,73 @@ async function handleOpenResultsTab(url, { tab } = {}) {
 // 채널 구독: 새 영상 자동 감지/분석
 // ---------------------------------------------------------------------
 
-function notifyNewVideoAnalyzed(channel, video) {
-  chrome.notifications.create(`viewdigest-analysis-${video.videoId}`, {
-    type: "basic",
-    iconUrl: "icons/icon128.png",
-    title: t("bgNotificationTitle"),
-    message: `${channel.title}\n${video.title}`,
-  });
+function showNotification(id, title, message) {
+  chrome.notifications.create(id, { type: "basic", iconUrl: "icons/icon128.png", title, message });
 }
+
+async function notifyNewVideoAnalyzed(channel, video, entryId) {
+  await addUnseenId(entryId);
+  await refreshBadge();
+  showNotification(
+    `${NOTIFICATION_PREFIX.ENTRY}${entryId}`,
+    t("bgNotificationTitle"),
+    `${channel.title}\n${video.title}`
+  );
+}
+
+/**
+ * API 키 없음·한도 초과는 하루에 한 번만 알린다(같은 날 같은 원인이면 조용히 넘어감).
+ */
+async function notifyBlockingErrorOncePerDay(error) {
+  const today = getDateKey();
+  const { [NOTICE_DATES_KEY]: dates = {} } = await chrome.storage.local.get(NOTICE_DATES_KEY);
+  if (dates[error.code] === today) return;
+  await chrome.storage.local.set({ [NOTICE_DATES_KEY]: { ...dates, [error.code]: today } });
+
+  const id = `${NOTIFICATION_PREFIX.SETUP}${error.code}`;
+  if (error.code === "RATE_LIMITED") {
+    const { limit } = await checkRateLimit();
+    showNotification(id, t("bgRateLimitedTitle"), t("bgRateLimitedBody", limit));
+  } else {
+    showNotification(id, t("bgAnalysisFailedTitle"), t("bgMissingKeyBody"));
+  }
+}
+
+function notifyVideoFailed(channel, video, error) {
+  showNotification(
+    `${NOTIFICATION_PREFIX.VIDEO}${video.videoId}`,
+    t("bgAnalysisFailedTitle"),
+    `${channel.title} · ${video.title}\n${error.message}`
+  );
+}
+
+chrome.notifications.onClicked.addListener((notificationId) => {
+  chrome.notifications.clear(notificationId);
+
+  if (notificationId.startsWith(NOTIFICATION_PREFIX.ENTRY)) {
+    // 결과 탭이 열리면서 그 항목을 "확인함"으로 표시하고 배지를 줄인다.
+    const entryId = notificationId.slice(NOTIFICATION_PREFIX.ENTRY.length);
+    const url = new URL(chrome.runtime.getURL("results/results.html"));
+    url.searchParams.set("entryId", entryId);
+    chrome.tabs.create({ url: url.toString() });
+  } else if (notificationId.startsWith(NOTIFICATION_PREFIX.SETUP)) {
+    chrome.runtime.openOptionsPage();
+  } else if (notificationId.startsWith(NOTIFICATION_PREFIX.VIDEO)) {
+    const videoId = notificationId.slice(NOTIFICATION_PREFIX.VIDEO.length);
+    chrome.tabs.create({ url: `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}` });
+  }
+});
 
 /**
  * 채널 하나의 RSS 피드를 확인해, 구독 등록 이후 새로 올라온 영상만 자동 분석한다.
  *
  * - lastVideoId가 없으면(=방금 구독) 지금 최신 영상을 기준선으로만 저장하고,
  *   그 영상 자체는 분석하지 않는다. (구독 즉시 과거 영상까지 소급 분석되는 것을 방지)
- * - RATE_LIMITED로 실패하면 그 영상부터는 기준선을 전진시키지 않아, 다음 확인 때
- *   (한도가 초기화된 뒤) 같은 영상부터 다시 시도한다.
- * - 그 외 사유로 분석에 실패한 영상은 계속 재시도해도 성공할 가능성이 낮으므로 건너뛴다.
+ * - 한도 초과(RATE_LIMITED)나 API 키 없음(MISSING_API_KEY)으로 실패하면 그 영상부터는
+ *   기준선을 전진시키지 않아, 원인이 풀린 뒤 다음 확인 때 같은 영상부터 다시 시도한다.
+ *   이 둘은 하루 한 번만 알린다.
+ * - 그 외 사유로 분석에 실패한 영상은 계속 재시도해도 성공할 가능성이 낮으므로 건너뛰고,
+ *   영상마다 실패를 알린다.
  */
 async function checkChannel(channel) {
   const videos = await fetchLatestVideos(channel.channelId, MAX_NEW_VIDEOS_PER_CHECK + 1);
@@ -225,11 +293,14 @@ async function checkChannel(channel) {
     const response = await handleAnalyzeVideo(video.url, { titleOverride: video.title });
     if (response.success) {
       advanceTo = video.videoId;
-      notifyNewVideoAnalyzed(channel, video);
-    } else if (response.error?.code === "RATE_LIMITED") {
+      await notifyNewVideoAnalyzed(channel, video, response.result.id);
+    } else if (BLOCKING_ERROR_CODES.includes(response.error?.code)) {
+      await notifyBlockingErrorOncePerDay(response.error);
       break;
     } else {
       advanceTo = video.videoId;
+      // 다른 확인이 같은 영상을 이미 분석 중이면 실패가 아니다. 그쪽이 결과를 알린다.
+      if (response.error?.code !== "ALREADY_ANALYZING") notifyVideoFailed(channel, video, response.error);
     }
   }
 

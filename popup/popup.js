@@ -3,9 +3,16 @@
 // 분석은 항상 results/results.html을 새 탭으로 열어 처리한다(스트리밍 표시).
 // 팝업 자체는 분석 결과를 렌더링하지 않고, 분석 시작 버튼 + 히스토리 + 사용량만 보여준다.
 
-import { getHistory, deleteAnalysis, clearHistory } from "../utils/storage.js";
+import {
+  getHistory,
+  deleteAnalysis,
+  clearHistory,
+  getUnseenIds,
+  setUnseenIds,
+} from "../utils/storage.js";
 import { getUsageStats, checkRateLimit } from "../utils/cost.js";
 import { t, localizePage, formatDateTime } from "../utils/i18n.js";
+import { refreshBadge } from "../utils/badge.js";
 
 localizePage();
 
@@ -81,6 +88,17 @@ function setupAnalyzeButton() {
 // 히스토리 탭
 // ---------------------------------------------------------------------
 
+// 채널 자동 분석으로 새로 생긴 항목. 팝업을 연 순간 "확인함"으로 보고 아이콘 배지를
+// 지우지만, 이 팝업이 열려 있는 동안에는 어떤 항목이 새것인지 NEW로 계속 보여준다.
+const newEntryIds = new Set();
+
+async function takeUnseenEntries() {
+  const ids = await getUnseenIds();
+  ids.forEach((id) => newEntryIds.add(id));
+  if (ids.length > 0) await setUnseenIds([]);
+  await refreshBadge();
+}
+
 async function refreshHistory() {
   const history = await getHistory();
   const list = document.getElementById("history-list");
@@ -103,7 +121,10 @@ async function refreshHistory() {
 
     const meta = document.createElement("div");
     meta.className = "history-item-meta";
-    meta.innerHTML = `<span>${formatDateTime(entry.createdAt)}</span><span class="model-badge">${
+    const newBadge = newEntryIds.has(entry.id)
+      ? `<span class="new-badge">${t("popupNewBadge")}</span>`
+      : "";
+    meta.innerHTML = `${newBadge}<span>${formatDateTime(entry.createdAt)}</span><span class="model-badge">${
       entry.model ?? "-"
     }</span>`;
 
@@ -190,7 +211,7 @@ async function refreshUsage() {
 function setupBackgroundListener() {
   chrome.runtime.onMessage.addListener((message) => {
     if (message?.action === "analysisComplete") {
-      refreshHistory();
+      takeUnseenEntries().then(refreshHistory);
       refreshUsage();
     }
   });
@@ -211,6 +232,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   initAnalyzeButton();
-  refreshHistory();
+  takeUnseenEntries().then(refreshHistory);
   refreshUsage();
 });

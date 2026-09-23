@@ -4,6 +4,7 @@ const STORAGE_KEYS = {
   HISTORY: "analysisHistory",
   SETTINGS: "settings",
   CHANNELS: "subscribedChannels",
+  UNSEEN: "unseenAutoAnalysisIds",
 };
 
 const MAX_HISTORY_ITEMS = 50;
@@ -137,6 +138,30 @@ async function updateChannel(channelId, patch) {
   return updated.find((c) => c.channelId === channelId) ?? null;
 }
 
+/**
+ * 채널 자동 분석으로 생겼지만 사용자가 아직 확인하지 않은 히스토리 항목 id 목록.
+ * 툴바 아이콘 배지 숫자와 팝업의 NEW 표시가 이 목록을 쓴다.
+ */
+async function getUnseenIds() {
+  const { [STORAGE_KEYS.UNSEEN]: ids } = await chrome.storage.local.get(STORAGE_KEYS.UNSEEN);
+  return ids ?? [];
+}
+
+async function setUnseenIds(ids) {
+  await chrome.storage.local.set({ [STORAGE_KEYS.UNSEEN]: ids });
+}
+
+async function addUnseenId(id) {
+  const ids = await getUnseenIds();
+  if (!ids.includes(id)) await setUnseenIds([...ids, id]);
+}
+
+async function removeUnseenIds(idsToRemove) {
+  const ids = await getUnseenIds();
+  const remaining = ids.filter((id) => !idsToRemove.includes(id));
+  if (remaining.length !== ids.length) await setUnseenIds(remaining);
+}
+
 export {
   STORAGE_KEYS,
   MAX_HISTORY_ITEMS,
@@ -150,4 +175,8 @@ export {
   addChannel,
   removeChannel,
   updateChannel,
+  getUnseenIds,
+  setUnseenIds,
+  addUnseenId,
+  removeUnseenIds,
 };
