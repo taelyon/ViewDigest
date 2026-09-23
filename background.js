@@ -302,6 +302,11 @@ const VIDEOS_TO_SCAN = 15;
  *   이 둘은 하루 한 번만 알린다.
  * - 그 외 사유로 분석에 실패한 영상은 계속 재시도해도 성공할 가능성이 낮으므로 건너뛰고,
  *   영상마다 실패를 알린다.
+ * - 영상 하나를 처리할 때마다 기준선을 바로 저장한다. 분석은 한 건에 몇 분씩 걸리므로,
+ *   끝에서 한 번에 저장하면 도중에 확인이 끊겼을 때 이미 분석한 영상이 다음 확인에서
+ *   다시 분석된다(같은 리포트가 주기마다 쌓이고 비용도 매번 나간다).
+ * - 이미 히스토리에 있는 영상(직접 분석했거나 전에 자동 분석한 영상)은 다시 분석하지
+ *   않고 건너뛴다. 어떤 이유로 기준선이 어긋나도 같은 영상에 두 번 비용이 들지 않게 한다.
  * - RSS가 막혀 채널 "동영상" 탭에서 읽은 경우, 그 목록에는 쇼츠·라이브가 없어 기준 영상이
  *   빠져 있을 수 있다. 이때 "전부 새 영상"으로 보면 예전 영상까지 분석해 비용이 나가므로,
  *   분석하지 않고 기준선만 지금 최신 영상으로 다시 잡는다.
@@ -335,27 +340,45 @@ async function checkChannel(channel) {
   // 업로드 순서(오래된 것부터)대로 분석해 히스토리 순서가 자연스럽게 유지되도록 한다.
   const toAnalyze = newVideos.slice(0, MAX_NEW_VIDEOS_PER_CHECK).reverse();
 
-  let advanceTo = channel.lastVideoId;
+  const advanceTo = (video) => updateChannel(channel.channelId, { lastVideoId: video.videoId });
+
   for (const video of toAnalyze) {
+    const history = await getHistory();
+    if (history.some((entry) => entry.videoId === video.videoId)) {
+      console.warn(`[이미 분석한 영상 건너뜀] ${channel.title}: ${video.title}`);
+      await advanceTo(video);
+      continue;
+    }
+
     const response = await handleAnalyzeVideo(video.url, {
       titleOverride: video.title,
       channelTitle: channel.title,
     });
     if (response.success) {
-      advanceTo = video.videoId;
+      await advanceTo(video);
       await notifyNewVideoAnalyzed(channel, video, response.result.id);
     } else if (BLOCKING_ERROR_CODES.includes(response.error?.code)) {
       await notifyBlockingErrorOncePerDay(response.error);
       break;
     } else {
-      advanceTo = video.videoId;
+      await advanceTo(video);
       // 다른 확인이 같은 영상을 이미 분석 중이면 실패가 아니다. 그쪽이 결과를 알린다.
       if (response.error?.code !== "ALREADY_ANALYZING") notifyVideoFailed(channel, video, response.error);
     }
   }
+}
 
-  if (advanceTo !== channel.lastVideoId) {
-    await updateChannel(channel.channelId, { lastVideoId: advanceTo });
+// 자동 분석 한 건은 Gemini 응답을 몇 분씩 기다린다. 그동안 확장 API 호출이 없으면 Chrome이
+// 서비스 워커를 유휴 상태로 보고 종료해 분석이 도중에 끊길 수 있으므로, 채널 확인이 도는
+// 동안 20초마다 가벼운 확장 API를 불러 깨어 있게 한다.
+const KEEP_ALIVE_INTERVAL_MS = 20 * 1000;
+
+async function withKeepAlive(task) {
+  const timer = setInterval(() => chrome.runtime.getPlatformInfo(), KEEP_ALIVE_INTERVAL_MS);
+  try {
+    return await task();
+  } finally {
+    clearInterval(timer);
   }
 }
 
@@ -384,7 +407,7 @@ async function checkAllChannels() {
 
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === CHANNEL_CHECK_ALARM_NAME) {
-    checkAllChannels();
+    withKeepAlive(checkAllChannels);
   }
 });
 
@@ -403,7 +426,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return true; // 비동기 응답
 
     case "checkChannelsNow":
-      checkAllChannels()
+      withKeepAlive(checkAllChannels)
         .then(() => sendResponse({ success: true }))
         .catch((error) => sendResponse({ success: false, error: normalizeError(error) }));
       return true; // 비동기 응답
