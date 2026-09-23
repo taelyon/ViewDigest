@@ -196,6 +196,10 @@ ViewDigest/
 │   ├── cost.js                   # 비용 추정, 사용량 기록, rate limit
 │   └── channels.js                # 채널 ID 조회, RSS 피드로 최신 영상 확인
 ├── icons/                     # 확장프로그램 아이콘 (16/32/48/128px)
+├── scripts/
+│   └── package.sh             # 스토어 업로드용 zip 생성 (dist/viewdigest-<버전>.zip)
+├── docs/
+│   └── privacy-policy.html    # 개인정보처리방침 (GitHub Pages로 공개)
 └── README.md
 ```
 
@@ -221,3 +225,5 @@ ViewDigest/
   `checkChannelsNow` / `refreshChannelCheckAlarm`(options → background).
 - `utils/channels.js`는 background.js(service worker, DOMParser 없음)에서도 동작해야 하므로
   채널 페이지 HTML과 RSS XML을 정규식으로 직접 파싱합니다.
+- 스토어에 업데이트를 배포하는 절차(버전 올리기, `scripts/package.sh`, 대시보드 제출, 태그)는
+  `STORE_LISTING.md`의 "업데이트 배포 절차"에 있습니다.
