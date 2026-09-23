@@ -29,11 +29,17 @@
         <p class="state-message error-message" id="error-text"></p>
       </div>
 
+      <div id="saved-notice" class="saved-notice hidden">
+        <span id="saved-notice-text"></span>
+        <button id="notice-reanalyze-btn" class="secondary-btn" type="button" data-i18n="resultsReanalyze">🔄 다시 분석</button>
+      </div>
+
       <div id="result-content" class="markdown-body hidden"></div>
 
       <div id="result-actions" class="result-actions hidden">
         <button id="copy-btn" class="secondary-btn" type="button" data-i18n="resultsCopy">📋 복사</button>
         <button id="download-btn" class="secondary-btn" type="button" data-i18n="resultsDownload">⬇️ Markdown 다운로드</button>
+        <button id="reanalyze-btn" class="secondary-btn hidden" type="button" data-i18n="resultsReanalyze">🔄 다시 분석</button>
       </div>
     </main>
   </div>

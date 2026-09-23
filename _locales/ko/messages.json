@@ -245,6 +245,12 @@
   "resultsDownload": {
     "message": "⬇️ Markdown 다운로드"
   },
+  "resultsReanalyze": {
+    "message": "🔄 다시 분석"
+  },
+  "resultsAlreadyAnalyzed": {
+    "message": "이미 분석한 영상이라 저장된 리포트를 보여 드립니다 ($1 분석). 다시 분석하면 비용이 다시 듭니다."
+  },
   "resultsMeta": {
     "message": "$1 · 예상 비용 $2"
   },

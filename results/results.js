@@ -9,10 +9,16 @@
 //    저장된 분석 결과를 그대로 불러와 즉시 렌더링한다(재분석하지 않음).
 
 import { analyzeYouTubeVideoStream, GeminiApiError } from "../utils/gemini.js";
-import { getSettings, saveAnalysis, getHistory, removeUnseenIds } from "../utils/storage.js";
+import {
+  getSettings,
+  saveAnalysis,
+  getHistory,
+  removeUnseenIds,
+  setAnalysisInProgress,
+} from "../utils/storage.js";
 import { renderMarkdown } from "../utils/markdown.js";
 import { fetchVideoChannelName } from "../utils/channels.js";
-import { t, localizePage } from "../utils/i18n.js";
+import { t, localizePage, formatDateTime } from "../utils/i18n.js";
 import { refreshBadge } from "../utils/badge.js";
 
 localizePage();
@@ -21,6 +27,8 @@ const params = new URLSearchParams(location.search);
 const videoUrl = params.get("url");
 const videoTitle = params.get("title");
 const entryId = params.get("entryId");
+// "다시 분석"을 눌러 연 경우. 이미 분석한 영상이어도 저장된 리포트 대신 새로 분석한다.
+const reanalyze = params.get("reanalyze") === "1";
 
 function extractVideoId(url) {
   try {
@@ -45,6 +53,10 @@ const els = {
   actions: document.getElementById("result-actions"),
   copyBtn: document.getElementById("copy-btn"),
   downloadBtn: document.getElementById("download-btn"),
+  reanalyzeBtn: document.getElementById("reanalyze-btn"),
+  savedNotice: document.getElementById("saved-notice"),
+  savedNoticeText: document.getElementById("saved-notice-text"),
+  noticeReanalyzeBtn: document.getElementById("notice-reanalyze-btn"),
 };
 
 let finalEntry = null;
@@ -126,6 +138,22 @@ function downloadMarkdown() {
 // 저장된 히스토리 항목을 그대로 표시 (재분석하지 않음)
 // ---------------------------------------------------------------------
 
+function showSavedEntry(entry, { alreadyAnalyzed = false } = {}) {
+  finalEntry = entry;
+  // 알림을 눌러 연 채널 자동 분석 리포트라면, 이제 본 것이므로 아이콘 배지에서 뺀다.
+  removeUnseenIds([entry.id]).then(refreshBadge);
+  document.title = `${entry.title ?? t("untitled")} - ViewDigest`;
+  els.title.textContent = entry.title ?? t("untitled");
+  showMeta(entry);
+  renderReport(entry.markdown ?? "");
+  els.actions.classList.remove("hidden");
+  els.reanalyzeBtn.classList.toggle("hidden", !entry.url);
+  if (alreadyAnalyzed) {
+    els.savedNoticeText.textContent = t("resultsAlreadyAnalyzed", formatDateTime(entry.createdAt));
+    els.savedNotice.classList.remove("hidden");
+  }
+}
+
 async function runFromHistory(id) {
   const history = await getHistory();
   const entry = history.find((e) => e.id === id);
@@ -133,15 +161,18 @@ async function runFromHistory(id) {
     showError(t("resultsNotFound"));
     return;
   }
+  showSavedEntry(entry);
+}
 
-  finalEntry = entry;
-  // 알림을 눌러 연 채널 자동 분석 리포트라면, 이제 본 것이므로 아이콘 배지에서 뺀다.
-  removeUnseenIds([id]).then(refreshBadge);
-  document.title = `${entry.title ?? t("untitled")} - ViewDigest`;
-  els.title.textContent = entry.title ?? t("untitled");
-  showMeta(entry);
-  renderReport(entry.markdown ?? "");
-  els.actions.classList.remove("hidden");
+// 같은 영상을 새로 분석한다(비용이 다시 든다). 끝나면 히스토리의 이전 결과를 대신한다.
+function reanalyzeCurrent() {
+  if (!finalEntry?.url) return;
+  const url = new URL(location.href);
+  url.search = "";
+  url.searchParams.set("url", finalEntry.url);
+  if (finalEntry.title) url.searchParams.set("title", finalEntry.title);
+  url.searchParams.set("reanalyze", "1");
+  location.replace(url.toString());
 }
 
 // ---------------------------------------------------------------------
@@ -159,6 +190,7 @@ async function runNewAnalysis() {
   });
   document.title = `${initialTitle} - ViewDigest`;
   els.title.textContent = initialTitle;
+  if (videoId) await setAnalysisInProgress(videoId, true);
 
   try {
     const settings = await getSettings();
@@ -203,7 +235,20 @@ async function runNewAnalysis() {
         ? error.message
         : t("resultsUnknownError");
     showError(message);
+  } finally {
+    if (videoId) await setAnalysisInProgress(videoId, false);
   }
+}
+
+/**
+ * 이미 분석해 둔 영상이면 그 결과. 같은 영상을 또 분석해 비용이 나가지 않도록,
+ * 분석 버튼을 눌러도 먼저 저장된 리포트를 보여준다("다시 분석"으로 새로 분석할 수 있다).
+ */
+async function findSavedAnalysis(url) {
+  const videoId = extractVideoId(url);
+  if (!videoId) return null;
+  const history = await getHistory();
+  return history.find((entry) => entry.videoId === videoId) ?? null;
 }
 
 async function run() {
@@ -217,11 +262,22 @@ async function run() {
     return;
   }
 
+  if (!reanalyze) {
+    const saved = await findSavedAnalysis(videoUrl);
+    if (saved) {
+      showSavedEntry(saved, { alreadyAnalyzed: true });
+      return;
+    }
+  }
+
   await runNewAnalysis();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   els.copyBtn.addEventListener("click", copyMarkdown);
   els.downloadBtn.addEventListener("click", downloadMarkdown);
+  els.reanalyzeBtn.addEventListener("click", reanalyzeCurrent);
+  // 긴 리포트 맨 아래까지 내려가지 않아도 되도록, 안내 옆에도 같은 버튼을 둔다.
+  els.noticeReanalyzeBtn.addEventListener("click", reanalyzeCurrent);
   run();
 });
