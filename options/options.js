@@ -14,6 +14,9 @@ import { t, localizePage, formatDateTime } from "../utils/i18n.js";
 
 localizePage();
 
+// 설치된 버전. manifest.json에서 읽으므로 버전을 올리면 따로 고칠 필요가 없다.
+document.getElementById("app-version").textContent = `v${chrome.runtime.getManifest().version}`;
+
 // gemini.js가 읽는 것과 동일한 storage 영역/키. API 키는 기기 간 동기화되는
 // chrome.storage.sync에 저장하므로, 로컬 설정/히스토리를 다루는
 // utils/storage.js와는 별도로 이 파일에서 직접 다룬다.

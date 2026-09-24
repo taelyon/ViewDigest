@@ -56,6 +56,17 @@ body {
   font-size: 18px;
 }
 
+.app-version {
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
 .page-subtitle {
   margin: 2px 0 0;
   color: var(--text-muted);
