@@ -14,6 +14,7 @@ import {
   removeDuplicateHistory,
   getAnalysesInProgress,
   addChannelFailure,
+  mutateChannel,
   getChannels,
   updateChannel,
   addUnseenId,
@@ -39,6 +40,20 @@ const MAX_NEW_VIDEOS_PER_CHECK = 3;
 // 해결된 뒤 다음 확인 때 같은 영상부터 다시 분석한다.
 const BLOCKING_ERROR_CODES = ["RATE_LIMITED", "MISSING_API_KEY"];
 const NOTICE_DATES_KEY = "blockingNoticeDates";
+
+// 지금은 실패했지만 시간이 지나면 풀릴 수 있는 실패. 업로드 직후 처리 중이거나 아직 공개 전인
+// 프리미어·라이브라 Gemini가 영상을 못 가져오는 경우(403), 서버 과부하(429·5xx), 네트워크
+// 오류가 그렇다. 이런 영상은 바로 포기하지 않고 이 시간 동안 확인할 때마다 다시 시도한다.
+// 거부된 요청은 분석이 이뤄지지 않았으므로 일일 한도에도 세지 않는다.
+const RETRY_WINDOW_MS = 24 * 60 * 60 * 1000;
+const RETRYABLE_HTTP_STATUSES = [429, 500, 502, 503, 504];
+
+function isRetryableFailure(error) {
+  if (error?.code === "VIDEO_NOT_ACCESSIBLE") return true;
+  if (error?.code !== "REQUEST_FAILED") return false;
+  // 상태 코드가 없으면 응답을 받기 전에 끊긴 것(네트워크 오류 등)이다.
+  return error.status === undefined || RETRYABLE_HTTP_STATUSES.includes(error.status);
+}
 
 // 알림 id 접두어. 알림을 눌렀을 때 무엇을 열지 id로 구분한다.
 const NOTIFICATION_PREFIX = {
@@ -136,7 +151,7 @@ function extractTitle(tab, videoId) {
  */
 function normalizeError(error) {
   if (error instanceof GeminiApiError) {
-    return { code: error.code, message: error.message };
+    return { code: error.code, message: error.message, status: error.details?.status };
   }
   return { code: "UNKNOWN_ERROR", message: error?.message ?? t("unknownError") };
 }
@@ -415,17 +430,10 @@ async function checkChannel(channel) {
     } else {
       await advanceTo(video);
       // 다른 확인이 같은 영상을 이미 분석 중이면 실패가 아니다. 그쪽이 결과를 알린다.
-      if (response.error?.code !== "ALREADY_ANALYZING") {
-        await addChannelFailure(channel.channelId, {
-          videoId: video.videoId,
-          title: video.title,
-          url: video.url,
-          reason: response.error?.message ?? t("unknownError"),
-          code: response.error?.code ?? null,
-          at: new Date().toISOString(),
-        });
-        notifyVideoFailed(channel, video, response.error);
-      }
+      if (response.error?.code === "ALREADY_ANALYZING") continue;
+      // 시간이 지나면 풀릴 수 있는 실패는 재시도 목록으로 옮긴다(알림은 최종 실패 때만).
+      if (isRetryableFailure(response.error)) await queueRetry(channel, video, response.error);
+      else await giveUpOnVideo(channel, video, response.error);
     }
   }
 }
@@ -444,10 +452,92 @@ async function withKeepAlive(task) {
   }
 }
 
+/**
+ * 영상 하나를 포기한다: 설정 화면의 실패 기록에 남기고 알린다.
+ */
+async function giveUpOnVideo(channel, video, error) {
+  await addChannelFailure(channel.channelId, {
+    videoId: video.videoId,
+    title: video.title,
+    url: video.url,
+    reason: error?.message ?? t("unknownError"),
+    code: error?.code ?? null,
+    at: new Date().toISOString(),
+  });
+  notifyVideoFailed(channel, video, error ?? { message: t("unknownError") });
+}
+
+async function queueRetry(channel, video, error) {
+  await mutateChannel(channel.channelId, (current) => ({
+    pendingRetries: [
+      ...(current.pendingRetries ?? []).filter((p) => p.videoId !== video.videoId),
+      {
+        videoId: video.videoId,
+        title: video.title,
+        url: video.url,
+        firstFailedAt: new Date().toISOString(),
+        attempts: 1,
+        reason: error?.message ?? null,
+      },
+    ],
+  }));
+}
+
+/**
+ * 전에 일시적으로 실패한 영상을 다시 시도한다. 성공하면 평소처럼 알리고, 다시 일시적으로
+ * 실패하면 24시간이 될 때까지 남겨 두며, 그 밖의 실패나 24시간이 지나면 포기한다.
+ */
+async function retryPendingVideos(channel) {
+  const pending = channel.pendingRetries ?? [];
+  if (pending.length === 0) return;
+
+  const history = await getHistory();
+  const inProgress = await getAnalysesInProgress();
+  const keep = [];
+  let blocked = false;
+
+  for (const item of pending) {
+    // 그 사이 직접 분석했으면 끝난 것이다.
+    if (history.some((entry) => entry.videoId === item.videoId)) continue;
+    if (blocked || inProgress[item.videoId]) {
+      keep.push(item);
+      continue;
+    }
+
+    const response = await handleAnalyzeVideo(item.url, {
+      titleOverride: item.title,
+      channelTitle: channel.title,
+    });
+    if (response.success) {
+      await notifyNewVideoAnalyzed(channel, item, response.result.id);
+    } else if (BLOCKING_ERROR_CODES.includes(response.error?.code)) {
+      await notifyBlockingErrorOncePerDay(response.error);
+      blocked = true; // 한도·키 문제는 모든 영상에 해당하므로 남은 재시도도 다음으로 미룬다.
+      keep.push(item);
+    } else if (response.error?.code === "ALREADY_ANALYZING") {
+      keep.push(item);
+    } else if (
+      isRetryableFailure(response.error) &&
+      Date.now() - Date.parse(item.firstFailedAt) < RETRY_WINDOW_MS
+    ) {
+      keep.push({ ...item, attempts: item.attempts + 1, reason: response.error?.message ?? item.reason });
+    } else {
+      await giveUpOnVideo(channel, item, response.error);
+    }
+  }
+
+  // 그 사이 checkChannel 등이 추가한 항목을 잃지 않도록 최신 목록 기준으로 합친다.
+  const handled = new Set(pending.map((p) => p.videoId));
+  await mutateChannel(channel.channelId, (current) => ({
+    pendingRetries: [...(current.pendingRetries ?? []).filter((p) => !handled.has(p.videoId)), ...keep],
+  }));
+}
+
 async function checkAllChannels() {
   const channels = await getChannels();
   for (const channel of channels.filter((c) => c.enabled)) {
     try {
+      await retryPendingVideos(channel);
       await checkChannel(channel);
     } catch (error) {
       // 한 채널의 네트워크 오류 등이 나머지 채널 확인을 막지 않도록 채널별로 격리한다.

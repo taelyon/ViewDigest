@@ -200,6 +200,9 @@
   "optionsRecentFailure": {
     "message": "분석 실패 ($1)"
   },
+  "optionsRetryPending": {
+    "message": "다시 시도 중 (처음 실패 $1, $2회 시도)"
+  },
   "optionsLastSuccess": {
     "message": "마지막 성공: $1"
   },
@@ -307,6 +310,9 @@
   },
   "geminiVideoTooLong": {
     "message": "이 영상은 길이가 너무 길어 Gemini가 한 번에 분석할 수 있는 한도(입력 토큰)를 초과합니다. 더 짧은 영상으로 시도해주세요."
+  },
+  "geminiVideoNotAccessible": {
+    "message": "Gemini가 이 영상에 접근하지 못했습니다(권한 없음). 아직 공개 전인 프리미어·라이브, 라이브 방송 중, 업로드 직후 처리 중인 영상이거나, 비공개·일부 공개·멤버십 전용·연령 제한 영상일 수 있습니다. 모든 영상에서 이 오류가 나면 API 키 권한을 확인하세요."
   },
   "geminiRequestFailed": {
     "message": "Gemini API 요청이 실패했습니다: $1"

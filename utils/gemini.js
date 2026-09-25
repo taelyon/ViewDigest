@@ -44,6 +44,7 @@ const ERROR_CODES = {
   RATE_LIMITED: "RATE_LIMITED",
   REQUEST_FAILED: "REQUEST_FAILED",
   EMPTY_RESPONSE: "EMPTY_RESPONSE",
+  VIDEO_NOT_ACCESSIBLE: "VIDEO_NOT_ACCESSIBLE",
 };
 
 // 영상 자체를 인식해야 하므로 추론과 검색 그라운딩이 실제로 필요하다. 다만
@@ -146,6 +147,16 @@ async function assertOkResponse(response) {
       ERROR_CODES.REQUEST_FAILED,
       { status: response.status, body: details }
     );
+  }
+
+  // Gemini가 이 영상을 가져올 수 없을 때의 403. 원문("The caller does not have permission")만
+  // 보여주면 API 키 문제처럼 읽히지만, 실제로는 대개 영상 쪽 사정이다(비공개·멤버십 전용,
+  // 아직 공개 전인 프리미어·라이브, 업로드 직후 처리 중 등). 뒤의 경우는 시간이 지나면 풀린다.
+  if (response.status === 403 && /caller does not have permission/i.test(apiMessage ?? "")) {
+    throw new GeminiApiError(t("geminiVideoNotAccessible"), ERROR_CODES.VIDEO_NOT_ACCESSIBLE, {
+      status: response.status,
+      body: details,
+    });
   }
 
   const message = apiMessage
