@@ -221,6 +221,36 @@ function renderChannelMeta(meta, channel) {
   meta.textContent = text;
 }
 
+// 이보다 오래된 실패 기록은 화면에 보이지 않게 한다(저장은 채널당 최근 3건까지만).
+const FAILURE_VISIBLE_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * 채널 자동 분석이 건너뛴 영상과 그 사유. 알림을 놓쳐도 여기서 확인할 수 있다.
+ */
+function renderChannelFailures(channel) {
+  const cutoff = Date.now() - FAILURE_VISIBLE_MS;
+  const failures = (channel.recentFailures ?? []).filter((f) => Date.parse(f.at) >= cutoff);
+  if (failures.length === 0) return null;
+
+  const list = document.createElement("ul");
+  list.className = "channel-failures";
+  for (const failure of failures) {
+    const item = document.createElement("li");
+    const link = document.createElement("a");
+    link.href = failure.url;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = failure.title;
+    item.append(
+      `${t("optionsRecentFailure", formatDateTime(failure.at))}: `,
+      link,
+      ` — ${failure.reason}`
+    );
+    list.appendChild(item);
+  }
+  return list;
+}
+
 async function refreshNextCheck() {
   const alarm = await chrome.alarms.get(CHANNEL_CHECK_ALARM_NAME);
   const channels = await getChannels();
@@ -257,6 +287,8 @@ async function refreshChannelList() {
     renderChannelMeta(meta, channel);
 
     main.append(title, meta);
+    const failures = renderChannelFailures(channel);
+    if (failures) main.appendChild(failures);
 
     const toggleLabel = document.createElement("label");
     toggleLabel.className = "channel-toggle";

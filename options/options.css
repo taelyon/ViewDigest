@@ -286,6 +286,27 @@ select.text-input {
   color: var(--danger);
 }
 
+/* 자동 분석이 건너뛴 영상과 사유 */
+.channel-failures {
+  margin: 6px 0 0;
+  padding: 6px 0 0;
+  list-style: none;
+  border-top: 1px dashed var(--border-color);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--danger);
+  overflow-wrap: anywhere;
+}
+
+.channel-failures li + li {
+  margin-top: 3px;
+}
+
+.channel-failures a {
+  color: inherit;
+  font-weight: 600;
+}
+
 .channel-toggle {
   flex-shrink: 0;
   display: flex;

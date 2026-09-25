@@ -94,6 +94,21 @@ async function removeDuplicateHistory() {
   return history.length - kept.length;
 }
 
+const MAX_CHANNEL_FAILURES = 3;
+
+/**
+ * 채널 자동 분석이 건너뛴(실패한) 영상을 채널에 기록한다. 알림은 사라지므로, 설정 화면에서
+ * 나중에도 무엇이 왜 실패했는지 볼 수 있게 최근 몇 건을 남긴다. 같은 영상은 한 번만 남긴다.
+ */
+async function addChannelFailure(channelId, failure) {
+  const channel = (await getChannels()).find((c) => c.channelId === channelId);
+  if (!channel) return;
+  const others = (channel.recentFailures ?? []).filter((f) => f.videoId !== failure.videoId);
+  await updateChannel(channelId, {
+    recentFailures: [failure, ...others].slice(0, MAX_CHANNEL_FAILURES),
+  });
+}
+
 /**
  * 결과 탭에서 직접 분석 중인 영상. 채널 자동 분석이 같은 영상을 동시에 분석해
  * 비용이 두 번 나가지 않도록, 자동 분석은 이 목록에 있는 영상을 다음 확인으로 미룬다.
@@ -237,6 +252,7 @@ export {
   addChannel,
   removeChannel,
   updateChannel,
+  addChannelFailure,
   getUnseenIds,
   setUnseenIds,
   addUnseenId,

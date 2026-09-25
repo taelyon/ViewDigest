@@ -197,6 +197,9 @@
   "optionsCheckFailed": {
     "message": "확인 실패 ($1): $2"
   },
+  "optionsRecentFailure": {
+    "message": "분석 실패 ($1)"
+  },
   "optionsLastSuccess": {
     "message": "마지막 성공: $1"
   },
