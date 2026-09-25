@@ -12,6 +12,24 @@ const STORAGE_KEYS = {
 const IN_PROGRESS_TTL_MS = 15 * 60 * 1000;
 
 const MAX_HISTORY_ITEMS = 50;
+// chrome.storage.local의 기본 한도는 10MB다. 리포트가 길면 50개로도 한도에 닿아 저장이 실패하고
+// (방금 비용을 내고 받은 분석이 사라진다), 큰 값을 통째로 읽고 쓰는 부담도 커지므로 히스토리가
+// 이 크기를 넘으면 오래된 항목부터 줄인다. 사용량 기록 등 다른 값이 쓸 자리도 남겨 둔다.
+const MAX_HISTORY_BYTES = 6 * 1024 * 1024;
+
+function jsonBytes(value) {
+  return new TextEncoder().encode(JSON.stringify(value)).length;
+}
+
+/** 최신순 목록에서 전체 크기가 한도 안에 들도록 뒤(오래된 것)부터 뺀다. 가장 최근 항목은 남긴다. */
+function trimHistoryToSize(history) {
+  let total = jsonBytes(history);
+  const trimmed = [...history];
+  while (total > MAX_HISTORY_BYTES && trimmed.length > 1) {
+    total -= jsonBytes(trimmed.pop()) + 1; // +1: 항목 사이 쉼표
+  }
+  return trimmed;
+}
 
 function generateId() {
   return typeof crypto !== "undefined" && crypto.randomUUID
@@ -70,7 +88,7 @@ async function saveAnalysis(result) {
 
   const history = await getHistory();
   const others = entry.videoId ? history.filter((item) => item.videoId !== entry.videoId) : history;
-  const updated = [entry, ...others].slice(0, MAX_HISTORY_ITEMS);
+  const updated = trimHistoryToSize([entry, ...others].slice(0, MAX_HISTORY_ITEMS));
   await chrome.storage.local.set({ [STORAGE_KEYS.HISTORY]: updated });
   if (entry.videoId) await forgetChannelProblems(entry.videoId);
   return entry;
