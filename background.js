@@ -232,6 +232,46 @@ async function handleOpenResultsTab(url, { tab } = {}) {
 }
 
 // ---------------------------------------------------------------------
+// 리포트의 ▶ 시각 버튼: 영상의 그 장면으로 이동
+// ---------------------------------------------------------------------
+
+/**
+ * 리포트가 다루는 영상을 그 시각부터 보여준다.
+ *
+ * - 그 영상이 열려 있는 YouTube 탭이 있으면 그 탭으로 전환해 content.js가 재생 위치를
+ *   옮긴다. 반드시 영상 ID로 탭을 고른다. 활성 탭에 무작정 보내면 다른 영상이 이동될 수
+ *   있다(예전 구현에서 실제로 있었던 버그).
+ * - 탭은 있지만 content.js가 답하지 않으면(확장프로그램 설치·업데이트 전에 열린 탭 등)
+ *   그 탭을 시각이 붙은 주소로 다시 연다.
+ * - 열린 탭이 없으면 그 시각에서 시작하는 새 탭을 연다.
+ */
+async function handleSeekVideo(url, seconds) {
+  const videoId = extractVideoId(url);
+  if (!videoId || !Number.isFinite(seconds) || seconds < 0) return { success: false };
+  const start = Math.floor(seconds);
+  const watchUrl = `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}&t=${start}s`;
+
+  const tabs = await chrome.tabs.query({ url: "https://www.youtube.com/watch*" });
+  const matching = tabs.filter((tab) => extractVideoId(tab.url ?? "") === videoId);
+  const tab = matching.find((t) => t.active) ?? matching.sort((a, b) => (b.lastAccessed ?? 0) - (a.lastAccessed ?? 0))[0];
+
+  if (!tab) {
+    await chrome.tabs.create({ url: watchUrl });
+    return { success: true, opened: "new-tab" };
+  }
+
+  await chrome.tabs.update(tab.id, { active: true });
+  await chrome.windows.update(tab.windowId, { focused: true });
+  const response = await chrome.tabs
+    .sendMessage(tab.id, { action: "seekTo", seconds: start })
+    .catch(() => null);
+  if (response?.success) return { success: true, opened: "existing-tab" };
+
+  await chrome.tabs.update(tab.id, { url: watchUrl });
+  return { success: true, opened: "reloaded-tab" };
+}
+
+// ---------------------------------------------------------------------
 // 채널 구독: 새 영상 자동 감지/분석
 // ---------------------------------------------------------------------
 
@@ -430,6 +470,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (!message || typeof message.action !== "string") return false;
 
   switch (message.action) {
+    case "seekVideo":
+      handleSeekVideo(message.url, Number(message.seconds))
+        .then(sendResponse)
+        .catch((error) => sendResponse({ success: false, error: normalizeError(error) }));
+      return true; // 비동기 응답
+
     case "openResultsTab":
       handleOpenResultsTab(message.url, { tab: sender.tab })
         .then(sendResponse)

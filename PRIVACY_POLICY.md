@@ -1,6 +1,6 @@
 # ViewDigest 개인정보처리방침
 
-최종 수정일: 2026-09-23
+최종 수정일: 2026-09-25
 
 > 스토어에 등록된 공식 주소는 <https://taelyon.github.io/ViewDigest/privacy-policy.html> 이며,
 > 그 페이지의 원본은 [`docs/privacy-policy.html`](./docs/privacy-policy.html)입니다.
@@ -43,6 +43,9 @@ Generative Language API(`generativelanguage.googleapis.com`)로 **직접** 전�
 - 탭 제목 (분석 리포트의 기본 제목으로 사용)
 
 그 외 페이지 콘텐츠(댓글, 시청 기록, 로그인 정보 등)는 읽거나 수집하지 않습니다.
+
+분석 리포트의 ▶ 시각 버튼을 누르면, 그 영상이 열려 있는 YouTube 탭의 재생 위치를 해당 시각으로
+옮깁니다. 이때도 페이지의 정보를 읽거나 전송하지 않습니다.
 
 분석 기록에 채널 이름을 표시하기 위해, 분석한 영상의 URL로 YouTube의 공개 oEmbed 주소
 (`youtube.com/oembed`)를 로그인 정보(쿠키) 없이 조회해 채널 이름을 받아옵니다. 받아온 채널 이름은

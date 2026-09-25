@@ -30,6 +30,7 @@ ViewDigest는 YouTube 영상을 Google Gemini API로 분석해, 영상을 보지
 ■ 리포트 구성
 - 목차와 대주제(1.) → 소주제(1-1.) 계층 구조
 - 소주제마다 인물 발언, 사건 경위, 핵심 수치를 담은 상세 포인트
+- 소제목 옆 ▶ 시각을 누르면 영상의 그 장면으로 바로 이동
 - 복사 및 Markdown 파일 다운로드
 
 ■ 비용 관리
@@ -79,6 +80,7 @@ so you can understand a video without watching it.
 ■ What the report contains
 - A table of contents with chapters (1.) and sections (1-1.)
 - Specific points for each section: who said what, how events unfolded, and the key figures
+- Click the ▶ time next to a section to jump to that moment in the video
 - Copy to clipboard or download as a Markdown file
 - Reports in English or Korean, whatever language the video is in (set it on the options page)
 
@@ -237,6 +239,18 @@ API 키가 없으면 옵션 페이지에 키 등록을 안내하는 오류 메�
 3. **한국어 스크린샷은 선택.** 기존 3장도 여전히 정확합니다. 설정 페이지 사진에 새 "리포트 언어"
    항목이 없을 뿐입니다.
 4. **권한 변경 없음.** 기존 사용자에게 권한 경고가 뜨지 않습니다.
+
+## v1.2.0 제출 메모 (소제목 → 영상 장면 이동)
+
+1.1.1을 아직 제출하지 않았다면 1.1.1 대신 1.2.0을 제출합니다. 1.2.0에는 1.1.1의 모든 변경이
+들어 있으므로 아래 1.1.1 메모의 할 일(설명·스크린샷·권한 사유 교체)도 함께 합니다.
+
+- **권한 변경 없음.** 기존 `tabs` 권한(열린 YouTube 탭 찾기)과 YouTube 콘텐츠 스크립트(재생 위치
+  옮기기)만 씁니다.
+- **자세한 설명 갱신.** 한국어·영어 "리포트 구성"에 ▶ 시각 이동 한 줄이 추가됐습니다.
+- **개인정보처리방침 갱신됨.** 3항에 "▶ 버튼을 누르면 그 영상 탭의 재생 위치만 옮긴다"는 문장이
+  추가됐습니다(자동 반영).
+- 게시 후 태그는 `v1.2.0`.
 
 ## v1.1.1 제출 메모 (새 분석 알림·배지)
 

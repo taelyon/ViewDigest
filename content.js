@@ -12,6 +12,8 @@
 //   2. 버튼 클릭 시 background.js 로 { action: "openResultsTab", url } 전송해
 //      새 탭(results/results.html)을 열게 한다. 실제 분석/스트리밍 렌더링은
 //      그 탭이 직접 수행하므로, 여기서는 탭을 여는 것까지만 책임진다.
+//   3. 리포트의 ▶ 시각 버튼을 누르면 background.js가 보내는 { action: "seekTo", seconds }를
+//      받아 이 탭의 영상을 그 시각으로 옮기고 재생한다.
 
 (function () {
   const TITLE_BUTTON_ID = "viewdigest-analyze-button";
@@ -233,9 +235,36 @@
   // 초기화
   // ---------------------------------------------------------------------
 
+  // ---------------------------------------------------------------------
+  // 리포트의 시각 버튼 → 영상 이동
+  // ---------------------------------------------------------------------
+
+  function seekTo(seconds) {
+    const video =
+      document.querySelector("#movie_player video") ?? document.querySelector("video.html5-main-video");
+    if (!video) return false;
+    video.currentTime = seconds;
+    video.play?.().catch(() => {});
+    // 댓글 등을 보느라 아래로 내려가 있으면 플레이어가 보이도록 올린다.
+    const rect = video.getBoundingClientRect();
+    if (rect.bottom < 0 || rect.top > window.innerHeight) {
+      video.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
+    return true;
+  }
+
+  function setupSeekListener() {
+    chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+      if (message?.action !== "seekTo") return false;
+      sendResponse({ success: isWatchPage() && seekTo(Number(message.seconds)) });
+      return false;
+    });
+  }
+
   function init() {
     injectStyles();
     setupNavigationWatchers();
+    setupSeekListener();
     scheduleEnsureButton();
   }
 
