@@ -289,7 +289,8 @@ async function runNewAnalysis() {
       }
     }
   } catch (error) {
-    console.error("[results 분석 실패]", videoUrl, error);
+    // Gemini가 거절한 경우는 화면에 사유를 보여 주는 예상된 실패라 "오류"로 남기지 않는다.
+    (error instanceof GeminiApiError ? console.log : console.error)("[results 분석 실패]", videoUrl, error);
     const message =
       error instanceof GeminiApiError
         ? error.message

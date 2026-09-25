@@ -22,6 +22,9 @@
   // 모듈이 아니라 utils/i18n.js를 import할 수 없으므로 chrome.i18n을 직접 쓴다.
   const BUTTON_LABEL = chrome.i18n.getMessage("contentButton");
   const BUTTON_LABEL_FULL = chrome.i18n.getMessage("contentButtonFull");
+  // 확장프로그램이 업데이트되면 chrome.i18n도 못 쓰게 되므로 미리 읽어 둔다.
+  const RELOAD_LABEL = chrome.i18n.getMessage("contentReloadNeeded");
+  const RELOAD_DETAIL = chrome.i18n.getMessage("contentReloadNeededDetail");
 
   // 좋아요/공유/다운로드 등 모든 네이티브 액션 버튼은 #actions-inner 안에서
   // 실질적으로 #menu 라는 단일 블록(ytd-menu-renderer)에 다 뭉쳐 들어있고,
@@ -131,14 +134,53 @@
     document.head.appendChild(style);
   }
 
+  /**
+   * 확장프로그램이 업데이트·다시 로드되면, 그 전에 열려 있던 탭의 이 스크립트는 확장과 연결이
+   * 끊긴다. 이때 chrome.runtime을 부르면 "Extension context invalidated" 예외가 나서 버튼이
+   * 멈추고 관리 페이지에 오류가 쌓이므로, 먼저 확인해 새로고침을 안내한다.
+   */
+  function isExtensionAlive() {
+    try {
+      return Boolean(chrome.runtime?.id);
+    } catch {
+      return false;
+    }
+  }
+
+  function showReloadNeeded(button) {
+    button.textContent = RELOAD_LABEL;
+    button.title = RELOAD_DETAIL;
+    button.dataset.reloadNeeded = "true";
+  }
+
   function handleAnalyzeClick(event) {
     const button = event.currentTarget;
     if (button.disabled) return;
+
+    // "새로고침 필요"가 표시된 버튼을 다시 누르면 페이지를 새로고침한다. 새 스크립트가 들어와
+    // 버튼이 다시 정상 동작한다.
+    if (button.dataset.reloadNeeded) {
+      location.reload();
+      return;
+    }
+    if (!isExtensionAlive()) {
+      showReloadNeeded(button);
+      return;
+    }
 
     // 실제 분석/진행 상태 표시는 새로 열리는 results 탭이 전담하므로, 이 버튼은
     // 탭을 여는 짧은 순간만 중복 클릭을 막고 바로 원래 상태로 돌아온다.
     button.disabled = true;
 
+    try {
+      sendOpenResultsTab(button);
+    } catch {
+      button.disabled = false;
+      showReloadNeeded(button);
+    }
+  }
+
+  function sendOpenResultsTab(button) {
     chrome.runtime.sendMessage(
       { action: "openResultsTab", url: location.href },
       (response) => {
