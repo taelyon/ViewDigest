@@ -297,8 +297,23 @@ async function handleSeekVideo(url, seconds) {
 // 채널 구독: 새 영상 자동 감지/분석
 // ---------------------------------------------------------------------
 
-function showNotification(id, title, message) {
-  chrome.notifications.create(id, { type: "basic", iconUrl: "icons/icon128.png", title, message });
+// 알림은 누르기 전까지 브라우저의 알림 센터(브라우저 프로세스 메모리)에 남는다. 자동 분석마다 새
+// 알림이 생기므로, 최근 몇 개만 남기고 오래된 것은 지워 끝없이 쌓이지 않게 한다.
+const NOTIFICATION_IDS_KEY = "shownNotificationIds";
+const MAX_NOTIFICATIONS = 5;
+
+async function showNotification(id, title, message) {
+  try {
+    await chrome.notifications.create(id, { type: "basic", iconUrl: "icons/icon128.png", title, message });
+    const { [NOTIFICATION_IDS_KEY]: shown = [] } = await chrome.storage.local.get(NOTIFICATION_IDS_KEY);
+    const ids = [...shown.filter((shownId) => shownId !== id), id];
+    const stale = ids.slice(0, -MAX_NOTIFICATIONS);
+    await Promise.all(stale.map((staleId) => chrome.notifications.clear(staleId)));
+    await chrome.storage.local.set({ [NOTIFICATION_IDS_KEY]: ids.slice(-MAX_NOTIFICATIONS) });
+  } catch (error) {
+    // 알림을 못 띄워도(운영체제에서 알림을 끈 경우 등) 분석 결과는 이미 저장되어 있다.
+    console.log("[알림 표시 실패]", error);
+  }
 }
 
 async function notifyNewVideoAnalyzed(channel, video, entryId) {
