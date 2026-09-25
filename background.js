@@ -13,6 +13,7 @@ import {
   patchHistoryEntries,
   removeDuplicateHistory,
   getAnalysesInProgress,
+  addChannelFailure,
   getChannels,
   updateChannel,
   addUnseenId,
@@ -414,7 +415,17 @@ async function checkChannel(channel) {
     } else {
       await advanceTo(video);
       // 다른 확인이 같은 영상을 이미 분석 중이면 실패가 아니다. 그쪽이 결과를 알린다.
-      if (response.error?.code !== "ALREADY_ANALYZING") notifyVideoFailed(channel, video, response.error);
+      if (response.error?.code !== "ALREADY_ANALYZING") {
+        await addChannelFailure(channel.channelId, {
+          videoId: video.videoId,
+          title: video.title,
+          url: video.url,
+          reason: response.error?.message ?? t("unknownError"),
+          code: response.error?.code ?? null,
+          at: new Date().toISOString(),
+        });
+        notifyVideoFailed(channel, video, response.error);
+      }
     }
   }
 }
