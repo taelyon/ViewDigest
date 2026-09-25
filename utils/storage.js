@@ -72,7 +72,30 @@ async function saveAnalysis(result) {
   const others = entry.videoId ? history.filter((item) => item.videoId !== entry.videoId) : history;
   const updated = [entry, ...others].slice(0, MAX_HISTORY_ITEMS);
   await chrome.storage.local.set({ [STORAGE_KEYS.HISTORY]: updated });
+  if (entry.videoId) await forgetChannelProblems(entry.videoId);
   return entry;
+}
+
+/**
+ * 분석에 성공한 영상은 채널의 재시도 목록과 실패 기록에서 지운다. 채널 재시도가 아닌 다른
+ * 경로(직접 분석 등)로 성공해도 설정 화면에 "다시 시도 중"·"실패"가 남지 않게 한다.
+ */
+async function forgetChannelProblems(videoId) {
+  const channels = await getChannels();
+  let changed = false;
+  const updated = channels.map((channel) => {
+    const pendingRetries = (channel.pendingRetries ?? []).filter((p) => p.videoId !== videoId);
+    const recentFailures = (channel.recentFailures ?? []).filter((f) => f.videoId !== videoId);
+    if (
+      pendingRetries.length === (channel.pendingRetries ?? []).length &&
+      recentFailures.length === (channel.recentFailures ?? []).length
+    ) {
+      return channel;
+    }
+    changed = true;
+    return { ...channel, pendingRetries, recentFailures };
+  });
+  if (changed) await chrome.storage.local.set({ [STORAGE_KEYS.CHANNELS]: updated });
 }
 
 /**

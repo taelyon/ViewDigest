@@ -4,6 +4,7 @@ import {
   getSettings,
   setSettings,
   getChannels,
+  getHistory,
   addChannel,
   removeChannel,
   updateChannel,
@@ -230,10 +231,13 @@ const FAILURE_VISIBLE_MS = 7 * 24 * 60 * 60 * 1000;
 /**
  * 채널 자동 분석이 건너뛴 영상과 그 사유. 알림을 놓쳐도 여기서 확인할 수 있다.
  */
-function renderChannelFailures(channel) {
+function renderChannelFailures(channel, analyzedVideoIds) {
   const cutoff = Date.now() - FAILURE_VISIBLE_MS;
-  const failures = (channel.recentFailures ?? []).filter((f) => Date.parse(f.at) >= cutoff);
-  const retries = channel.pendingRetries ?? [];
+  // 그 뒤에 분석에 성공한 영상은 더 이상 문제가 아니다(이전 버전이 남긴 기록 포함).
+  const failures = (channel.recentFailures ?? []).filter(
+    (f) => Date.parse(f.at) >= cutoff && !analyzedVideoIds.has(f.videoId)
+  );
+  const retries = (channel.pendingRetries ?? []).filter((r) => !analyzedVideoIds.has(r.videoId));
   if (failures.length === 0 && retries.length === 0) return null;
 
   const list = document.createElement("ul");
@@ -282,6 +286,7 @@ async function refreshNextCheck() {
 
 async function refreshChannelList() {
   const channels = await getChannels();
+  const analyzedVideoIds = new Set((await getHistory()).map((entry) => entry.videoId).filter(Boolean));
   channelListEl.innerHTML = "";
   channelListEmptyEl.classList.toggle("hidden", channels.length > 0);
 
@@ -306,7 +311,7 @@ async function refreshChannelList() {
     renderChannelMeta(meta, channel);
 
     main.append(title, meta);
-    const failures = renderChannelFailures(channel);
+    const failures = renderChannelFailures(channel, analyzedVideoIds);
     if (failures) main.appendChild(failures);
 
     const toggleLabel = document.createElement("label");
