@@ -149,6 +149,9 @@
   "optionsReportLanguageHint": {
     "message": "Automatic writes in Korean when your browser is set to Korean, and in English otherwise. The language spoken in the video doesn't matter."
   },
+  "optionsShareAttribution": {
+    "message": "Include the original video and a source link (Made with ViewDigest) when copying or downloading"
+  },
   "optionsDailyLimitLabel": {
     "message": "Maximum analyses per day"
   },
@@ -256,6 +259,24 @@
   },
   "resultsAlreadyAnalyzed": {
     "message": "You already analyzed this video ($1), so here is the saved report. Analyzing again costs another analysis."
+  },
+  "shareSourceVideo": {
+    "message": "Original video: $1"
+  },
+  "reviewTitle": {
+    "message": "Is ViewDigest helping you?"
+  },
+  "reviewText": {
+    "message": "You've analyzed $1 videos so far. A short review on the Chrome Web Store helps other people find ViewDigest."
+  },
+  "reviewNow": {
+    "message": "⭐ Leave a review"
+  },
+  "reviewLater": {
+    "message": "Later"
+  },
+  "reviewNever": {
+    "message": "Don't ask again"
   },
   "resultsMeta": {
     "message": "$1 · Est. cost $2"

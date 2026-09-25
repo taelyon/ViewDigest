@@ -22,6 +22,7 @@ import {
 import { fetchLatestVideos, fetchVideoChannelName } from "./utils/channels.js";
 import { t } from "./utils/i18n.js";
 import { refreshBadge } from "./utils/badge.js";
+import { recordSuccessfulAnalysis } from "./utils/review.js";
 
 // 동시에 같은 영상이 중복 분석되는 것을 막기 위한 진행 중 URL 집합.
 // 서비스 워커가 유휴 상태에서 재시작되면 초기화되지만, 그 경우 이전 요청도
@@ -212,6 +213,7 @@ async function handleAnalyzeVideo(url, { tab, titleOverride, channelTitle } = {}
       estimatedCost: result.estimatedCost,
     });
 
+    await recordSuccessfulAnalysis();
     notifyPopup({ action: "analysisComplete", result: savedEntry });
     return { success: true, result: savedEntry };
   } catch (error) {

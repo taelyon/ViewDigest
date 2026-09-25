@@ -31,7 +31,7 @@ ViewDigest는 YouTube 영상을 Google Gemini API로 분석해, 영상을 보지
 - 목차와 대주제(1.) → 소주제(1-1.) 계층 구조
 - 소주제마다 인물 발언, 사건 경위, 핵심 수치를 담은 상세 포인트
 - 소제목 옆 ▶ 시각을 누르면 영상의 그 장면으로 바로 이동
-- 복사 및 Markdown 파일 다운로드
+- 복사 및 Markdown 파일 다운로드 (끝에 원본 영상 링크와 출처가 붙으며, 설정에서 끌 수 있음)
 
 ■ 비용 관리
 - 분석마다 실제 사용 토큰 기준으로 예상 비용을 계산해 기록합니다.
@@ -81,7 +81,8 @@ so you can understand a video without watching it.
 - A table of contents with chapters (1.) and sections (1-1.)
 - Specific points for each section: who said what, how events unfolded, and the key figures
 - Click the ▶ time next to a section to jump to that moment in the video
-- Copy to clipboard or download as a Markdown file
+- Copy to clipboard or download as a Markdown file (with a link to the original video and a credit line
+  at the end, which you can turn off on the options page)
 - Reports in English or Korean, whatever language the video is in (set it on the options page)
 
 ■ Cost control
@@ -239,6 +240,18 @@ API 키가 없으면 옵션 페이지에 키 등록을 안내하는 오류 메�
 3. **한국어 스크린샷은 선택.** 기존 3장도 여전히 정확합니다. 설정 페이지 사진에 새 "리포트 언어"
    항목이 없을 뿐입니다.
 4. **권한 변경 없음.** 기존 사용자에게 권한 경고가 뜨지 않습니다.
+
+## v1.3.0 제출 메모 (공유 출처 표기·리뷰 요청)
+
+1.2.0을 아직 제출하지 않았다면 1.2.0 대신 1.3.0을 제출합니다(1.2.0 메모의 할 일도 함께).
+
+- **권한 변경 없음.** 리뷰 페이지는 사용자가 버튼을 누를 때 새 탭으로 열 뿐입니다.
+- **자세한 설명 갱신.** 한국어·영어 "리포트 구성"의 복사/다운로드 줄에 출처 표기 설명이 붙었습니다.
+- **개인정보처리방침 갱신됨.** 1항 표에 "리뷰 요청 상태(로컬 저장)" 행이 추가됐습니다(자동 반영).
+- **데이터 사용 공시는 그대로.** 리뷰 요청 상태는 기기 밖으로 나가지 않습니다.
+- 스토어 설치본에서는 확장프로그램 ID가 곧 스토어 항목 ID라서, 출처 링크와 리뷰 버튼이 이 항목의
+  페이지로 연결됩니다(개발자 모드로 불러온 사본은 ID가 달라 맞지 않음).
+- 게시 후 태그는 `v1.3.0`.
 
 ## v1.2.0 제출 메모 (소제목 → 영상 장면 이동)
 

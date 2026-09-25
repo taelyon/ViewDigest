@@ -141,6 +141,7 @@ function setupApiKeySection() {
 
 const modelSelect = document.getElementById("model-select");
 const reportLanguageSelect = document.getElementById("report-language-select");
+const shareAttributionInput = document.getElementById("share-attribution-input");
 const dailyLimitInput = document.getElementById("daily-limit-input");
 const settingsFeedback = document.getElementById("settings-feedback");
 const saveSettingsBtn = document.getElementById("save-settings-btn");
@@ -149,6 +150,7 @@ async function loadSettingsForm() {
   const settings = await getSettings();
   modelSelect.value = settings.model ?? DEFAULT_MODEL;
   reportLanguageSelect.value = settings.reportLanguage ?? "auto";
+  shareAttributionInput.checked = settings.shareAttribution !== false;
   dailyLimitInput.value = settings.dailyLimit ?? DEFAULT_DAILY_LIMIT;
 }
 
@@ -167,6 +169,7 @@ function setupSettingsSection() {
       await setSettings({
         model: modelSelect.value,
         reportLanguage: reportLanguageSelect.value,
+        shareAttribution: shareAttributionInput.checked,
         dailyLimit,
       });
       showFeedback(settingsFeedback, t("optionsSettingsSaved"), "success");
