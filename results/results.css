@@ -178,6 +178,52 @@ body {
   color: #ffffff;
 }
 
+/* 웹스토어 리뷰 요청: 읽기를 막지 않도록 화면 구석에 작게 띄운다 */
+.review-card {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 10;
+  width: min(340px, calc(100vw - 48px));
+  padding: 16px 18px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+.review-card-title {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.review-card-text {
+  margin: 0 0 14px;
+  word-break: keep-all;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+.review-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.review-never-btn {
+  margin-left: auto;
+  padding: 4px 2px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+.review-never-btn:hover {
+  color: var(--text-secondary);
+  text-decoration: underline;
+}
+
 /* 이미 분석한 영상이라 저장된 리포트를 보여줄 때의 안내 */
 .saved-notice {
   display: flex;

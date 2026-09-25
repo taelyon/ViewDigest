@@ -96,6 +96,16 @@ body {
   color: var(--accent);
 }
 
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0 0;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
 /* 입력칸 바로 아래 붙는 보충 설명 */
 .card-desc.field-hint {
   margin: 6px 0 0;

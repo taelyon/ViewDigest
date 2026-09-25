@@ -20,6 +20,13 @@ import { renderMarkdown } from "../utils/markdown.js";
 import { fetchVideoChannelName } from "../utils/channels.js";
 import { t, localizePage, formatDateTime } from "../utils/i18n.js";
 import { refreshBadge } from "../utils/badge.js";
+import {
+  storePageUrl,
+  storeReviewUrl,
+  recordSuccessfulAnalysis,
+  reviewPromptCount,
+  answerReviewPrompt,
+} from "../utils/review.js";
 
 localizePage();
 
@@ -99,13 +106,31 @@ function formatCost(usd) {
 // 복사 / 다운로드
 // ---------------------------------------------------------------------
 
+/**
+ * 복사·다운로드하는 리포트 끝에 원본 영상과 ViewDigest 출처를 붙인다(설정에서 끌 수 있다).
+ * 받는 사람이 원본 영상을 찾을 수 있고, 어떤 도구로 만든 요약인지 알 수 있다.
+ */
+async function markdownForSharing(entry) {
+  const settings = await getSettings();
+  if (settings.shareAttribution === false) return entry.markdown;
+
+  const lines = [entry.markdown.trimEnd(), "", "---", ""];
+  if (entry.url) {
+    const title = (entry.title ?? entry.url).replace(/[[\]]/g, "\\$&");
+    lines.push(t("shareSourceVideo", `[${title}](${entry.url})`), "");
+  }
+  lines.push(`Made with [ViewDigest](${storePageUrl()})`, "");
+  return lines.join("\n");
+}
+
 async function copyMarkdown() {
   if (!finalEntry?.markdown) return;
+  const text = await markdownForSharing(finalEntry);
   try {
-    await navigator.clipboard.writeText(finalEntry.markdown);
+    await navigator.clipboard.writeText(text);
   } catch {
     const textarea = document.createElement("textarea");
-    textarea.value = finalEntry.markdown;
+    textarea.value = text;
     textarea.style.position = "fixed";
     textarea.style.opacity = "0";
     document.body.appendChild(textarea);
@@ -120,10 +145,10 @@ async function copyMarkdown() {
   }, 1500);
 }
 
-function downloadMarkdown() {
+async function downloadMarkdown() {
   if (!finalEntry?.markdown) return;
   const safeTitle = (finalEntry.title ?? "analysis").replace(/[\\/:*?"<>|]/g, "_").slice(0, 80);
-  const blob = new Blob([finalEntry.markdown], { type: "text/markdown;charset=utf-8" });
+  const blob = new Blob([await markdownForSharing(finalEntry)], { type: "text/markdown;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -132,6 +157,38 @@ function downloadMarkdown() {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+}
+
+// ---------------------------------------------------------------------
+// 웹스토어 리뷰 요청: 분석이 몇 번 성공한 뒤, 막 끝난 분석 옆에 작게 띄운다
+// ---------------------------------------------------------------------
+
+const reviewCard = {
+  root: document.getElementById("review-card"),
+  text: document.getElementById("review-card-text"),
+  now: document.getElementById("review-now-btn"),
+  later: document.getElementById("review-later-btn"),
+  never: document.getElementById("review-never-btn"),
+};
+
+async function maybeAskForReview() {
+  const count = await reviewPromptCount();
+  if (count === null) return;
+  reviewCard.text.textContent = t("reviewText", count);
+  reviewCard.root.classList.remove("hidden");
+}
+
+function setupReviewCard() {
+  const answer = async (kind) => {
+    reviewCard.root.classList.add("hidden");
+    await answerReviewPrompt(kind);
+  };
+  reviewCard.now.addEventListener("click", () => {
+    window.open(storeReviewUrl(), "_blank", "noopener");
+    answer("review");
+  });
+  reviewCard.later.addEventListener("click", () => answer("later"));
+  reviewCard.never.addEventListener("click", () => answer("never"));
 }
 
 // ---------------------------------------------------------------------
@@ -222,6 +279,9 @@ async function runNewAnalysis() {
         showMeta(savedEntry);
         els.actions.classList.remove("hidden");
 
+        await recordSuccessfulAnalysis();
+        maybeAskForReview();
+
         // popup이 열려있다면 히스토리/사용량을 즉시 갱신할 수 있도록 알린다.
         chrome.runtime.sendMessage({ action: "analysisComplete", result: savedEntry }, () => {
           void chrome.runtime.lastError;
@@ -277,6 +337,7 @@ document.addEventListener("DOMContentLoaded", () => {
   els.copyBtn.addEventListener("click", copyMarkdown);
   els.downloadBtn.addEventListener("click", downloadMarkdown);
   els.reanalyzeBtn.addEventListener("click", reanalyzeCurrent);
+  setupReviewCard();
   // 소제목 옆 ▶ 시각 버튼. 리포트는 스트리밍 중에 계속 다시 그려지므로 위임으로 받는다.
   els.content.addEventListener("click", (event) => {
     const button = event.target.closest(".timestamp-link");
