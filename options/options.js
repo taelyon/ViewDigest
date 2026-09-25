@@ -230,10 +230,26 @@ const FAILURE_VISIBLE_MS = 7 * 24 * 60 * 60 * 1000;
 function renderChannelFailures(channel) {
   const cutoff = Date.now() - FAILURE_VISIBLE_MS;
   const failures = (channel.recentFailures ?? []).filter((f) => Date.parse(f.at) >= cutoff);
-  if (failures.length === 0) return null;
+  const retries = channel.pendingRetries ?? [];
+  if (failures.length === 0 && retries.length === 0) return null;
 
   const list = document.createElement("ul");
   list.className = "channel-failures";
+  for (const retry of retries) {
+    const item = document.createElement("li");
+    item.className = "is-retrying";
+    const link = document.createElement("a");
+    link.href = retry.url;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = retry.title;
+    item.append(
+      `${t("optionsRetryPending", formatDateTime(retry.firstFailedAt), retry.attempts)}: `,
+      link,
+      retry.reason ? ` — ${retry.reason}` : ""
+    );
+    list.appendChild(item);
+  }
   for (const failure of failures) {
     const item = document.createElement("li");
     const link = document.createElement("a");

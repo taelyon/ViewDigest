@@ -110,6 +110,15 @@ async function addChannelFailure(channelId, failure) {
 }
 
 /**
+ * 채널 항목을 최신 값 기준으로 고친다. fn(channel)이 돌려준 부분만 덮어쓴다.
+ */
+async function mutateChannel(channelId, fn) {
+  const channel = (await getChannels()).find((c) => c.channelId === channelId);
+  if (!channel) return null;
+  return updateChannel(channelId, fn(channel));
+}
+
+/**
  * 결과 탭에서 직접 분석 중인 영상. 채널 자동 분석이 같은 영상을 동시에 분석해
  * 비용이 두 번 나가지 않도록, 자동 분석은 이 목록에 있는 영상을 다음 확인으로 미룬다.
  */
@@ -253,6 +262,7 @@ export {
   removeChannel,
   updateChannel,
   addChannelFailure,
+  mutateChannel,
   getUnseenIds,
   setUnseenIds,
   addUnseenId,

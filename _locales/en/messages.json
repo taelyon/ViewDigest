@@ -200,6 +200,9 @@
   "optionsRecentFailure": {
     "message": "Analysis failed ($1)"
   },
+  "optionsRetryPending": {
+    "message": "Retrying (first failed $1, attempt $2)"
+  },
   "optionsLastSuccess": {
     "message": "Last successful check: $1"
   },
@@ -307,6 +310,9 @@
   },
   "geminiVideoTooLong": {
     "message": "This video is too long for Gemini to analyze in one request (it exceeds the input token limit). Try a shorter video."
+  },
+  "geminiVideoNotAccessible": {
+    "message": "Gemini couldn't access this video (permission denied). It may be a premiere or live stream that hasn't started, a stream in progress, a video still processing after upload, or a private, unlisted, members-only or age-restricted video. If every video fails this way, check your API key's permissions."
   },
   "geminiRequestFailed": {
     "message": "Gemini API request failed: $1"
