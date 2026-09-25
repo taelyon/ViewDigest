@@ -56,6 +56,36 @@
 
   let insertionScheduled = false;
 
+  // YouTube가 화면을 다시 그리면서 우리 버튼을 계속 지우는 구조가 되면, 다시 넣고 지워지기를
+  // 매 프레임 반복하며 페이지를 끝없이 다시 그리게 된다(CPU 점유). 같은 페이지에서 버튼마다
+  // 짧은 시간에 다시 넣는 횟수를 제한하고, 한도에 걸리면 잠시 뒤에 한 번 더 시도한다.
+  // 다른 영상으로 이동하면 새로 센다(빠르게 여러 영상을 넘겨도 버튼이 빠지지 않게).
+  const MAX_INSERTS_PER_WINDOW = 10;
+  const INSERT_WINDOW_MS = 10 * 1000;
+  const insertTimes = new Map();
+  let insertTimesHref = location.href;
+  let retryTimer = null;
+
+  function allowInsert(id) {
+    if (location.href !== insertTimesHref) {
+      insertTimes.clear();
+      insertTimesHref = location.href;
+    }
+    const now = performance.now();
+    const recent = (insertTimes.get(id) ?? []).filter((time) => now - time < INSERT_WINDOW_MS);
+    const allowed = recent.length < MAX_INSERTS_PER_WINDOW;
+    if (allowed) {
+      recent.push(now);
+    } else if (!retryTimer) {
+      retryTimer = setTimeout(() => {
+        retryTimer = null;
+        scheduleEnsureButton();
+      }, INSERT_WINDOW_MS);
+    }
+    insertTimes.set(id, recent);
+    return allowed;
+  }
+
   // ---------------------------------------------------------------------
   // 유틸리티
   // ---------------------------------------------------------------------
@@ -221,6 +251,7 @@
 
     const topRow = findFirstMatch(TITLE_ANCHOR_SELECTORS);
     if (!topRow || !topRow.parentElement) return; // 아직 DOM 준비 전: 다음 MutationObserver 콜백에서 재시도
+    if (!allowInsert(TITLE_BUTTON_ID)) return;
 
     if (existing) existing.remove(); // 옛 컨테이너에 붙어있던 유령 버튼 정리
     topRow.parentElement.insertBefore(createButton(TITLE_BUTTON_ID), topRow); // 제목과 액션 버튼 줄 사이
@@ -232,6 +263,7 @@
 
     const container = findFirstMatch(SIDEBAR_CONTAINER_SELECTORS);
     if (!container) return; // 아직 DOM 준비 전: 다음 MutationObserver 콜백에서 재시도
+    if (!allowInsert(SIDEBAR_BUTTON_ID)) return;
 
     if (existing) existing.remove(); // 옛 컨테이너에 붙어있던 유령 버튼 정리
     container.prepend(createButton(SIDEBAR_BUTTON_ID)); // 우측 영역 최상단
