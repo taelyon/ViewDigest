@@ -29,7 +29,8 @@ export const DEFAULT_PROMPT = `이 유튜브 영상을 분석하여, 영상을 �
    - 대주제(Chapter)와 소주제(Section)로 체계화하고, 각 소주제마다 명확한 소제목 부여
    - 제목 단계는 정확히 이렇게 쓰세요: 대주제는 "## ", 소주제는 "### ". #을 5개 이상 쓰지 마세요.
    - 제목에 "1.", "1-1.", "Chapter", "Section" 같은 번호나 머리말을 직접 붙이지 마세요. 번호는 화면에서 자동으로 매겨지므로, 제목에는 내용만 쓰세요.
-   - 타임스탬프(00:00 형식)는 표기하지 마세요.
+   - 각 소주제("### ") 제목 끝에 그 내용이 영상에서 시작되는 시각을 [분:초] 형식으로 붙이세요(1시간이 넘으면 [시:분:초]). 예: "### 오스틴 시내에서 발생한 접촉 사고 [12:34]". 영상에서 직접 확인한 시각만 쓰고, 확실하지 않으면 붙이지 마세요.
+   - 그 밖의 곳(본문 문장, 목차, 대주제 제목)에는 시각을 쓰지 마세요.
    - 소주제마다 구체적인 인물 발언, 사건 경위, 핵심 수치, 반론 및 전망을 담은 detailedPoints를 2~4개의 간결한 문장으로 기술
 3. 분량:
    - 영상 길이에 맞게 조절하세요. 10분 내외의 영상이라면 챕터 3~4개로 충분합니다.
@@ -65,7 +66,8 @@ export const DEFAULT_PROMPT_EN = `Analyze this YouTube video and write an analys
    - Organize the content into chapters (main topics) and sections (subtopics), and give each section a clear heading.
    - Use exactly these heading levels: "## " for chapters and "### " for sections. Never use five or more #.
    - Do not put numbers or labels such as "1.", "1-1.", "Chapter", or "Section" in headings. Numbers are added automatically on screen, so headings should contain only their content.
-   - Do not include timestamps (00:00 format).
+   - End each section ("### ") heading with the time the section's content starts in the video, as [minutes:seconds] ([hours:minutes:seconds] past one hour). Example: "### A low-speed collision in downtown Austin [12:34]". Only give a time you actually saw in the video; if you are not sure, leave it off.
+   - Do not put times anywhere else (body sentences, the table of contents, chapter headings).
    - For each section, write detailedPoints as 2–4 concise sentences covering specific statements, how events unfolded, key figures, counterarguments, and outlook.
 3. Length:
    - Match the length to the video. For a video of about 10 minutes, 3–4 chapters are enough.

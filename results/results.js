@@ -277,6 +277,16 @@ document.addEventListener("DOMContentLoaded", () => {
   els.copyBtn.addEventListener("click", copyMarkdown);
   els.downloadBtn.addEventListener("click", downloadMarkdown);
   els.reanalyzeBtn.addEventListener("click", reanalyzeCurrent);
+  // 소제목 옆 ▶ 시각 버튼. 리포트는 스트리밍 중에 계속 다시 그려지므로 위임으로 받는다.
+  els.content.addEventListener("click", (event) => {
+    const button = event.target.closest(".timestamp-link");
+    const url = finalEntry?.url ?? videoUrl;
+    if (!button || !url) return;
+    chrome.runtime.sendMessage(
+      { action: "seekVideo", url, seconds: Number(button.dataset.seconds) },
+      () => void chrome.runtime.lastError
+    );
+  });
   // 긴 리포트 맨 아래까지 내려가지 않아도 되도록, 안내 옆에도 같은 버튼을 둔다.
   els.noticeReanalyzeBtn.addEventListener("click", reanalyzeCurrent);
   run();

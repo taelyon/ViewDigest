@@ -49,6 +49,30 @@ const HEADING_NUMBER_PREFIX_RE = /^\s*(?:chapter|section)?\s*\d+(?:\s*[-.–]\s*
 const WRAPPER_HEADING_RE =
   /^(목차|차례|목록|상세\s*분석|분석\s*내용|table of contents|contents|outline|(detailed|in-depth)\s+analysis|analysis)$/i;
 
+// 소주제 제목 끝에 프롬프트가 붙이게 한 영상 시각: "[12:34]", "[1:02:03]".
+// 대괄호만 알아본다. 괄호 속 "9:00 발표" 같은 제목 내용과 섞이지 않게 하기 위해서다.
+const HEADING_TIMESTAMP_RE = /\s*\[\s*(?:(\d{1,2}):)?(\d{1,2}):(\d{2})\s*\]\s*$/;
+
+/**
+ * 제목 끝의 영상 시각을 떼어낸다. 형식이 맞지 않는 값(분·초가 60 이상 등)은 제목의
+ * 일부로 그대로 둔다.
+ * @returns {{ text: string, seconds: number | null }}
+ */
+function splitHeadingTimestamp(text) {
+  const match = text.match(HEADING_TIMESTAMP_RE);
+  if (!match) return { text, seconds: null };
+  const [hours, minutes, seconds] = [match[1] ?? "0", match[2], match[3]].map(Number);
+  if ((match[1] !== undefined && minutes >= 60) || seconds >= 60) return { text, seconds: null };
+  return { text: text.slice(0, match.index), seconds: hours * 3600 + minutes * 60 + seconds };
+}
+
+function formatTimestamp(totalSeconds) {
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = String(totalSeconds % 60).padStart(2, "0");
+  return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${s}` : `${m}:${s}`;
+}
+
 function stripHeadingNumber(text) {
   return text.replace(HEADING_NUMBER_PREFIX_RE, "").trim();
 }
@@ -70,10 +94,12 @@ function planHeadingNumbers(lines) {
   lines.forEach((line, index) => {
     const match = line.match(HEADING_RE);
     if (!match) return;
+    const { text: withoutTime, seconds } = splitHeadingTimestamp(match[2]);
     headings.push({
       index,
       level: Math.min(match[1].length, 4),
-      text: stripHeadingNumber(match[2]),
+      text: stripHeadingNumber(withoutTime),
+      seconds,
       // 바로 뒤에 본문 없이 또 다른 제목이 오는가 — 리포트 제목을 가려내는 데 쓴다.
       leadsStraightToHeading: (() => {
         for (let i = index + 1; i < lines.length; i++) {
@@ -86,6 +112,9 @@ function planHeadingNumbers(lines) {
   });
 
   const text = new Map(headings.map((h) => [h.index, h.text]));
+  const timestamps = new Map(
+    headings.filter((h) => h.seconds !== null).map((h) => [h.index, h.seconds])
+  );
   const prefixes = new Map();
   const chapterIndexes = new Set();
   const sectionIndexes = new Set();
@@ -93,7 +122,7 @@ function planHeadingNumbers(lines) {
   const candidates = headings.filter((h) => !WRAPPER_HEADING_RE.test(h.text));
 
   // 제목이 하나뿐이면 그건 리포트 제목이다. "1."을 붙여봐야 가리킬 대상이 없다.
-  if (candidates.length < 2) return { text, prefixes, chapterIndexes, sectionIndexes };
+  if (candidates.length < 2) return { text, timestamps, prefixes, chapterIndexes, sectionIndexes };
 
   // 리포트 제목은 번호에서 뺀다. 두 가지로 알아본다:
   //  - 나머지 어떤 제목보다도 얕은 단계에 홀로 있거나(현재 프롬프트 형식),
@@ -124,13 +153,14 @@ function planHeadingNumbers(lines) {
     }
   }
 
-  return { text, prefixes, chapterIndexes, sectionIndexes };
+  return { text, timestamps, prefixes, chapterIndexes, sectionIndexes };
 }
 
 function renderMarkdown(markdown) {
   const lines = markdown.replace(/\r\n/g, "\n").split("\n");
   const {
     text: headingText,
+    timestamps: headingTimestamps,
     prefixes: headingPrefixes,
     chapterIndexes,
     sectionIndexes,
@@ -169,7 +199,13 @@ function renderMarkdown(markdown) {
       let role = "";
       if (chapterIndexes.has(i)) role = ' class="report-chapter"';
       else if (sectionIndexes.has(i)) role = ' class="report-section"';
-      blocks.push(`<h${level}${role}>${escapeHtml(prefix)}${body}</h${level}>`);
+      // 영상 시각이 있으면 누르면 그 장면으로 이동하는 버튼을 붙인다(동작은 results.js).
+      const seconds = headingTimestamps.get(i);
+      const seek =
+        seconds === undefined
+          ? ""
+          : ` <button type="button" class="timestamp-link" data-seconds="${seconds}">▶ ${formatTimestamp(seconds)}</button>`;
+      blocks.push(`<h${level}${role}>${escapeHtml(prefix)}${body}${seek}</h${level}>`);
       i++;
       continue;
     }

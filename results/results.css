@@ -157,6 +157,27 @@ body {
   padding: 10px 14px;
 }
 
+/* 소제목 옆 ▶ 시각 버튼: 누르면 영상의 그 장면으로 이동한다 */
+#result-content.markdown-body .timestamp-link {
+  margin-left: 8px;
+  padding: 1px 8px;
+  border: none;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.6;
+  vertical-align: middle;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+#result-content.markdown-body .timestamp-link:hover {
+  background: var(--accent);
+  color: #ffffff;
+}
+
 /* 이미 분석한 영상이라 저장된 리포트를 보여줄 때의 안내 */
 .saved-notice {
   display: flex;
