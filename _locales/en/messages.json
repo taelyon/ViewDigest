@@ -374,6 +374,12 @@
   "geminiUnknownError": {
     "message": "An unknown error occurred while calling the Gemini API."
   },
+  "geminiTimeout": {
+    "message": "Gemini didn't respond within $1 minutes. It will be retried on the next check."
+  },
+  "requestTimedOut": {
+    "message": "request timed out"
+  },
   "geminiAnalyzing": {
     "message": "Gemini is analyzing the video. It may take a while before the first text appears..."
   },

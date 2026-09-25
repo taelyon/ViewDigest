@@ -24,6 +24,11 @@ const API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 // 기기 간 동기화가 필요한 민감 정보이므로 chrome.storage.sync 에 별도 보관한다.
 const API_KEY_STORAGE_KEY = "geminiApiKey";
 
+// 채널 자동 분석(백그라운드)의 요청 한도 시간. 긴 영상도 보통 몇 분 안에 끝나므로 넉넉히 잡는다.
+// 한도가 없으면 네트워크가 멈췄을 때(절전 복귀 등) 응답을 영원히 기다리며, 그동안 서비스 워커를
+// 깨워 두는 keep-alive도 끝나지 않는다. 시간 초과는 다음 확인 때 다시 시도하는 실패로 다룬다.
+const BACKGROUND_REQUEST_TIMEOUT_MS = 10 * 60 * 1000;
+
 /**
  * gemini.js에서 발생하는 모든 에러를 구분하기 위한 커스텀 에러 클래스.
  * `code` 필드로 호출부(background.js/popup.js)가 에러 종류에 따라
@@ -260,6 +265,13 @@ async function prepareRequest(youtubeUrl, options) {
 
 function toGeminiApiError(error) {
   if (error instanceof GeminiApiError) return error;
+  if (error?.name === "TimeoutError") {
+    return new GeminiApiError(
+      t("geminiTimeout", Math.round(BACKGROUND_REQUEST_TIMEOUT_MS / 60000)),
+      ERROR_CODES.REQUEST_FAILED,
+      error
+    );
+  }
   return new GeminiApiError(
     t("geminiUnknownError"),
     ERROR_CODES.REQUEST_FAILED,
@@ -287,6 +299,7 @@ async function analyzeYouTubeVideo(youtubeUrl, options = {}) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(requestBody),
+      signal: AbortSignal.timeout(BACKGROUND_REQUEST_TIMEOUT_MS),
     });
     await assertOkResponse(response);
     const data = await response.json();

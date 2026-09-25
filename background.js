@@ -564,9 +564,20 @@ async function checkAllChannels() {
   }
 }
 
+// 채널 확인은 한 번에 하나만 돈다. 확인이 길어지는 동안 다음 알람이 오거나 "지금 확인"을 누르면
+// 새로 시작하지 않고 진행 중인 확인을 함께 기다린다(겹쳐 돌면 요청과 keep-alive가 쌓인다).
+let channelCheckRun = null;
+
+function runChannelCheck() {
+  channelCheckRun ??= withKeepAlive(checkAllChannels).finally(() => {
+    channelCheckRun = null;
+  });
+  return channelCheckRun;
+}
+
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === CHANNEL_CHECK_ALARM_NAME) {
-    withKeepAlive(checkAllChannels);
+    runChannelCheck();
   }
 });
 
@@ -591,7 +602,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return true; // 비동기 응답
 
     case "checkChannelsNow":
-      withKeepAlive(checkAllChannels)
+      runChannelCheck()
         .then(() => sendResponse({ success: true }))
         .catch((error) => sendResponse({ success: false, error: normalizeError(error) }));
       return true; // 비동기 응답

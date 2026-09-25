@@ -12,6 +12,19 @@ import { t } from "./i18n.js";
 
 const CHANNEL_ID_RE = /^UC[0-9A-Za-z_-]{22}$/;
 
+// YouTube 요청 한도 시간. 응답이 멈추면 채널 확인 전체가 끝나지 않으므로 적당히 끊는다.
+const YOUTUBE_REQUEST_TIMEOUT_MS = 30 * 1000;
+
+/** fetch와 같되, 한도 시간이 지나면 "응답 시간 초과" 오류로 끝낸다. */
+async function fetchWithTimeout(url, init = {}) {
+  try {
+    return await fetch(url, { ...init, signal: AbortSignal.timeout(YOUTUBE_REQUEST_TIMEOUT_MS) });
+  } catch (error) {
+    if (error?.name === "TimeoutError") throw new Error(t("requestTimedOut"));
+    throw error;
+  }
+}
+
 function decodeHtmlEntities(text) {
   return text
     .replace(/&amp;/g, "&")
@@ -52,7 +65,7 @@ async function resolveChannelId(input) {
   }
 
   const pageUrl = buildChannelPageUrl(trimmed);
-  const response = await fetch(pageUrl, { credentials: "omit" });
+  const response = await fetchWithTimeout(pageUrl, { credentials: "omit" });
   if (!response.ok) {
     throw new Error(t("channelPageFailed", response.status));
   }
@@ -103,7 +116,7 @@ function sourceHttpError(sourceName, status) {
 }
 
 async function fetchFeed(query) {
-  const response = await fetch(`${FEED_URL}?${query}`);
+  const response = await fetchWithTimeout(`${FEED_URL}?${query}`);
   if (!response.ok) throw sourceHttpError("RSS", response.status);
   // 200이면 영상이 0개여도(아직 영상이 없는 채널) 그대로 믿는다.
   return parseVideoEntries(await response.text());
@@ -186,7 +199,7 @@ function collectPageVideos(node, videos, seen) {
  */
 async function fetchChannelPageVideos(channelId) {
   const pageName = t("channelSourcePage");
-  const response = await fetch(`https://www.youtube.com/channel/${encodeURIComponent(channelId)}/videos`, {
+  const response = await fetchWithTimeout(`https://www.youtube.com/channel/${encodeURIComponent(channelId)}/videos`, {
     credentials: "omit",
   });
   if (!response.ok) throw sourceHttpError(pageName, response.status);
@@ -235,7 +248,7 @@ async function fetchLatestVideos(channelId, maxResults = 15) {
 async function fetchVideoChannelName(videoUrl) {
   let response;
   try {
-    response = await fetch(
+    response = await fetchWithTimeout(
       `https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(videoUrl)}`,
       { credentials: "omit" }
     );
