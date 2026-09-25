@@ -219,7 +219,11 @@ async function handleAnalyzeVideo(url, { tab, titleOverride, channelTitle } = {}
   } catch (error) {
     // 서비스 워커 콘솔(chrome://extensions → 세부정보 → 서비스 워커 검사)에서
     // Google이 보낸 원본 에러 본문까지 확인할 수 있도록 전체 에러를 남긴다.
-    console.error("[analyzeVideo 실패]", url, error, error?.details ?? "");
+    // Gemini가 거절한 경우(접근 불가·한도 등)는 알림·설정 화면으로 이미 알리는 예상된 실패라
+    // console.error로 남기지 않는다. error로 남기면 확장프로그램 관리 페이지에 "오류"로 쌓여
+    // 라이브 영상 재시도처럼 30분마다 되풀이되는 실패가 확장프로그램 고장처럼 보인다.
+    const log = error instanceof GeminiApiError ? console.log : console.error;
+    log("[analyzeVideo 실패]", url, error, error?.details ?? "");
     const normalized = normalizeError(error);
     notifyPopup({ action: "analysisError", url, error: normalized });
     return { success: false, error: normalized };
@@ -544,7 +548,8 @@ async function checkAllChannels() {
     } catch (error) {
       // 한 채널의 네트워크 오류 등이 나머지 채널 확인을 막지 않도록 채널별로 격리한다.
       // 실패도 시각과 사유를 남겨, 설정 화면에서 "확인이 멈춘 것"과 구분되게 한다.
-      console.error(`[채널 확인 실패] ${channel.title ?? channel.channelId}:`, error);
+      // 사유는 설정 화면의 채널 목록에 표시되므로 관리 페이지의 "오류"로는 남기지 않는다.
+      console.log(`[채널 확인 실패] ${channel.title ?? channel.channelId}:`, error);
       const patch = {
         lastCheckedAt: new Date().toISOString(),
         lastCheckError: error?.message ?? String(error),

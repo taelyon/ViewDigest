@@ -302,6 +302,12 @@
   "contentOpenFailedDetail": {
     "message": "새 탭을 여는 중 오류가 발생했습니다."
   },
+  "contentReloadNeeded": {
+    "message": "🔄 새로고침 필요"
+  },
+  "contentReloadNeededDetail": {
+    "message": "ViewDigest가 업데이트되었습니다. 이 페이지를 새로고침한 뒤 다시 눌러 주세요. (버튼을 한 번 더 누르면 새로고침합니다)"
+  },
   "bgAlreadyAnalyzing": {
     "message": "이미 이 영상을 분석하고 있습니다."
   },

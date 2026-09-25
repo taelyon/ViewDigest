@@ -302,6 +302,12 @@
   "contentOpenFailedDetail": {
     "message": "An error occurred while opening a new tab."
   },
+  "contentReloadNeeded": {
+    "message": "🔄 Reload needed"
+  },
+  "contentReloadNeededDetail": {
+    "message": "ViewDigest was updated. Reload this page, then click again. (Click the button once more to reload.)"
+  },
   "bgAlreadyAnalyzing": {
     "message": "This video is already being analyzed."
   },
