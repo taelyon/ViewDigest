@@ -83,6 +83,22 @@ async function setupChannelCheckAlarm({ reschedule = false } = {}) {
   });
 }
 
+// 브라우저를 오래 꺼 두었다가 켜면, 꺼져 있는 동안 돌았어야 할 확인이 바로 돌지 않고 켠 시점부터
+// 한 주기(기본 30분) 뒤로 밀린다(알람은 재시작 후 유지·즉시 실행이 보장되지 않는다). 마지막 확인이
+// 한 주기보다 오래됐으면 켠 뒤 잠시(네트워크가 붙을 시간) 있다가 한 번 확인한다.
+const CHANNEL_CATCH_UP_ALARM_NAME = "checkChannelsCatchUp";
+const CHANNEL_CATCH_UP_DELAY_MINUTES = 1;
+
+async function scheduleCatchUpCheckIfOverdue() {
+  const enabled = (await getChannels()).filter((c) => c.enabled);
+  if (enabled.length === 0) return;
+  const settings = await getSettings();
+  const intervalMs = (settings.channelCheckIntervalMinutes ?? DEFAULT_CHANNEL_CHECK_INTERVAL_MINUTES) * 60 * 1000;
+  const lastChecked = Math.min(...enabled.map((c) => Date.parse(c.lastCheckedAt ?? "") || 0));
+  if (Date.now() - lastChecked < intervalMs) return;
+  await chrome.alarms.create(CHANNEL_CATCH_UP_ALARM_NAME, { delayInMinutes: CHANNEL_CATCH_UP_DELAY_MINUTES });
+}
+
 chrome.runtime.onInstalled.addListener(async (details) => {
   if (details.reason === "install") {
     // 이미 저장된 값을 덮어쓰지 않도록, 없는 설정만 기본값으로 채운다.
@@ -92,6 +108,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     }
   }
   await setupChannelCheckAlarm();
+  await scheduleCatchUpCheckIfOverdue();
   await removeDuplicateHistory();
   await refreshBadge();
   await backfillChannelTitles();
@@ -101,6 +118,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 // 배지 글자는 브라우저를 다시 켜면 지워지므로 저장된 개수로 다시 그린다.
 chrome.runtime.onStartup.addListener(async () => {
   setupChannelCheckAlarm();
+  scheduleCatchUpCheckIfOverdue();
   await removeDuplicateHistory();
   refreshBadge();
   backfillChannelTitles();
@@ -614,6 +632,8 @@ function runChannelCheck(options) {
 
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === CHANNEL_CHECK_ALARM_NAME) {
+    runChannelCheck();
+  } else if (alarm.name === CHANNEL_CATCH_UP_ALARM_NAME) {
     runChannelCheck();
   } else if (alarm.name === CHANNEL_QUICK_RETRY_ALARM_NAME) {
     runChannelCheck({ isQuickRetry: true });
