@@ -15,12 +15,24 @@ const CHANNEL_ID_RE = /^UC[0-9A-Za-z_-]{22}$/;
 // YouTube 요청 한도 시간. 응답이 멈추면 채널 확인 전체가 끝나지 않으므로 적당히 끊는다.
 const YOUTUBE_REQUEST_TIMEOUT_MS = 30 * 1000;
 
-/** fetch와 같되, 한도 시간이 지나면 "응답 시간 초과" 오류로 끝낸다. */
+/** 잠시 뒤 다시 하면 될 가능성이 큰 실패(네트워크 끊김·응답 시간 초과)를 표시한 오류. */
+function temporaryError(message) {
+  const error = new Error(message);
+  error.temporary = true;
+  return error;
+}
+
+/**
+ * fetch와 같되, 한도 시간이 지나면 "응답 시간 초과"로 끝낸다. 요청이 네트워크에 닿지도 못한
+ * 경우(절전 복귀 직후 Wi-Fi 재연결 전 등, fetch가 "Failed to fetch"로 실패)는 알아보기 쉬운
+ * 문구로 바꾼다. 둘 다 일시적인 실패로 표시한다.
+ */
 async function fetchWithTimeout(url, init = {}) {
   try {
     return await fetch(url, { ...init, signal: AbortSignal.timeout(YOUTUBE_REQUEST_TIMEOUT_MS) });
   } catch (error) {
-    if (error?.name === "TimeoutError") throw new Error(t("requestTimedOut"));
+    if (error?.name === "TimeoutError") throw temporaryError(t("requestTimedOut"));
+    if (error instanceof TypeError) throw temporaryError(t("networkUnavailable"));
     throw error;
   }
 }
@@ -232,10 +244,12 @@ async function fetchLatestVideos(channelId, maxResults = 15) {
       const videos = await load();
       return { source, videos: videos.slice(0, maxResults) };
     } catch (error) {
-      failures.push(error.message);
+      failures.push(error);
     }
   }
-  throw new Error(t("channelVideosFailed", [...new Set(failures)].join(" · ")));
+  const message = t("channelVideosFailed", [...new Set(failures.map((f) => f.message))].join(" · "));
+  // 모든 경로가 일시적인 이유로 실패했으면 호출한 쪽이 곧 다시 시도할 수 있게 표시한다.
+  throw failures.every((f) => f.temporary) ? temporaryError(message) : new Error(message);
 }
 
 /**

@@ -380,6 +380,9 @@
   "requestTimedOut": {
     "message": "request timed out"
   },
+  "networkUnavailable": {
+    "message": "couldn't connect to the network"
+  },
   "geminiAnalyzing": {
     "message": "Gemini is analyzing the video. It may take a while before the first text appears..."
   },
