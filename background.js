@@ -554,9 +554,24 @@ async function retryPendingVideos(channel) {
   }));
 }
 
-async function checkAllChannels() {
+// 네트워크가 끊겨 확인하지 못했을 때 다음 정기 확인(보통 30분 뒤)까지 기다리지 않고 한 번 더 해 보는
+// 알람. 절전에서 깨어나면 놓친 알람이 바로 울리는데, 그때는 Wi-Fi가 아직 안 붙어 있는 일이 흔하다.
+const CHANNEL_QUICK_RETRY_ALARM_NAME = "checkChannelsQuickRetry";
+const CHANNEL_QUICK_RETRY_DELAY_MINUTES = 2;
+
+async function checkAllChannels({ isQuickRetry = false } = {}) {
   const channels = await getChannels();
-  for (const channel of channels.filter((c) => c.enabled)) {
+  const enabled = channels.filter((c) => c.enabled);
+  if (enabled.length === 0) return;
+
+  // 오프라인이 확실하면 실패를 기록하지 않고 곧 다시 확인한다.
+  if (navigator.onLine === false) {
+    if (!isQuickRetry) scheduleQuickRetry();
+    return;
+  }
+
+  let networkFailed = false;
+  for (const channel of enabled) {
     try {
       await retryPendingVideos(channel);
       await checkChannel(channel);
@@ -565,6 +580,7 @@ async function checkAllChannels() {
       // 실패도 시각과 사유를 남겨, 설정 화면에서 "확인이 멈춘 것"과 구분되게 한다.
       // 사유는 설정 화면의 채널 목록에 표시되므로 관리 페이지의 "오류"로는 남기지 않는다.
       console.log(`[채널 확인 실패] ${channel.title ?? channel.channelId}:`, error);
+      if (error?.temporary) networkFailed = true;
       const patch = {
         lastCheckedAt: new Date().toISOString(),
         lastCheckError: error?.message ?? String(error),
@@ -577,14 +593,20 @@ async function checkAllChannels() {
       await updateChannel(channel.channelId, patch);
     }
   }
+  // 빠른 재시도는 한 번만 한다. 그래도 안 되면 정기 확인을 기다린다(오프라인 동안 계속 깨우지 않게).
+  if (networkFailed && !isQuickRetry) scheduleQuickRetry();
+}
+
+function scheduleQuickRetry() {
+  chrome.alarms.create(CHANNEL_QUICK_RETRY_ALARM_NAME, { delayInMinutes: CHANNEL_QUICK_RETRY_DELAY_MINUTES });
 }
 
 // 채널 확인은 한 번에 하나만 돈다. 확인이 길어지는 동안 다음 알람이 오거나 "지금 확인"을 누르면
 // 새로 시작하지 않고 진행 중인 확인을 함께 기다린다(겹쳐 돌면 요청과 keep-alive가 쌓인다).
 let channelCheckRun = null;
 
-function runChannelCheck() {
-  channelCheckRun ??= withKeepAlive(checkAllChannels).finally(() => {
+function runChannelCheck(options) {
+  channelCheckRun ??= withKeepAlive(() => checkAllChannels(options)).finally(() => {
     channelCheckRun = null;
   });
   return channelCheckRun;
@@ -593,6 +615,8 @@ function runChannelCheck() {
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === CHANNEL_CHECK_ALARM_NAME) {
     runChannelCheck();
+  } else if (alarm.name === CHANNEL_QUICK_RETRY_ALARM_NAME) {
+    runChannelCheck({ isQuickRetry: true });
   }
 });
 

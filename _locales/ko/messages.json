@@ -380,6 +380,9 @@
   "requestTimedOut": {
     "message": "응답 시간 초과"
   },
+  "networkUnavailable": {
+    "message": "네트워크에 연결하지 못했습니다"
+  },
   "geminiAnalyzing": {
     "message": "Gemini가 영상을 분석하고 있습니다. 첫 내용이 나오기까지 시간이 걸릴 수 있습니다..."
   },
