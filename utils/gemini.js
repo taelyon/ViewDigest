@@ -215,12 +215,28 @@ function parseResponse(data) {
 
   // usageMetadata는 Gemini API가 실제로 소모한 토큰 수를 알려준다.
   // 값이 없는 예외적인 경우에는 대략적인 추정치로 대체한다.
-  const usage = data?.usageMetadata ?? {};
-  const inputTokens = usage.promptTokenCount ?? Math.ceil(markdown.length / 4);
-  const outputTokens = usage.candidatesTokenCount ?? Math.ceil(markdown.length / 4);
-  const totalTokens = usage.totalTokenCount ?? inputTokens + outputTokens;
+  const { inputTokens, outputTokens, totalTokens } = readTokenUsage(
+    data?.usageMetadata,
+    markdown
+  );
 
   return { markdown, inputTokens, outputTokens, totalTokens };
+}
+
+/**
+ * usageMetadata에서 입력/출력/전체 토큰 수를 읽는다. 사고(thinking) 토큰은
+ * candidatesTokenCount에 들어있지 않고 thoughtsTokenCount로 따로 오지만, 출력 단가로
+ * 청구되므로 출력 토큰에 더한다. 값이 없는 예외적인 경우에는 텍스트 길이로 추정한다.
+ */
+function readTokenUsage(usage, text) {
+  const estimated = Math.ceil(text.length / 4);
+  const inputTokens = usage?.promptTokenCount ?? estimated;
+  const outputTokens =
+    usage?.candidatesTokenCount != null
+      ? usage.candidatesTokenCount + (usage.thoughtsTokenCount ?? 0)
+      : estimated;
+  const totalTokens = usage?.totalTokenCount ?? inputTokens + outputTokens;
+  return { inputTokens, outputTokens, totalTokens };
 }
 
 /**
@@ -463,9 +479,7 @@ async function* analyzeYouTubeVideoStream(youtubeUrl, options = {}) {
       );
     }
 
-    const inputTokens = usage?.promptTokenCount ?? Math.ceil(trimmed.length / 4);
-    const outputTokens = usage?.candidatesTokenCount ?? Math.ceil(trimmed.length / 4);
-    const totalTokens = usage?.totalTokenCount ?? inputTokens + outputTokens;
+    const { inputTokens, outputTokens, totalTokens } = readTokenUsage(usage, trimmed);
     const estimatedCost = estimateCost({ inputTokens, outputTokens }, model);
 
     await recordUsage(totalTokens, estimatedCost);
