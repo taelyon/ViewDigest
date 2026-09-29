@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title data-i18n="optionsPageTitle">ViewDigest - 설정</title>
+  <script src="../utils/theme-init.js"></script>
   <link rel="stylesheet" href="options.css" />
 </head>
 <body>
@@ -13,6 +14,14 @@
         <h1>ViewDigest <span id="app-version" class="app-version"></span></h1>
         <p class="page-subtitle" data-i18n="optionsSubtitle">설정</p>
       </div>
+      <label class="theme-picker">
+        <span data-i18n="optionsTheme">테마</span>
+        <select id="theme-select" class="text-input">
+          <option value="dark" data-i18n="optionsThemeDark">다크</option>
+          <option value="light" data-i18n="optionsThemeLight">라이트</option>
+          <option value="system" data-i18n="optionsThemeSystem">시스템 설정 따르기</option>
+        </select>
+      </label>
     </header>
 
     <!-- Gemini API 키 -->

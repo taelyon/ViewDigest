@@ -14,9 +14,32 @@
   --danger: #f87171;
   --danger-soft: rgba(248, 113, 113, 0.14);
   --success: #4ade80;
+  --warning: #fbbf24;
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
+}
+
+/* 라이트 테마. utils/theme-init.js가 <html data-theme>를 정한다. */
+:root {
+  color-scheme: dark;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg-primary: #f6f4fa;
+  --bg-secondary: #ffffff;
+  --bg-elevated: #efebf6;
+  --border-color: #dcd5e8;
+  --text-primary: #1d1826;
+  --text-secondary: #4a4358;
+  --text-muted: #6f6781;
+  --accent: #7c3aed;
+  --accent-dark: #5b21b6;
+  --accent-soft: rgba(124, 58, 237, 0.1);
+  --danger: #dc2626;
+  --danger-soft: rgba(220, 38, 38, 0.09);
+  --success: #15803d;
+  --warning: #b45309;
 }
 
 * {

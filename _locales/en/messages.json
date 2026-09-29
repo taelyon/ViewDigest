@@ -80,6 +80,18 @@
   "optionsSubtitle": {
     "message": "Settings"
   },
+  "optionsTheme": {
+    "message": "Theme"
+  },
+  "optionsThemeDark": {
+    "message": "Dark"
+  },
+  "optionsThemeLight": {
+    "message": "Light"
+  },
+  "optionsThemeSystem": {
+    "message": "Match system"
+  },
   "optionsApiKeyHeading": {
     "message": "Gemini API key"
   },

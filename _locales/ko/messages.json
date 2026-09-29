@@ -80,6 +80,18 @@
   "optionsSubtitle": {
     "message": "설정"
   },
+  "optionsTheme": {
+    "message": "테마"
+  },
+  "optionsThemeDark": {
+    "message": "다크"
+  },
+  "optionsThemeLight": {
+    "message": "라이트"
+  },
+  "optionsThemeSystem": {
+    "message": "시스템 설정 따르기"
+  },
   "optionsApiKeyHeading": {
     "message": "Gemini API 키"
   },

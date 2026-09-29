@@ -9,6 +9,14 @@
   --chapter-accent: #38bdf8;
   --section-accent: #fbbf24;
 }
+/* 밝은 배경에서는 같은 색 계열의 진한 쪽을 쓴다(흰 배경 대비 약 6:1, 5:1). */
+:root[data-theme="light"] {
+  --chapter-accent: #0369a1;
+  --section-accent: #b45309;
+}
+:root[data-theme="light"] .review-card {
+  box-shadow: 0 12px 32px rgba(40, 20, 70, 0.18);
+}
 
 body {
   width: auto;

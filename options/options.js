@@ -140,6 +140,15 @@ function setupApiKeySection() {
 // 분석 설정 섹션 (모델 / 리포트 언어 / 일일 한도)
 // ---------------------------------------------------------------------
 
+// 테마는 고르는 즉시 저장하고 적용한다(설정 저장 버튼과 별개). 실제 적용은 각 페이지의
+// utils/theme-init.js가 저장소 변경을 보고 한다.
+const themeSelect = document.getElementById("theme-select");
+
+async function setupThemePicker() {
+  themeSelect.value = (await getSettings()).theme ?? "dark";
+  themeSelect.addEventListener("change", () => setSettings({ theme: themeSelect.value }));
+}
+
 const modelSelect = document.getElementById("model-select");
 const reportLanguageSelect = document.getElementById("report-language-select");
 const shareAttributionInput = document.getElementById("share-attribution-input");
@@ -422,6 +431,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupApiKeySection();
   setupSettingsSection();
   setupChannelSection();
+  setupThemePicker();
 
   refreshApiKeyStatus();
   loadSettingsForm();
