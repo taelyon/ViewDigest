@@ -268,6 +268,31 @@ body {
   background: var(--danger-soft);
 }
 
+.history-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.quiet-btn {
+  padding: 3px 8px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.quiet-btn:hover {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.quiet-btn.hidden {
+  display: none;
+}
+
 /* 결과 뷰 (popup.html에는 더 이상 없지만, results.css가 그대로 재사용한다) */
 .result-meta {
   flex-shrink: 0;
@@ -293,7 +318,7 @@ body {
   gap: 6px;
 }
 
-/* 채널 자동 분석으로 새로 생겨 아직 확인하지 않은 항목 */
+/* 채널 자동 분석으로 생겨 아직 열어 보지 않은 항목 */
 .new-badge {
   flex-shrink: 0;
   background: var(--accent);
@@ -469,11 +494,21 @@ body {
 
 .history-item-title {
   font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary);
+  font-weight: 500;
+  color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* 아직 열어 보지 않은 리포트: 제목을 굵고 밝게, 왼쪽에 강조 막대 */
+.history-item.is-unread {
+  border-left: 3px solid var(--accent);
+  padding-left: 10px;
+}
+.history-item.is-unread .history-item-title {
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
 .history-item-meta {

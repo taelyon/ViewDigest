@@ -35,6 +35,9 @@
   "popupClearHistory": {
     "message": "Clear all"
   },
+  "popupMarkAllRead": {
+    "message": "Mark all read"
+  },
   "popupClearHistoryConfirm": {
     "message": "Delete all? Click again"
   },
@@ -315,7 +318,7 @@
     "message": "New video analyzed"
   },
   "actionTitleUnseen": {
-    "message": "ViewDigest - New analyses: $1"
+    "message": "ViewDigest - Unread analyses: $1"
   },
   "popupNewBadge": {
     "message": "NEW"

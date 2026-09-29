@@ -88,15 +88,14 @@ function setupAnalyzeButton() {
 // 히스토리 탭
 // ---------------------------------------------------------------------
 
-// 채널 자동 분석으로 새로 생긴 항목. 팝업을 연 순간 "확인함"으로 보고 아이콘 배지를
-// 지우지만, 이 팝업이 열려 있는 동안에는 어떤 항목이 새것인지 NEW로 계속 보여준다.
-const newEntryIds = new Set();
+// 채널 자동 분석으로 생긴 리포트는 사용자가 그 리포트를 실제로 열어 볼 때까지 "읽지 않음"이다
+// (결과 탭이 열릴 때 목록에서 빠진다). 팝업을 열었다는 것만으로는 읽은 것으로 보지 않는다.
+// 직접 분석한 리포트는 분석하는 동안 이미 본 것이므로 처음부터 읽음이다.
 
-async function takeUnseenEntries() {
-  const ids = await getUnseenIds();
-  ids.forEach((id) => newEntryIds.add(id));
-  if (ids.length > 0) await setUnseenIds([]);
+async function markAllRead() {
+  await setUnseenIds([]);
   await refreshBadge();
+  await refreshHistory();
 }
 
 function textSpan(className, text) {
@@ -107,7 +106,7 @@ function textSpan(className, text) {
 }
 
 async function refreshHistory() {
-  const history = await getHistory();
+  const [history, unreadIds] = await Promise.all([getHistory(), getUnseenIds().then((ids) => new Set(ids))]);
   const list = document.getElementById("history-list");
   const empty = document.getElementById("history-empty");
 
@@ -115,10 +114,13 @@ async function refreshHistory() {
   empty.classList.toggle("hidden", history.length > 0);
   document.querySelector(".history-header").classList.toggle("hidden", history.length === 0);
   document.getElementById("history-count").textContent = t("popupHistoryCount", history.length);
+  const unreadCount = history.filter((entry) => unreadIds.has(entry.id)).length;
+  document.getElementById("mark-all-read-btn").classList.toggle("hidden", unreadCount === 0);
 
   for (const entry of history) {
     const li = document.createElement("li");
-    li.className = "history-item";
+    const unread = unreadIds.has(entry.id);
+    li.className = unread ? "history-item is-unread" : "history-item";
 
     const main = document.createElement("div");
     main.className = "history-item-main";
@@ -129,7 +131,7 @@ async function refreshHistory() {
 
     const meta = document.createElement("div");
     meta.className = "history-item-meta";
-    if (newEntryIds.has(entry.id)) meta.append(textSpan("new-badge", t("popupNewBadge")));
+    if (unread) meta.append(textSpan("new-badge", t("popupNewBadge")));
     meta.append(textSpan("history-item-date", formatDateTime(entry.createdAt)));
     // 채널 이름은 외부(YouTube)에서 온 글자이므로 HTML이 아니라 텍스트로 넣는다.
     if (entry.channelTitle) {
@@ -223,7 +225,7 @@ async function refreshUsage() {
 function setupBackgroundListener() {
   chrome.runtime.onMessage.addListener((message) => {
     if (message?.action === "analysisComplete") {
-      takeUnseenEntries().then(refreshHistory);
+      refreshBadge().then(refreshHistory);
       refreshUsage();
     }
   });
@@ -243,7 +245,13 @@ document.addEventListener("DOMContentLoaded", () => {
     chrome.runtime.openOptionsPage();
   });
 
+  document.getElementById("mark-all-read-btn").addEventListener("click", markAllRead);
+  // 다른 탭에서 리포트를 열어 읽음이 되면 열려 있는 팝업에도 바로 반영한다.
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === "local" && changes.unseenAutoAnalysisIds) refreshHistory();
+  });
+
   initAnalyzeButton();
-  takeUnseenEntries().then(refreshHistory);
+  refreshBadge().then(refreshHistory);
   refreshUsage();
 });

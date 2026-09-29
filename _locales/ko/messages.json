@@ -35,6 +35,9 @@
   "popupClearHistory": {
     "message": "전체 삭제"
   },
+  "popupMarkAllRead": {
+    "message": "모두 읽음"
+  },
   "popupClearHistoryConfirm": {
     "message": "정말 삭제할까요? 다시 클릭"
   },
@@ -315,7 +318,7 @@
     "message": "새 영상 분석 완료"
   },
   "actionTitleUnseen": {
-    "message": "ViewDigest - 확인하지 않은 새 분석 $1건"
+    "message": "ViewDigest - 읽지 않은 분석 $1건"
   },
   "popupNewBadge": {
     "message": "NEW"
