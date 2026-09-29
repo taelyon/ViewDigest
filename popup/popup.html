@@ -32,7 +32,10 @@
       <section id="history-panel" class="panel active" data-panel="history">
         <div class="history-header">
           <span id="history-count" class="history-count"></span>
-          <button id="clear-history-btn" class="quiet-danger-btn" type="button" data-i18n="popupClearHistory">전체 삭제</button>
+          <div class="history-actions">
+            <button id="mark-all-read-btn" class="quiet-btn hidden" type="button" data-i18n="popupMarkAllRead">모두 읽음</button>
+            <button id="clear-history-btn" class="quiet-danger-btn" type="button" data-i18n="popupClearHistory">전체 삭제</button>
+          </div>
         </div>
         <div id="history-empty" class="state-view hidden">
           <p class="state-message" data-i18n="popupHistoryEmpty">아직 분석한 영상이 없습니다.</p>
