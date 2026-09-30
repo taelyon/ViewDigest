@@ -119,7 +119,7 @@ async function markdownForSharing(entry) {
     const title = (entry.title ?? entry.url).replace(/[[\]]/g, "\\$&");
     lines.push(t("shareSourceVideo", `[${title}](${entry.url})`), "");
   }
-  lines.push(`Made with [ViewDigest](${storePageUrl()})`, "");
+  lines.push(`Made with [View Digest](${storePageUrl()})`, "");
   return lines.join("\n");
 }
 
@@ -199,7 +199,7 @@ function showSavedEntry(entry, { alreadyAnalyzed = false } = {}) {
   finalEntry = entry;
   // 알림을 눌러 연 채널 자동 분석 리포트라면, 이제 본 것이므로 아이콘 배지에서 뺀다.
   removeUnseenIds([entry.id]).then(refreshBadge);
-  document.title = `${entry.title ?? t("untitled")} - ViewDigest`;
+  document.title = `${entry.title ?? t("untitled")} - View Digest`;
   els.title.textContent = entry.title ?? t("untitled");
   showMeta(entry);
   renderReport(entry.markdown ?? "");
@@ -245,7 +245,7 @@ async function runNewAnalysis() {
   channelTitlePromise.then((channelTitle) => {
     if (channelTitle && !finalEntry) showMeta({ channelTitle });
   });
-  document.title = `${initialTitle} - ViewDigest`;
+  document.title = `${initialTitle} - View Digest`;
   els.title.textContent = initialTitle;
   if (videoId) await setAnalysisInProgress(videoId, true);
 
@@ -274,7 +274,7 @@ async function runNewAnalysis() {
         });
 
         finalEntry = savedEntry;
-        document.title = `${savedEntry.title} - ViewDigest`;
+        document.title = `${savedEntry.title} - View Digest`;
         els.title.textContent = savedEntry.title;
         showMeta(savedEntry);
         els.actions.classList.remove("hidden");
