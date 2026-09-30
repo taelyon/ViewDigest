@@ -26,7 +26,7 @@ async function refreshBadge() {
   // setBadgeTextColor는 Chrome 110부터 있다. 없으면 Chrome이 배경색에 맞춰 고른다.
   await chrome.action.setBadgeTextColor?.({ color: BADGE_TEXT });
   await chrome.action.setBadgeText({ text: count > 0 ? String(count) : "" });
-  await chrome.action.setTitle({ title: count > 0 ? t("actionTitleUnseen", count) : "ViewDigest" });
+  await chrome.action.setTitle({ title: count > 0 ? t("actionTitleUnseen", count) : "View Digest" });
   return count;
 }
 

@@ -75,7 +75,7 @@
     "message": "You've reached today's analysis limit. Try again tomorrow."
   },
   "optionsPageTitle": {
-    "message": "ViewDigest - Settings"
+    "message": "View Digest - Settings"
   },
   "optionsSubtitle": {
     "message": "Settings"
@@ -165,7 +165,7 @@
     "message": "Automatic writes in Korean when your browser is set to Korean, and in English otherwise. The language spoken in the video doesn't matter."
   },
   "optionsShareAttribution": {
-    "message": "Include the original video and a source link (Made with ViewDigest) when copying or downloading"
+    "message": "Include the original video and a source link (Made with View Digest) when copying or downloading"
   },
   "optionsDailyLimitLabel": {
     "message": "Maximum analyses per day"
@@ -252,7 +252,7 @@
     "message": "Check interval saved."
   },
   "resultsPageTitle": {
-    "message": "ViewDigest Analysis"
+    "message": "View Digest Analysis"
   },
   "resultsPreparing": {
     "message": "Preparing analysis..."
@@ -279,10 +279,10 @@
     "message": "Original video: $1"
   },
   "reviewTitle": {
-    "message": "Is ViewDigest helping you?"
+    "message": "Is View Digest helping you?"
   },
   "reviewText": {
-    "message": "You've analyzed $1 videos so far. A short review on the Chrome Web Store helps other people find ViewDigest."
+    "message": "You've analyzed $1 videos so far. A short review on the Chrome Web Store helps other people find View Digest."
   },
   "reviewNow": {
     "message": "⭐ Leave a review"
@@ -303,7 +303,7 @@
     "message": "An unknown error occurred during the analysis."
   },
   "resultsNoUrl": {
-    "message": "No video URL to analyze. This page can only be opened from a ViewDigest analyze button."
+    "message": "No video URL to analyze. This page can only be opened from a View Digest analyze button."
   },
   "contentButton": {
     "message": "⚡ Analyze video"
@@ -321,7 +321,7 @@
     "message": "🔄 Reload needed"
   },
   "contentReloadNeededDetail": {
-    "message": "ViewDigest was updated. Reload this page, then click again. (Click the button once more to reload.)"
+    "message": "View Digest was updated. Reload this page, then click again. (Click the button once more to reload.)"
   },
   "bgAlreadyAnalyzing": {
     "message": "This video is already being analyzed."
@@ -330,7 +330,7 @@
     "message": "New video analyzed"
   },
   "actionTitleUnseen": {
-    "message": "ViewDigest - Unread analyses: $1"
+    "message": "View Digest - Unread analyses: $1"
   },
   "popupNewBadge": {
     "message": "NEW"

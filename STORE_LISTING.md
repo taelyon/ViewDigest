@@ -7,7 +7,7 @@
 ## 이름
 
 ```
-ViewDigest
+View Digest
 ```
 
 ## 간단한 설명 (132자 제한)
@@ -19,7 +19,7 @@ YouTube 영상을 Gemini API로 분석해 목차와 챕터별 상세 리포트�
 ## 자세한 설명
 
 ```
-ViewDigest는 YouTube 영상을 Google Gemini API로 분석해, 영상을 보지 않고도 내용을 파악할 수 있는
+View Digest는 YouTube 영상을 Google Gemini API로 분석해, 영상을 보지 않고도 내용을 파악할 수 있는
 구조화된 리포트를 만들어 주는 확장프로그램입니다.
 
 ■ 사용 방법
@@ -55,7 +55,7 @@ ViewDigest는 YouTube 영상을 Google Gemini API로 분석해, 영상을 보지
 ## 영어 등록정보 (English listing)
 
 v1.1.0부터 화면이 한국어·영어를 지원합니다. 대시보드의 **스토어 등록정보** 탭 상단 언어 선택에서
-English를 고르고 아래 문구를 넣습니다. 이름은 두 언어 모두 `ViewDigest`입니다.
+English를 고르고 아래 문구를 넣습니다. 이름은 두 언어 모두 `View Digest`입니다.
 
 ### Short description (132자 제한)
 
@@ -69,7 +69,7 @@ Analyzes YouTube videos with the Gemini API into a report with a table of conten
 ### Detailed description
 
 ```
-ViewDigest analyzes YouTube videos with the Google Gemini API and turns them into structured reports,
+View Digest analyzes YouTube videos with the Google Gemini API and turns them into structured reports,
 so you can understand a video without watching it.
 
 ■ How to use
@@ -241,6 +241,21 @@ API 키가 없으면 옵션 페이지에 키 등록을 안내하는 오류 메�
    항목이 없을 뿐입니다.
 4. **권한 변경 없음.** 기존 사용자에게 권한 경고가 뜨지 않습니다.
 
+## v1.2.2 제출 메모 (이름 변경: ViewDigest → View Digest)
+
+게시된 v1.2.1 위에 올리는 업데이트입니다. 기능 변경은 없고 표시 이름만 바뀝니다.
+
+- 스토어에 보이는 이름은 패키지의 `manifest.json` `name`에서 오므로, **패키지를 올리면 등록정보 이름도
+  "View Digest"로 바뀝니다.** 대시보드에 따로 입력하는 칸은 없습니다.
+- 확장프로그램 ID·스토어 주소·저장된 데이터는 그대로입니다. 기존 설치자는 자동 업데이트되고 설정·
+  히스토리가 유지됩니다.
+- 화면(팝업·결과·설정 머리, 탭 제목, 아이콘 툴팁), 공유 문구(`Made with View Digest`), 리뷰 요청
+  카드, 개인정보처리방침(GitHub Pages 자동 반영)의 이름이 바뀝니다.
+- **스크린샷 교체 권장**: 기존 스크린샷 머리에 옛 이름(ViewDigest)이 보입니다. 새 이름으로 찍은
+  한국어·영어 각 3장으로 바꿉니다.
+- 자세한 설명의 이름도 바뀌었으니 한국어·영어 "자세한 설명"을 이 문서의 블록으로 다시 붙여 넣습니다.
+- 권한·데이터 사용 공시 변경 없음. 게시 후 태그는 `v1.2.2`.
+
 ## v1.2.1 제출 메모 (안정성·비용 표시 수정, 읽음 구분, 라이트 테마)
 
 게시된 v1.2.0 위에 올리는 업데이트입니다. **패키지만 올리면 됩니다.**
@@ -268,7 +283,7 @@ API 키가 없으면 옵션 페이지에 키 등록을 안내하는 오류 메�
 **이번 버전에서 바뀐 것** (심사 요청 시 참고)
 
 - 리포트 소제목 옆 ▶ 시각을 누르면 열려 있는 YouTube 탭의 재생 위치를 그 장면으로 옮김
-- 복사·다운로드한 리포트 끝에 원본 영상 링크와 `Made with ViewDigest` 출처 표기(설정에서 끌 수 있음)
+- 복사·다운로드한 리포트 끝에 원본 영상 링크와 `Made with View Digest` 출처 표기(설정에서 끌 수 있음)
 - 분석이 3번 성공한 뒤 결과 페이지에 웹스토어 리뷰를 부탁하는 작은 카드(한 번 거절하면 다시 묻지
   않거나 한참 뒤에 한 번만 더 물음)
 - 채널 자동 분석이 일시적으로 실패한 영상(라이브 중·처리 중 403, 과부하, 네트워크 오류, 응답 시간
@@ -347,7 +362,7 @@ zip을 만들어 달라고 요청해도 됩니다.
 
 ### 3. 대시보드에 업로드 → 제출
 
-1. [개발자 대시보드](https://chrome.google.com/webstore/devconsole) → ViewDigest
+1. [개발자 대시보드](https://chrome.google.com/webstore/devconsole) → View Digest
 2. **패키지** 탭 → **새 패키지 업로드** → zip 선택
 3. 바뀐 것이 있으면 함께 수정합니다.
    - 설명·스크린샷 → **스토어 등록정보** 탭

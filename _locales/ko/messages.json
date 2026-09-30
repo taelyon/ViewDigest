@@ -75,7 +75,7 @@
     "message": "오늘의 분석 한도를 모두 사용했습니다. 내일 다시 시도해주세요."
   },
   "optionsPageTitle": {
-    "message": "ViewDigest - 설정"
+    "message": "View Digest - 설정"
   },
   "optionsSubtitle": {
     "message": "설정"
@@ -165,7 +165,7 @@
     "message": "자동으로 두면 브라우저 언어가 한국어일 때는 한국어로, 그 밖에는 영어로 작성합니다. 영상에서 쓰인 언어와는 관계없습니다."
   },
   "optionsShareAttribution": {
-    "message": "복사·다운로드할 때 원본 영상과 출처 링크(Made with ViewDigest) 포함"
+    "message": "복사·다운로드할 때 원본 영상과 출처 링크(Made with View Digest) 포함"
   },
   "optionsDailyLimitLabel": {
     "message": "하루 최대 분석 횟수"
@@ -252,7 +252,7 @@
     "message": "확인 주기가 저장되었습니다."
   },
   "resultsPageTitle": {
-    "message": "ViewDigest 분석"
+    "message": "View Digest 분석"
   },
   "resultsPreparing": {
     "message": "분석 준비 중..."
@@ -279,10 +279,10 @@
     "message": "원본 영상: $1"
   },
   "reviewTitle": {
-    "message": "ViewDigest가 도움이 되셨나요?"
+    "message": "View Digest가 도움이 되셨나요?"
   },
   "reviewText": {
-    "message": "벌써 영상 $1개를 분석하셨네요. 웹스토어에 짧은 리뷰를 남겨 주시면 다른 분들이 ViewDigest를 찾는 데 큰 도움이 됩니다."
+    "message": "벌써 영상 $1개를 분석하셨네요. 웹스토어에 짧은 리뷰를 남겨 주시면 다른 분들이 View Digest를 찾는 데 큰 도움이 됩니다."
   },
   "reviewNow": {
     "message": "⭐ 리뷰 남기기"
@@ -303,7 +303,7 @@
     "message": "분석 중 알 수 없는 오류가 발생했습니다."
   },
   "resultsNoUrl": {
-    "message": "분석할 영상 URL을 찾을 수 없습니다. 이 페이지는 ViewDigest 확장프로그램의 분석 버튼을 통해서만 열 수 있습니다."
+    "message": "분석할 영상 URL을 찾을 수 없습니다. 이 페이지는 View Digest 확장프로그램의 분석 버튼을 통해서만 열 수 있습니다."
   },
   "contentButton": {
     "message": "⚡ 영상 분석"
@@ -321,7 +321,7 @@
     "message": "🔄 새로고침 필요"
   },
   "contentReloadNeededDetail": {
-    "message": "ViewDigest가 업데이트되었습니다. 이 페이지를 새로고침한 뒤 다시 눌러 주세요. (버튼을 한 번 더 누르면 새로고침합니다)"
+    "message": "View Digest가 업데이트되었습니다. 이 페이지를 새로고침한 뒤 다시 눌러 주세요. (버튼을 한 번 더 누르면 새로고침합니다)"
   },
   "bgAlreadyAnalyzing": {
     "message": "이미 이 영상을 분석하고 있습니다."
@@ -330,7 +330,7 @@
     "message": "새 영상 분석 완료"
   },
   "actionTitleUnseen": {
-    "message": "ViewDigest - 읽지 않은 분석 $1건"
+    "message": "View Digest - 읽지 않은 분석 $1건"
   },
   "popupNewBadge": {
     "message": "NEW"
