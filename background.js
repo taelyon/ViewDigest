@@ -421,25 +421,42 @@ async function checkChannel(channel) {
   });
   if (videos.length === 0) return;
 
+  // 기준 영상과 그 게시 시각을 함께 둔다. 기준 영상이 나중에 목록에서 사라져도 게시 시각으로
+  // 무엇이 새 영상인지 가릴 수 있다.
+  const baselineOf = (video) => ({ lastVideoId: video.videoId, lastVideoPublishedAt: video.publishedAt ?? null });
+
   if (!channel.lastVideoId) {
-    await updateChannel(channel.channelId, { lastVideoId: videos[0].videoId });
+    await updateChannel(channel.channelId, baselineOf(videos[0]));
     return;
   }
 
   const lastIndex = videos.findIndex((v) => v.videoId === channel.lastVideoId);
-  if (lastIndex === -1 && source === "page") {
-    console.warn(`[채널 기준선 재설정] ${channel.title}: 기준 영상이 채널 페이지 목록에 없음`);
-    await updateChannel(channel.channelId, { lastVideoId: videos[0].videoId });
-    return;
+  let newVideos;
+  if (lastIndex !== -1) {
+    newVideos = videos.slice(0, lastIndex);
+  } else {
+    // 기준 영상이 목록에 없다. 라이브·프리미어가 끝난 뒤 삭제·비공개되었거나, 채널 페이지(쇼츠·
+    // 라이브 제외)에서 읽은 경우다. 예전에는 이때 목록 전체를 새 영상으로 봐서 며칠 지난 영상까지
+    // 분석했다. 이제는 기준 영상의 게시 시각(모르면 지난번 확인에 성공한 시각) 이후에 게시된 영상만
+    // 새 영상으로 보고, 그 시각을 모르거나 게시 시각이 없는 목록(채널 페이지)이면 분석하지 않고
+    // 기준선만 지금 최신 영상으로 다시 잡는다.
+    const cutoff = Date.parse(channel.lastVideoPublishedAt ?? channel.lastSuccessAt ?? channel.lastCheckedAt ?? "");
+    newVideos =
+      source === "page" || !Number.isFinite(cutoff)
+        ? []
+        : videos.filter((v) => Date.parse(v.publishedAt ?? "") > cutoff);
+    if (newVideos.length === 0) {
+      console.warn(`[채널 기준선 재설정] ${channel.title}: 기준 영상이 목록에 없고 그 뒤에 올라온 영상도 없음`);
+      await updateChannel(channel.channelId, baselineOf(videos[0]));
+      return;
+    }
   }
-  // RSS에 lastVideoId가 없다면(그 사이 매우 많은 영상이 올라온 경우) 전부 새 영상으로 간주한다.
-  const newVideos = lastIndex === -1 ? videos : videos.slice(0, lastIndex);
   if (newVideos.length === 0) return;
 
   // 업로드 순서(오래된 것부터)대로 분석해 히스토리 순서가 자연스럽게 유지되도록 한다.
   const toAnalyze = newVideos.slice(0, MAX_NEW_VIDEOS_PER_CHECK).reverse();
 
-  const advanceTo = (video) => updateChannel(channel.channelId, { lastVideoId: video.videoId });
+  const advanceTo = (video) => updateChannel(channel.channelId, baselineOf(video));
 
   for (const video of toAnalyze) {
     // 사용자가 결과 탭에서 같은 영상을 지금 분석 중이면 끝날 때까지 미룬다(기준선을 두면
