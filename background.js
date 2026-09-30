@@ -19,7 +19,7 @@ import {
   updateChannel,
   addUnseenId,
 } from "./utils/storage.js";
-import { fetchLatestVideos, fetchVideoChannelName } from "./utils/channels.js";
+import { fetchLatestVideos, fetchVideoChannelName, fetchVideoPublishDate } from "./utils/channels.js";
 import { t } from "./utils/i18n.js";
 import { refreshBadge } from "./utils/badge.js";
 import { recordSuccessfulAnalysis } from "./utils/review.js";
@@ -112,6 +112,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   await removeDuplicateHistory();
   await refreshBadge();
   await backfillChannelTitles();
+  await backfillPublishDates();
 });
 
 // 서비스 워커가 유휴 상태에서 깨어날 때(브라우저 재시작 등)도 알람이 등록되어 있는지 보장한다.
@@ -121,7 +122,7 @@ chrome.runtime.onStartup.addListener(async () => {
   scheduleCatchUpCheckIfOverdue();
   await removeDuplicateHistory();
   refreshBadge();
-  backfillChannelTitles();
+  backfillChannelTitles().then(backfillPublishDates);
 });
 
 /**
@@ -137,6 +138,22 @@ async function backfillChannelTitles() {
   for (const entry of missing) {
     const channelTitle = await fetchVideoChannelName(entry.url);
     if (channelTitle !== undefined) patches.set(entry.id, { channelTitle });
+  }
+  if (patches.size > 0) await patchHistoryEntries(patches);
+}
+
+/**
+ * 게시 시각을 저장하지 않던 버전에서 만든 히스토리 항목에 게시 시각을 채워 넣는다.
+ * YouTube 페이지에서 찾지 못한 항목은 null로 남겨 다시 묻지 않는다.
+ */
+async function backfillPublishDates() {
+  const missing = (await getHistory()).filter((entry) => entry.publishedAt === undefined && entry.url);
+  if (missing.length === 0) return;
+
+  const patches = new Map();
+  for (const entry of missing) {
+    const publishedAt = await fetchVideoPublishDate(entry.url);
+    if (publishedAt !== undefined) patches.set(entry.id, { publishedAt });
   }
   if (patches.size > 0) await patchHistoryEntries(patches);
 }
@@ -190,7 +207,7 @@ function notifyPopup(message) {
 // analyzeVideo 처리
 // ---------------------------------------------------------------------
 
-async function handleAnalyzeVideo(url, { tab, titleOverride, channelTitle } = {}) {
+async function handleAnalyzeVideo(url, { tab, titleOverride, channelTitle, publishedAt } = {}) {
   // has() 확인과 add()를 그 사이에 await 없이(동기적으로) 수행해야, 거의 동시에
   // 들어온 두 번째 analyzeVideo 요청이 첫 번째 요청의 등록을 확실히 보고 걸러진다.
   // (add()를 비동기 작업 뒤로 미루면 그 틈에 두 요청이 모두 통과하는 경쟁 조건이 생긴다.)
@@ -212,6 +229,8 @@ async function handleAnalyzeVideo(url, { tab, titleOverride, channelTitle } = {}
       return { success: false, error };
     }
 
+    // 게시 시각: 채널 자동 분석은 RSS에서 이미 알고 있고, 모르면 분석하는 동안 알아 둔다.
+    const publishedAtPromise = publishedAt ? Promise.resolve(publishedAt) : fetchVideoPublishDate(url);
     const settings = await getSettings();
     const result = await analyzeYouTubeVideo(url, {
       model: settings.model,
@@ -224,6 +243,7 @@ async function handleAnalyzeVideo(url, { tab, titleOverride, channelTitle } = {}
       videoId,
       title: titleOverride ?? extractTitle(tab, videoId),
       channelTitle,
+      publishedAt: await publishedAtPromise,
       url,
       markdown: result.markdown,
       model: result.model,
@@ -476,6 +496,7 @@ async function checkChannel(channel) {
     const response = await handleAnalyzeVideo(video.url, {
       titleOverride: video.title,
       channelTitle: channel.title,
+      publishedAt: video.publishedAt,
     });
     if (response.success) {
       await advanceTo(video);
@@ -531,6 +552,7 @@ async function queueRetry(channel, video, error) {
         videoId: video.videoId,
         title: video.title,
         url: video.url,
+        publishedAt: video.publishedAt ?? null,
         firstFailedAt: new Date().toISOString(),
         attempts: 1,
         reason: error?.message ?? null,
@@ -563,6 +585,7 @@ async function retryPendingVideos(channel) {
     const response = await handleAnalyzeVideo(item.url, {
       titleOverride: item.title,
       channelTitle: channel.title,
+      publishedAt: item.publishedAt,
     });
     if (response.success) {
       await notifyNewVideoAnalyzed(channel, item, response.result.id);

@@ -335,6 +335,21 @@
   "popupNewBadge": {
     "message": "NEW"
   },
+  "historyDates": {
+    "message": "Posted $1 · Analyzed $2"
+  },
+  "historyAnalyzed": {
+    "message": "Analyzed $1"
+  },
+  "historyPublishedFull": {
+    "message": "Video posted: $1"
+  },
+  "historyAnalyzedFull": {
+    "message": "Analyzed: $1"
+  },
+  "resultsPublished": {
+    "message": "Posted $1"
+  },
   "bgAnalysisFailedTitle": {
     "message": "Couldn't analyze a new video"
   },
