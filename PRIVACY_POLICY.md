@@ -1,6 +1,6 @@
 # View Digest 개인정보처리방침
 
-최종 수정일: 2026-09-25
+최종 수정일: 2026-09-30
 
 > 스토어에 등록된 공식 주소는 <https://taelyon.github.io/ViewDigest/privacy-policy.html> 이며,
 > 그 페이지의 원본은 [`docs/privacy-policy.html`](./docs/privacy-policy.html)입니다.
@@ -51,6 +51,10 @@ Generative Language API(`generativelanguage.googleapis.com`)로 **직접** 전�
 분석 기록에 채널 이름을 표시하기 위해, 분석한 영상의 URL로 YouTube의 공개 oEmbed 주소
 (`youtube.com/oembed`)를 로그인 정보(쿠키) 없이 조회해 채널 이름을 받아옵니다. 받아온 채널 이름은
 분석 히스토리와 함께 이 브라우저에만 저장됩니다.
+
+같은 방식으로, 분석 기록에 영상 게시일을 표시하기 위해 분석한 영상의 공개 시청 페이지
+(`youtube.com/watch`)를 로그인 정보(쿠키) 없이 불러와 게시일만 읽습니다. 게시일은 분석 히스토리와 함께
+이 브라우저에만 저장되고, 페이지의 다른 정보는 저장하거나 전송하지 않습니다.
 
 ## 4. 채널 구독(자동 분석) 기능
 

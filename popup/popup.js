@@ -11,7 +11,7 @@ import {
   setUnseenIds,
 } from "../utils/storage.js";
 import { getUsageStats, checkRateLimit } from "../utils/cost.js";
-import { t, localizePage, formatDateTime } from "../utils/i18n.js";
+import { t, localizePage, formatDateTime, formatShortDate, formatShortDateTime } from "../utils/i18n.js";
 import { refreshBadge } from "../utils/badge.js";
 
 localizePage();
@@ -132,7 +132,17 @@ async function refreshHistory() {
     const meta = document.createElement("div");
     meta.className = "history-item-meta";
     if (unread) meta.append(textSpan("new-badge", t("popupNewBadge")));
-    meta.append(textSpan("history-item-date", formatDateTime(entry.createdAt)));
+    // 영상 게시일과 분석한 시각을 함께 보여 준다(자동 분석은 며칠 전 영상일 수도 있다).
+    const analyzed = formatShortDateTime(entry.createdAt);
+    const dates = textSpan(
+      "history-item-date",
+      entry.publishedAt ? t("historyDates", formatShortDate(entry.publishedAt), analyzed) : t("historyAnalyzed", analyzed)
+    );
+    dates.title = [
+      entry.publishedAt ? t("historyPublishedFull", formatDateTime(entry.publishedAt)) : "",
+      t("historyAnalyzedFull", formatDateTime(entry.createdAt)),
+    ].filter(Boolean).join("\n");
+    meta.append(dates);
     // 채널 이름은 외부(YouTube)에서 온 글자이므로 HTML이 아니라 텍스트로 넣는다.
     if (entry.channelTitle) {
       const channel = textSpan("channel-badge", entry.channelTitle);

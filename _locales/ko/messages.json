@@ -335,6 +335,21 @@
   "popupNewBadge": {
     "message": "NEW"
   },
+  "historyDates": {
+    "message": "$1 게시 · $2 분석"
+  },
+  "historyAnalyzed": {
+    "message": "$1 분석"
+  },
+  "historyPublishedFull": {
+    "message": "영상 게시: $1"
+  },
+  "historyAnalyzedFull": {
+    "message": "분석한 시각: $1"
+  },
+  "resultsPublished": {
+    "message": "$1 게시"
+  },
   "bgAnalysisFailedTitle": {
     "message": "새 영상을 분석하지 못했습니다"
   },

@@ -78,6 +78,8 @@ async function saveAnalysis(result) {
     title: result.title,
     // 채널 이름을 알아내지 못했으면 undefined로 둔다(저장되지 않음). 나중에 다시 채울 수 있다.
     channelTitle: result.channelTitle,
+    // 영상 게시 시각. 모르면 undefined(저장되지 않음, 나중에 다시 채움), YouTube에도 없으면 null.
+    publishedAt: result.publishedAt,
     url: result.url,
     markdown: result.markdown,
     createdAt: result.createdAt ?? new Date().toISOString(),

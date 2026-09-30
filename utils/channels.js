@@ -278,11 +278,37 @@ async function fetchVideoChannelName(videoUrl) {
   }
 }
 
+/**
+ * 영상의 게시 시각을 YouTube 시청 페이지에서 읽는다. API 키가 필요 없고 로그인 정보(쿠키)도
+ * 보내지 않는다. 채널 자동 분석은 RSS에 게시 시각이 있으므로, 이것은 직접 분석한 영상과
+ * 게시 시각을 저장하지 않던 버전의 기록에만 쓴다.
+ *
+ * @returns {Promise<string | null | undefined>} ISO 시각. 페이지에서 찾지 못하면(비공개·삭제된
+ *   영상, 동의 페이지 등) null, 네트워크 오류처럼 나중에 다시 시도할 만하면 undefined.
+ */
+async function fetchVideoPublishDate(videoUrl) {
+  let html;
+  try {
+    const response = await fetchWithTimeout(videoUrl, { credentials: "omit" });
+    if (!response.ok) return null;
+    html = await response.text();
+  } catch {
+    return undefined;
+  }
+  const match =
+    html.match(/<meta itemprop="(?:datePublished|uploadDate)" content="([^"]+)"/) ??
+    html.match(/"(?:publishDate|uploadDate)":"([^"]+)"/);
+  if (!match) return null;
+  const date = new Date(match[1]);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
 export {
   CHANNEL_ID_RE,
   resolveChannelId,
   fetchLatestVideos,
   fetchVideoChannelName,
+  fetchVideoPublishDate,
   extractInitialData,
   collectPageVideos,
 };

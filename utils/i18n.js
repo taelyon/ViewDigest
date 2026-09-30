@@ -61,4 +61,43 @@ function formatDateTime(iso) {
   });
 }
 
-export { t, displayLanguage, localizePage, formatDateTime };
+function toDate(iso) {
+  if (!iso) return null;
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+/** 날짜만. 예) 2026년 9월 28일 / Sep 28, 2026 */
+function formatDate(iso) {
+  const date = toDate(iso);
+  if (!date) return "";
+  return date.toLocaleDateString(displayLanguage(), { year: "numeric", month: "short", day: "numeric" });
+}
+
+/** 좁은 곳(팝업)에 쓰는 짧은 날짜. 올해면 연도를 뺀다. 예) 9월 28일 / Sep 28 */
+function formatShortDate(iso) {
+  const date = toDate(iso);
+  if (!date) return "";
+  const sameYear = date.getFullYear() === new Date().getFullYear();
+  return date.toLocaleDateString(displayLanguage(), {
+    year: sameYear ? undefined : "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+/** 짧은 날짜와 시각. 예) 9월 30일 오전 11:52 / Sep 30, 11:52 AM */
+function formatShortDateTime(iso) {
+  const date = toDate(iso);
+  if (!date) return "";
+  const sameYear = date.getFullYear() === new Date().getFullYear();
+  return date.toLocaleString(displayLanguage(), {
+    year: sameYear ? undefined : "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+export { t, displayLanguage, localizePage, formatDateTime, formatDate, formatShortDate, formatShortDateTime };

@@ -15,10 +15,11 @@ import {
   getHistory,
   removeUnseenIds,
   setAnalysisInProgress,
+  patchHistoryEntries,
 } from "../utils/storage.js";
 import { renderMarkdown } from "../utils/markdown.js";
-import { fetchVideoChannelName } from "../utils/channels.js";
-import { t, localizePage, formatDateTime } from "../utils/i18n.js";
+import { fetchVideoChannelName, fetchVideoPublishDate } from "../utils/channels.js";
+import { t, localizePage, formatDateTime, formatDate } from "../utils/i18n.js";
 import { refreshBadge } from "../utils/badge.js";
 import {
   storePageUrl,
@@ -91,10 +92,28 @@ function renderReport(markdown) {
  * 제목 아래 줄에는 영상의 채널 이름을 보여준다. 모델과 예상 비용은 그 줄에 마우스를
  * 올리면 보인다. 채널 이름을 모르면(예전 기록, 비공개·삭제된 영상) 줄을 숨긴다.
  */
-function showMeta({ channelTitle, model, estimatedCost }) {
-  els.metaLine.textContent = channelTitle ?? "";
-  els.metaLine.title = model ? t("resultsMeta", model, formatCost(estimatedCost)) : "";
-  els.metaLine.classList.toggle("hidden", !channelTitle);
+function showMeta({ channelTitle, publishedAt, createdAt, model, estimatedCost }) {
+  const parts = [channelTitle, publishedAt ? t("resultsPublished", formatDate(publishedAt)) : null].filter(Boolean);
+  els.metaLine.textContent = parts.join(" · ");
+  els.metaLine.title = [
+    model ? t("resultsMeta", model, formatCost(estimatedCost)) : "",
+    createdAt ? t("historyAnalyzedFull", formatDateTime(createdAt)) : "",
+  ].filter(Boolean).join("\n");
+  els.metaLine.classList.toggle("hidden", parts.length === 0);
+}
+
+/**
+ * 게시 시각을 저장하지 않던 버전에서 만든 기록이면, 열 때 한 번 알아내 저장하고 화면에 반영한다.
+ */
+async function fillPublishDate(entry) {
+  if (entry.publishedAt !== undefined || !entry.url) return;
+  const publishedAt = await fetchVideoPublishDate(entry.url);
+  if (publishedAt === undefined) return;
+  await patchHistoryEntries(new Map([[entry.id, { publishedAt }]]));
+  if (finalEntry?.id === entry.id) {
+    finalEntry = { ...finalEntry, publishedAt };
+    showMeta(finalEntry);
+  }
 }
 
 function formatCost(usd) {
@@ -202,6 +221,7 @@ function showSavedEntry(entry, { alreadyAnalyzed = false } = {}) {
   document.title = `${entry.title ?? t("untitled")} - View Digest`;
   els.title.textContent = entry.title ?? t("untitled");
   showMeta(entry);
+  fillPublishDate(entry);
   renderReport(entry.markdown ?? "");
   els.actions.classList.remove("hidden");
   els.reanalyzeBtn.classList.toggle("hidden", !entry.url);
@@ -241,7 +261,11 @@ async function runNewAnalysis() {
   const initialTitle = videoTitle || videoId || t("untitled");
   // 히스토리에 채널 이름을 함께 남긴다. 분석이 한참 걸리므로 그동안 미리 알아 둔다.
   const channelTitlePromise = fetchVideoChannelName(videoUrl);
-  // 분석은 한참 걸리므로, 채널 이름은 알게 되는 즉시 보여준다.
+  const publishedAtPromise = fetchVideoPublishDate(videoUrl);
+  // 분석은 한참 걸리므로, 채널 이름과 게시일은 알게 되는 즉시 보여준다.
+  Promise.all([channelTitlePromise, publishedAtPromise]).then(([channelTitle, publishedAt]) => {
+    if (!finalEntry) showMeta({ channelTitle, publishedAt });
+  });
   channelTitlePromise.then((channelTitle) => {
     if (channelTitle && !finalEntry) showMeta({ channelTitle });
   });
@@ -266,6 +290,7 @@ async function runNewAnalysis() {
           videoId,
           title: initialTitle,
           channelTitle: await channelTitlePromise,
+          publishedAt: await publishedAtPromise,
           url: videoUrl,
           markdown: event.result.markdown,
           model: event.result.model,
