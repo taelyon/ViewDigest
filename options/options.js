@@ -145,7 +145,7 @@ function setupApiKeySection() {
 const themeSelect = document.getElementById("theme-select");
 
 async function setupThemePicker() {
-  themeSelect.value = (await getSettings()).theme ?? "dark";
+  themeSelect.value = (await getSettings()).theme ?? "system";
   themeSelect.addEventListener("change", () => setSettings({ theme: themeSelect.value }));
 }
 
