@@ -436,5 +436,134 @@
   },
   "channelPageNoVideos": {
     "message": "no videos found on the channel page"
+  },
+  "welcomePageTitle": {
+    "message": "Get started with View Digest"
+  },
+  "welcomeHeading": {
+    "message": "Welcome to View Digest"
+  },
+  "welcomeSubtitle": {
+    "message": "Turn YouTube videos into reports with a table of contents, key points and jump-to-scene links. Three steps and you're set."
+  },
+  "welcomeSampleHeading": {
+    "message": "See what you get first"
+  },
+  "welcomeSampleDesc": {
+    "message": "You can open a sample report without an API key. In real reports, clicking the ▶ time next to a section jumps to that moment in the video."
+  },
+  "welcomeSampleButton": {
+    "message": "📄 View a sample report"
+  },
+  "welcomeStep1Heading": {
+    "message": "Get a Gemini API key (free)"
+  },
+  "welcomeStep1Desc": {
+    "message": "View Digest analyzes videos with the Gemini API on your own Google account. There is no server in between, so your key and your reports never reach the developer."
+  },
+  "welcomeStep1Item1": {
+    "message": "Open Google AI Studio with the button below and sign in with your Google account."
+  },
+  "welcomeStep1Item2": {
+    "message": "Click <b>Create API key</b> and copy the key that starts with <code>AIza</code>."
+  },
+  "welcomeStep1Button": {
+    "message": "Get a key in Google AI Studio ↗"
+  },
+  "welcomeStep2Heading": {
+    "message": "Paste the key and test it"
+  },
+  "welcomeSaveAndTest": {
+    "message": "Save and test"
+  },
+  "welcomeKeySaved": {
+    "message": "✓ A key is saved: $1"
+  },
+  "welcomeNoKeyYet": {
+    "message": "Paste the key you copied below."
+  },
+  "welcomeEnterKey": {
+    "message": "Please paste your API key."
+  },
+  "welcomeChecking": {
+    "message": "Checking the key..."
+  },
+  "welcomeKeyOk": {
+    "message": "All set! You can now analyze videos on YouTube."
+  },
+  "welcomeKeyInvalid": {
+    "message": "Google didn't accept this key (HTTP $1). Make sure you copied the whole key. It was not saved."
+  },
+  "welcomeKeyNetwork": {
+    "message": "The key was saved, but it couldn't be checked because of a network problem. Check your connection and try again."
+  },
+  "welcomeStep3Heading": {
+    "message": "Analyze a video on YouTube"
+  },
+  "welcomeStep3Desc": {
+    "message": "Open any YouTube video and an ⚡ Analyze video button appears under the title and above the recommendations. Click it and the report is written live in a new tab."
+  },
+  "welcomeStep3Tip": {
+    "message": "Subscribe to channels to have new uploads analyzed automatically (Settings → Channel subscriptions). Pin View Digest from the puzzle icon in the toolbar to see the number of unread reports on its icon."
+  },
+  "welcomeOpenYoutube": {
+    "message": "Open YouTube ↗"
+  },
+  "welcomeOpenOptions": {
+    "message": "Open settings"
+  },
+  "welcomeQuotaHeading": {
+    "message": "If you see \"usage limit exceeded\""
+  },
+  "welcomeQuotaDesc": {
+    "message": "A key without billing is on the free tier, which limits usage per minute and per day. Video analysis uses many tokens, so the limit can be reached quickly."
+  },
+  "welcomeQuotaItem1": {
+    "message": "Per-minute limits clear after a minute or two; the daily limit resets the next day."
+  },
+  "welcomeQuotaItem2": {
+    "message": "Switching the model to \"Gemini 3.5 Flash Lite (economy)\" in settings hits the limit less often and costs less."
+  },
+  "welcomeQuotaItem3": {
+    "message": "For heavier use, set up billing for the key's project in AI Studio. You pay for what you use, and each analysis records its estimated cost."
+  },
+  "resultsSampleNotice": {
+    "message": "This is a sample report. Register a Gemini API key to get reports like this for the videos you choose."
+  },
+  "resultsOpenGuide": {
+    "message": "Open the getting-started guide"
+  },
+  "resultsRetry": {
+    "message": "🔄 Try again"
+  },
+  "resultsUseLiteModel": {
+    "message": "Switch to the economy model and retry"
+  },
+  "resultsCheckUsage": {
+    "message": "Check usage and limits ↗"
+  },
+  "resultsSetUpBilling": {
+    "message": "Set up billing ↗"
+  },
+  "resultsQuotaHint": {
+    "message": "Per-minute limits clear after a minute or two, daily limits the next day. If this happens often, use the economy model or set up billing."
+  },
+  "geminiQuotaExceeded": {
+    "message": "You've reached your Gemini API usage limit. Keys without billing are on the free tier, which limits usage per minute and per day."
+  },
+  "bgQuotaTitle": {
+    "message": "Gemini API usage limit reached"
+  },
+  "bgQuotaBody": {
+    "message": "Channel auto-analysis is paused for now and will continue on the next check once the limit clears. Click for ways to fix it."
+  },
+  "popupNoKey": {
+    "message": "Register a Gemini API key first to start analyzing."
+  },
+  "popupOpenGuide": {
+    "message": "🔑 Register an API key (getting-started guide)"
+  },
+  "optionsOpenGuide": {
+    "message": "New here? Open the getting-started guide"
   }
 }

@@ -13,6 +13,7 @@ import {
 import { getUsageStats, checkRateLimit } from "../utils/cost.js";
 import { t, localizePage, formatDateTime, formatShortDate, formatShortDateTime } from "../utils/i18n.js";
 import { refreshBadge } from "../utils/badge.js";
+import { getApiKey } from "../utils/apikey.js";
 
 localizePage();
 
@@ -72,6 +73,11 @@ async function initAnalyzeButton() {
 
   startBtn.disabled = !tab;
   hint.textContent = tab ? "" : t("popupWatchPageOnly");
+
+  // API 키가 없으면 분석해도 실패하므로, 시작 가이드로 가는 버튼을 먼저 보여 준다.
+  const hasKey = Boolean(await getApiKey());
+  document.getElementById("setup-guide-btn").classList.toggle("hidden", hasKey);
+  if (!hasKey) hint.textContent = t("popupNoKey");
 }
 
 function setupAnalyzeButton() {
@@ -253,6 +259,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("open-options-btn").addEventListener("click", () => {
     chrome.runtime.openOptionsPage();
+  });
+  document.getElementById("setup-guide-btn").addEventListener("click", () => {
+    chrome.tabs.create({ url: chrome.runtime.getURL("welcome/welcome.html") });
+    window.close();
   });
 
   document.getElementById("mark-all-read-btn").addEventListener("click", markAllRead);

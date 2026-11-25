@@ -627,3 +627,13 @@ body {
 .rate-limit-fill.is-full {
   background: var(--danger);
 }
+
+/* API 키가 없을 때 시작 가이드로 가는 버튼 */
+.setup-guide-btn {
+  display: block;
+  margin: 6px auto 0;
+  color: var(--accent);
+}
+.setup-guide-btn.hidden {
+  display: none;
+}

@@ -262,3 +262,31 @@ body {
 .hidden {
   display: none !important;
 }
+
+/* 오류 아래의 해결 방법 버튼(한도 초과, API 키 없음 등) */
+.error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+.error-actions a {
+  text-decoration: none;
+}
+.error-hint {
+  width: 100%;
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* 예시 리포트 안내 */
+.sample-notice {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.sample-notice .primary-btn {
+  flex-shrink: 0;
+}

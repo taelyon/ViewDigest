@@ -1,0 +1,70 @@
+/* View Digest - 시작 가이드. 설정 페이지(options.css)의 테마·카드·버튼을 그대로 쓰고 단계 표시만 더한다. */
+
+a.primary-btn,
+a.secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.hero-card {
+  border-color: var(--accent);
+  background: linear-gradient(135deg, var(--accent-soft), transparent 70%), var(--bg-secondary);
+}
+
+.step-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.step-head h2 {
+  margin: 0;
+}
+
+.step-num {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+}
+/* 끝난 단계는 초록 체크로 */
+.step.done .step-num {
+  background: var(--success);
+  color: var(--bg-primary);
+  font-size: 0;
+}
+.step.done .step-num::after {
+  content: "✓";
+  font-size: 14px;
+}
+
+.step-list {
+  margin: 10px 0 0;
+  padding-left: 20px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.step-list code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+#key-status.saved {
+  color: var(--success);
+  font-weight: 600;
+}
+
+/* 알림에서 '#quota'로 열면 한도 안내를 눈에 띄게 */
+#quota:target {
+  border-color: var(--warning);
+}
