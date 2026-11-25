@@ -12,16 +12,13 @@ import {
 import { DEFAULT_DAILY_LIMIT } from "../utils/cost.js";
 import { resolveChannelId } from "../utils/channels.js";
 import { t, localizePage, formatDateTime } from "../utils/i18n.js";
+import { getApiKey, setApiKey, maskApiKey, testApiKey } from "../utils/apikey.js";
 
 localizePage();
 
 // 설치된 버전. manifest.json에서 읽으므로 버전을 올리면 따로 고칠 필요가 없다.
 document.getElementById("app-version").textContent = `v${chrome.runtime.getManifest().version}`;
 
-// gemini.js가 읽는 것과 동일한 storage 영역/키. API 키는 기기 간 동기화되는
-// chrome.storage.sync에 저장하므로, 로컬 설정/히스토리를 다루는
-// utils/storage.js와는 별도로 이 파일에서 직접 다룬다.
-const API_KEY_STORAGE_KEY = "geminiApiKey";
 const DEFAULT_MODEL = "gemini-3.7-flash";
 // background.js의 기본값과 동일 (background.js는 다른 파일이 import하는 모듈이 아니므로 값을 복제)
 const DEFAULT_CHANNEL_CHECK_INTERVAL_MINUTES = 30;
@@ -29,32 +26,6 @@ const DEFAULT_CHANNEL_CHECK_INTERVAL_MINUTES = 30;
 // ---------------------------------------------------------------------
 // 유틸리티
 // ---------------------------------------------------------------------
-
-function getSyncApiKey() {
-  return new Promise((resolve) => {
-    chrome.storage.sync.get(API_KEY_STORAGE_KEY, (result) => {
-      resolve(result[API_KEY_STORAGE_KEY]);
-    });
-  });
-}
-
-function setSyncApiKey(key) {
-  return new Promise((resolve, reject) => {
-    chrome.storage.sync.set({ [API_KEY_STORAGE_KEY]: key }, () => {
-      if (chrome.runtime.lastError) {
-        reject(new Error(chrome.runtime.lastError.message));
-        return;
-      }
-      resolve();
-    });
-  });
-}
-
-function maskApiKey(key) {
-  if (!key) return "";
-  if (key.length <= 4) return "•".repeat(key.length);
-  return `${"•".repeat(Math.max(key.length - 4, 4))}${key.slice(-4)}`;
-}
 
 function showFeedback(el, message, type) {
   el.textContent = message;
@@ -74,7 +45,7 @@ const saveApiKeyBtn = document.getElementById("save-api-key-btn");
 const testApiKeyBtn = document.getElementById("test-api-key-btn");
 
 async function refreshApiKeyStatus() {
-  const key = await getSyncApiKey();
+  const key = await getApiKey();
   apiKeyStatus.textContent = key ? t("optionsSavedKey", maskApiKey(key)) : t("optionsNoSavedKey");
 }
 
@@ -94,7 +65,7 @@ function setupApiKeySection() {
 
     saveApiKeyBtn.disabled = true;
     try {
-      await setSyncApiKey(value);
+      await setApiKey(value);
       apiKeyInput.value = "";
       showFeedback(apiKeyFeedback, t("optionsApiKeySaved"), "success");
       await refreshApiKeyStatus();
@@ -107,7 +78,7 @@ function setupApiKeySection() {
 
   testApiKeyBtn.addEventListener("click", async () => {
     const typed = apiKeyInput.value.trim();
-    const keyToTest = typed || (await getSyncApiKey());
+    const keyToTest = typed || (await getApiKey());
 
     if (!keyToTest) {
       showFeedback(testResultEl, t("optionsNoKeyToTest"), "error");
@@ -119,17 +90,14 @@ function setupApiKeySection() {
 
     try {
       // 실제 분석 없이 가벼운 모델 목록 조회로 키 유효성만 확인한다 (비용 발생 없음).
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(keyToTest)}`
-      );
-
-      if (response.ok) {
+      const result = await testApiKey(keyToTest);
+      if (result.ok) {
         showFeedback(testResultEl, t("optionsKeyValid"), "success");
+      } else if (result.status) {
+        showFeedback(testResultEl, t("optionsKeyInvalid", result.status), "error");
       } else {
-        showFeedback(testResultEl, t("optionsKeyInvalid", response.status), "error");
+        showFeedback(testResultEl, t("optionsKeyNetworkError"), "error");
       }
-    } catch {
-      showFeedback(testResultEl, t("optionsKeyNetworkError"), "error");
     } finally {
       testApiKeyBtn.disabled = false;
     }

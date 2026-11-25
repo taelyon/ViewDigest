@@ -15,7 +15,7 @@ cd "$(dirname "$0")/.."
 # 확장프로그램 실행에 필요한 것만 담는다. docs/, *.md, scripts/는 넣지 않는다.
 # 최상위에 새 파일·폴더를 추가했다면 여기에도 추가해야 한다. 빠뜨리면 아래의
 # 참조 검사가 잡아낸다.
-INCLUDE=(manifest.json background.js content.js _locales icons popup options results utils)
+INCLUDE=(manifest.json background.js content.js _locales icons popup options results utils welcome)
 
 fail() { echo "✗ $*" >&2; exit 1; }
 warn() { echo "! $*" >&2; }

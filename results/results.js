@@ -11,6 +11,7 @@
 import { analyzeYouTubeVideoStream, GeminiApiError } from "../utils/gemini.js";
 import {
   getSettings,
+  setSettings,
   saveAnalysis,
   getHistory,
   removeUnseenIds,
@@ -19,7 +20,8 @@ import {
 } from "../utils/storage.js";
 import { renderMarkdown } from "../utils/markdown.js";
 import { fetchVideoChannelName, fetchVideoPublishDate } from "../utils/channels.js";
-import { t, localizePage, formatDateTime, formatDate } from "../utils/i18n.js";
+import { t, localizePage, formatDateTime, formatDate, displayLanguage } from "../utils/i18n.js";
+import { getSampleReport } from "../utils/sample-report.js";
 import { refreshBadge } from "../utils/badge.js";
 import {
   storePageUrl,
@@ -37,6 +39,10 @@ const videoTitle = params.get("title");
 const entryId = params.get("entryId");
 // "다시 분석"을 눌러 연 경우. 이미 분석한 영상이어도 저장된 리포트 대신 새로 분석한다.
 const reanalyze = params.get("reanalyze") === "1";
+// 시작 가이드에서 연 예시 리포트. API 키 없이 결과물의 모습을 보여 준다.
+const sample = params.get("sample") === "1";
+const GUIDE_URL = chrome.runtime.getURL("welcome/welcome.html");
+const LITE_MODEL = "gemini-3.5-flash-lite";
 
 function extractVideoId(url) {
   try {
@@ -65,6 +71,9 @@ const els = {
   savedNotice: document.getElementById("saved-notice"),
   savedNoticeText: document.getElementById("saved-notice-text"),
   noticeReanalyzeBtn: document.getElementById("notice-reanalyze-btn"),
+  errorActions: document.getElementById("error-actions"),
+  sampleNotice: document.getElementById("sample-notice"),
+  sampleGuideBtn: document.getElementById("sample-guide-btn"),
 };
 
 let finalEntry = null;
@@ -75,10 +84,79 @@ function showStatus(message) {
   els.statusText.textContent = message;
 }
 
-function showError(message) {
+function showError(message, code) {
   els.statusView.classList.add("hidden");
   els.errorView.classList.remove("hidden");
   els.errorText.textContent = message;
+  showErrorActions(code);
+}
+
+function actionButton(label, onClick, primary = false) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = primary ? "primary-btn" : "secondary-btn";
+  button.textContent = label;
+  button.addEventListener("click", onClick);
+  return button;
+}
+
+function actionLink(label, href) {
+  const link = document.createElement("a");
+  link.className = "secondary-btn";
+  link.href = href;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  link.textContent = label;
+  return link;
+}
+
+/** 같은 영상을 새로 분석한다(이미 저장된 결과가 있어도). */
+function retryAnalysis() {
+  const url = new URL(location.href);
+  url.searchParams.set("reanalyze", "1");
+  location.replace(url.toString());
+}
+
+/**
+ * 오류만 보여 주면 사용자가 무엇을 해야 할지 모르는 경우, 해결 방법을 버튼으로 둔다.
+ * - 한도 초과: 다시 시도, 경제형 모델로 바꿔 다시 시도, 사용량 확인, 결제 설정
+ * - API 키 없음: 시작 가이드
+ */
+async function showErrorActions(code) {
+  els.errorActions.replaceChildren();
+  const items = [];
+  if (code === "QUOTA_EXCEEDED") {
+    items.push(actionButton(t("resultsRetry"), retryAnalysis, true));
+    const { model } = await getSettings();
+    if (model !== LITE_MODEL) {
+      items.push(
+        actionButton(t("resultsUseLiteModel"), async () => {
+          await setSettings({ model: LITE_MODEL });
+          retryAnalysis();
+        })
+      );
+    }
+    items.push(actionLink(t("resultsCheckUsage"), "https://ai.dev/rate-limit"));
+    items.push(actionLink(t("resultsSetUpBilling"), "https://aistudio.google.com/apikey"));
+    const hint = document.createElement("p");
+    hint.className = "error-hint";
+    hint.textContent = t("resultsQuotaHint");
+    items.push(hint);
+  } else if (code === "MISSING_API_KEY") {
+    items.push(actionButton(t("resultsOpenGuide"), () => window.open(GUIDE_URL, "_blank"), true));
+  }
+  els.errorActions.append(...items);
+  els.errorActions.classList.toggle("hidden", items.length === 0);
+}
+
+/** 예시 리포트를 보여 준다. 저장하지 않고, 복사·재분석 버튼도 두지 않는다. */
+function showSample() {
+  const entry = getSampleReport(displayLanguage());
+  document.title = `${entry.title} - View Digest`;
+  els.title.textContent = entry.title;
+  showMeta(entry);
+  renderReport(entry.markdown);
+  els.sampleNotice.classList.remove("hidden");
 }
 
 function renderReport(markdown) {
@@ -320,7 +398,7 @@ async function runNewAnalysis() {
       error instanceof GeminiApiError
         ? error.message
         : t("resultsUnknownError");
-    showError(message);
+    showError(message, error instanceof GeminiApiError ? error.code : undefined);
   } finally {
     if (videoId) await setAnalysisInProgress(videoId, false);
   }
@@ -338,6 +416,11 @@ async function findSavedAnalysis(url) {
 }
 
 async function run() {
+  if (sample) {
+    showSample();
+    return;
+  }
+
   if (entryId) {
     await runFromHistory(entryId);
     return;
@@ -376,5 +459,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   // 긴 리포트 맨 아래까지 내려가지 않아도 되도록, 안내 옆에도 같은 버튼을 둔다.
   els.noticeReanalyzeBtn.addEventListener("click", reanalyzeCurrent);
+  els.sampleGuideBtn.addEventListener("click", () => window.open(GUIDE_URL, "_blank"));
   run();
 });

@@ -50,6 +50,8 @@ const ERROR_CODES = {
   REQUEST_FAILED: "REQUEST_FAILED",
   EMPTY_RESPONSE: "EMPTY_RESPONSE",
   VIDEO_NOT_ACCESSIBLE: "VIDEO_NOT_ACCESSIBLE",
+  // 내 Gemini API 키(프로젝트)의 사용 한도 초과. 우리 확장의 일일 분석 횟수 제한(RATE_LIMITED)과 다르다.
+  QUOTA_EXCEEDED: "QUOTA_EXCEEDED",
 };
 
 // 영상 자체를 인식해야 하므로 추론과 검색 그라운딩이 실제로 필요하다. 다만
@@ -159,6 +161,17 @@ async function assertOkResponse(response) {
   // 아직 공개 전인 프리미어·라이브, 업로드 직후 처리 중 등). 뒤의 경우는 시간이 지나면 풀린다.
   if (response.status === 403 && /caller does not have permission/i.test(apiMessage ?? "")) {
     throw new GeminiApiError(t("geminiVideoNotAccessible"), ERROR_CODES.VIDEO_NOT_ACCESSIBLE, {
+      status: response.status,
+      body: details,
+    });
+  }
+
+  // 사용 한도 초과(429 RESOURCE_EXHAUSTED). 무료 등급의 분당·하루 한도에 걸리는 일이 흔한데,
+  // Google 원문("You exceeded your current quota…")은 영어이고 무엇을 하면 되는지 알기 어렵다.
+  // 결과 화면이 다시 시도·경제형 모델·결제 설정 같은 선택지를 보여 줄 수 있게 따로 구분한다.
+  const apiStatus = typeof details === "object" ? details?.error?.status : null;
+  if (response.status === 429 || apiStatus === "RESOURCE_EXHAUSTED") {
+    throw new GeminiApiError(t("geminiQuotaExceeded"), ERROR_CODES.QUOTA_EXCEEDED, {
       status: response.status,
       body: details,
     });

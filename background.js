@@ -39,7 +39,7 @@ const MAX_NEW_VIDEOS_PER_CHECK = 3;
 // 채널 자동 분석을 막는 원인 중, 영상마다가 아니라 전체에 걸리는 것. 채널·영상마다
 // 알리면 알림이 쏟아지므로 하루 한 번만 알리고, 기준선을 전진시키지 않아 원인이
 // 해결된 뒤 다음 확인 때 같은 영상부터 다시 분석한다.
-const BLOCKING_ERROR_CODES = ["RATE_LIMITED", "MISSING_API_KEY"];
+const BLOCKING_ERROR_CODES = ["RATE_LIMITED", "MISSING_API_KEY", "QUOTA_EXCEEDED"];
 const NOTICE_DATES_KEY = "blockingNoticeDates";
 
 // 지금은 실패했지만 시간이 지나면 풀릴 수 있는 실패. 업로드 직후 처리 중이거나 아직 공개 전인
@@ -106,6 +106,8 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     if (settings.dailyLimit === undefined) {
       await setSettings({ dailyLimit: 20 });
     }
+    // 처음 설치하면 시작 가이드를 연다(API 키 발급·등록·첫 분석까지 안내).
+    chrome.tabs.create({ url: chrome.runtime.getURL("welcome/welcome.html") });
   }
   await setupChannelCheckAlarm();
   await scheduleCatchUpCheckIfOverdue();
@@ -377,6 +379,8 @@ async function notifyBlockingErrorOncePerDay(error) {
   if (error.code === "RATE_LIMITED") {
     const { limit } = await checkRateLimit();
     showNotification(id, t("bgRateLimitedTitle"), t("bgRateLimitedBody", limit));
+  } else if (error.code === "QUOTA_EXCEEDED") {
+    showNotification(id, t("bgQuotaTitle"), t("bgQuotaBody"));
   } else {
     showNotification(id, t("bgAnalysisFailedTitle"), t("bgMissingKeyBody"));
   }
@@ -400,7 +404,12 @@ chrome.notifications.onClicked.addListener((notificationId) => {
     url.searchParams.set("entryId", entryId);
     chrome.tabs.create({ url: url.toString() });
   } else if (notificationId.startsWith(NOTIFICATION_PREFIX.SETUP)) {
-    chrome.runtime.openOptionsPage();
+    // 한도 초과는 설정으로 해결할 일이 아니므로 시작 가이드의 한도 안내를 연다.
+    if (notificationId.endsWith("QUOTA_EXCEEDED")) {
+      chrome.tabs.create({ url: chrome.runtime.getURL("welcome/welcome.html#quota") });
+    } else {
+      chrome.runtime.openOptionsPage();
+    }
   } else if (notificationId.startsWith(NOTIFICATION_PREFIX.VIDEO)) {
     const videoId = notificationId.slice(NOTIFICATION_PREFIX.VIDEO.length);
     chrome.tabs.create({ url: `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}` });
