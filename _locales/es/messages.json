@@ -1,0 +1,692 @@
+{
+  "htmlLang": {
+    "message": "es"
+  },
+  "extDescription": {
+    "message": "Resumen de vídeos de YouTube con IA (Gemini): notas por capítulos, resumen en 3 líneas, preguntas sobre el vídeo y marcas de tiempo"
+  },
+  "untitled": {
+    "message": "Sin título"
+  },
+  "unknownError": {
+    "message": "Se produjo un error desconocido."
+  },
+  "unknownErrorShort": {
+    "message": "error desconocido"
+  },
+  "rateLimited": {
+    "message": "Has usado todos los análisis de hoy ($1 al día)."
+  },
+  "popupOpenSettings": {
+    "message": "Abrir ajustes"
+  },
+  "popupAnalyzeNow": {
+    "message": "🔍 Analizar ahora"
+  },
+  "popupWatchPageOnly": {
+    "message": "Abre la página de un vídeo de YouTube para analizarlo."
+  },
+  "popupTabHistory": {
+    "message": "Historial"
+  },
+  "popupTabUsage": {
+    "message": "Uso"
+  },
+  "popupClearHistory": {
+    "message": "Borrar todo"
+  },
+  "popupMarkAllRead": {
+    "message": "Marcar todo como leído"
+  },
+  "popupClearHistoryConfirm": {
+    "message": "¿Borrar todo? Haz clic otra vez"
+  },
+  "popupHistoryCount": {
+    "message": "Análisis guardados: $1"
+  },
+  "popupHistoryEmpty": {
+    "message": "Aún no has analizado ningún vídeo."
+  },
+  "popupDelete": {
+    "message": "Eliminar"
+  },
+  "popupUsageToday": {
+    "message": "Análisis de hoy"
+  },
+  "popupUsageMonth": {
+    "message": "Análisis de este mes"
+  },
+  "popupCostToday": {
+    "message": "Coste est. de hoy"
+  },
+  "popupCostMonth": {
+    "message": "Coste est. del mes"
+  },
+  "popupDailyLimit": {
+    "message": "Límite diario de hoy"
+  },
+  "popupCount": {
+    "message": "$1"
+  },
+  "popupRemaining": {
+    "message": "Te quedan $1 análisis hoy."
+  },
+  "popupLimitReached": {
+    "message": "Has alcanzado el límite de análisis de hoy. Vuelve a intentarlo mañana."
+  },
+  "optionsPageTitle": {
+    "message": "View Digest - Ajustes"
+  },
+  "optionsSubtitle": {
+    "message": "Ajustes"
+  },
+  "optionsTheme": {
+    "message": "Tema"
+  },
+  "optionsThemeDark": {
+    "message": "Oscuro"
+  },
+  "optionsThemeLight": {
+    "message": "Claro"
+  },
+  "optionsThemeSystem": {
+    "message": "Igual que el sistema"
+  },
+  "optionsApiKeyHeading": {
+    "message": "Clave de API de Gemini"
+  },
+  "optionsApiKeyDescHtml": {
+    "message": "Introduce una clave de API creada en <a href=\"https://aistudio.google.com/app/apikey\" target=\"_blank\" rel=\"noopener noreferrer\">Google AI Studio</a>. La clave se guarda en un almacenamiento que se sincroniza entre tus dispositivos (chrome.storage.sync)."
+  },
+  "optionsChecking": {
+    "message": "Comprobando..."
+  },
+  "optionsApiKeyPlaceholder": {
+    "message": "Introduce una nueva clave de API"
+  },
+  "optionsToggleVisibility": {
+    "message": "Mostrar/ocultar clave"
+  },
+  "optionsSaveApiKey": {
+    "message": "Guardar clave de API"
+  },
+  "optionsTestApiKey": {
+    "message": "Probar conexión"
+  },
+  "optionsSavedKey": {
+    "message": "Clave guardada: $1"
+  },
+  "optionsNoSavedKey": {
+    "message": "No hay ninguna clave de API guardada."
+  },
+  "optionsEnterApiKey": {
+    "message": "Introduce una clave de API."
+  },
+  "optionsApiKeySaved": {
+    "message": "Clave de API guardada."
+  },
+  "optionsSaveFailed": {
+    "message": "No se pudo guardar: $1"
+  },
+  "optionsNoKeyToTest": {
+    "message": "No hay ninguna clave de API que probar. Introduce una primero."
+  },
+  "optionsKeyValid": {
+    "message": "✅ La clave de API es válida."
+  },
+  "optionsKeyInvalid": {
+    "message": "❌ La clave de API no es válida. (HTTP $1)"
+  },
+  "optionsKeyNetworkError": {
+    "message": "❌ No se pudo comprobar por un error de red."
+  },
+  "optionsAnalysisHeading": {
+    "message": "Ajustes de análisis"
+  },
+  "optionsModelLabel": {
+    "message": "Modelo"
+  },
+  "optionsModelDefault": {
+    "message": "Gemini 3.7 Flash (predeterminado, equilibrado)"
+  },
+  "optionsModelHigh": {
+    "message": "Gemini 3.8 Flash (alto rendimiento)"
+  },
+  "optionsModelLite": {
+    "message": "Gemini 3.5 Flash Lite (económico)"
+  },
+  "optionsReportLanguageLabel": {
+    "message": "Idioma del informe"
+  },
+  "optionsReportLanguageAuto": {
+    "message": "Automático (idioma del navegador)"
+  },
+  "optionsReportLanguageHint": {
+    "message": "En automático se escribe en el idioma del navegador si es coreano, japonés o español, y en inglés en los demás casos. El idioma que se habla en el vídeo no importa."
+  },
+  "optionsShareAttribution": {
+    "message": "Incluir el vídeo original y un enlace a la fuente (Made with View Digest) al copiar o descargar"
+  },
+  "optionsDailyLimitLabel": {
+    "message": "Máximo de análisis al día"
+  },
+  "optionsSaveSettings": {
+    "message": "Guardar ajustes"
+  },
+  "optionsDailyLimitInvalid": {
+    "message": "El límite diario debe ser un número igual o mayor que 1."
+  },
+  "optionsSettingsSaved": {
+    "message": "Ajustes guardados."
+  },
+  "optionsChannelsHeading": {
+    "message": "Suscripciones a canales (analizar vídeos nuevos automáticamente)"
+  },
+  "optionsChannelsDesc": {
+    "message": "Al añadir un canal, solo se analizan automáticamente los vídeos que se suban después. (Los vídeos que ya estaban en el canal no se analizan.) Los canales solo se comprueban mientras el navegador está abierto."
+  },
+  "optionsChannelInputLabel": {
+    "message": "URL del canal, @identificador o ID del canal"
+  },
+  "optionsChannelPlaceholder": {
+    "message": "https://www.youtube.com/@canal"
+  },
+  "optionsAddChannel": {
+    "message": "Añadir canal"
+  },
+  "optionsIntervalLabel": {
+    "message": "Intervalo de comprobación (minutos)"
+  },
+  "optionsSaveInterval": {
+    "message": "Guardar intervalo"
+  },
+  "optionsCheckNow": {
+    "message": "Comprobar ahora"
+  },
+  "optionsNoChannels": {
+    "message": "Aún no te has suscrito a ningún canal."
+  },
+  "optionsLastChecked": {
+    "message": "Última comprobación: $1"
+  },
+  "optionsNotCheckedYet": {
+    "message": "Aún sin comprobar"
+  },
+  "optionsCheckFailed": {
+    "message": "Falló la comprobación ($1): $2"
+  },
+  "optionsRecentFailure": {
+    "message": "Falló el análisis ($1)"
+  },
+  "optionsRetryPending": {
+    "message": "Reintentando (primer fallo $1, intento $2)"
+  },
+  "optionsLastSuccess": {
+    "message": "Última comprobación correcta: $1"
+  },
+  "optionsReadFromPage": {
+    "message": "leído de la página del canal en lugar del RSS"
+  },
+  "optionsNextCheck": {
+    "message": "Próxima comprobación automática: $1"
+  },
+  "optionsAutoAnalyze": {
+    "message": "Análisis automático"
+  },
+  "optionsUnsubscribe": {
+    "message": "Cancelar suscripción"
+  },
+  "optionsEnterChannel": {
+    "message": "Introduce la URL del canal, el @identificador o el ID del canal."
+  },
+  "optionsResolvingChannel": {
+    "message": "Buscando el canal..."
+  },
+  "optionsChannelSubscribed": {
+    "message": "Te has suscrito a «$1»."
+  },
+  "optionsIntervalInvalid": {
+    "message": "El intervalo de comprobación debe ser de al menos 5 minutos."
+  },
+  "optionsIntervalSaved": {
+    "message": "Intervalo de comprobación guardado."
+  },
+  "resultsPageTitle": {
+    "message": "Análisis de View Digest"
+  },
+  "resultsPreparing": {
+    "message": "Preparando el análisis..."
+  },
+  "resultsStarting": {
+    "message": "Empezando..."
+  },
+  "resultsCopy": {
+    "message": "📋 Copiar"
+  },
+  "resultsCopied": {
+    "message": "✅ Copiado"
+  },
+  "resultsDownload": {
+    "message": "⬇️ Descargar Markdown"
+  },
+  "resultsReanalyze": {
+    "message": "🔄 Volver a analizar"
+  },
+  "resultsAlreadyAnalyzed": {
+    "message": "Ya analizaste este vídeo ($1), así que se muestra el informe guardado. Volver a analizarlo cuesta otro análisis."
+  },
+  "shareSourceVideo": {
+    "message": "Vídeo original: $1"
+  },
+  "reviewTitle": {
+    "message": "¿Te está siendo útil View Digest?"
+  },
+  "reviewText": {
+    "message": "Hasta ahora has analizado $1 vídeos. Una reseña breve en la tienda ayuda a que otras personas encuentren View Digest."
+  },
+  "reviewNow": {
+    "message": "⭐ Escribir una reseña"
+  },
+  "reviewLater": {
+    "message": "Más tarde"
+  },
+  "reviewNever": {
+    "message": "No volver a preguntar"
+  },
+  "resultsMeta": {
+    "message": "$1 · Coste est. $2"
+  },
+  "resultsNotFound": {
+    "message": "No se encontró este análisis guardado. Puede que se haya eliminado."
+  },
+  "resultsUnknownError": {
+    "message": "Se produjo un error desconocido durante el análisis."
+  },
+  "resultsNoUrl": {
+    "message": "No hay ninguna URL de vídeo que analizar. Esta página solo se puede abrir desde un botón de análisis de View Digest."
+  },
+  "contentButton": {
+    "message": "⚡ Analizar vídeo"
+  },
+  "contentButtonFull": {
+    "message": "Analizar vídeo (crear un informe detallado)"
+  },
+  "contentOpenFailed": {
+    "message": "❌ No se pudo abrir"
+  },
+  "contentOpenFailedDetail": {
+    "message": "Se produjo un error al abrir una pestaña nueva."
+  },
+  "contentReloadNeeded": {
+    "message": "🔄 Hay que recargar"
+  },
+  "contentReloadNeededDetail": {
+    "message": "View Digest se ha actualizado. Recarga esta página y vuelve a hacer clic. (Pulsa el botón otra vez para recargar.)"
+  },
+  "bgAlreadyAnalyzing": {
+    "message": "Este vídeo ya se está analizando."
+  },
+  "bgNotificationTitle": {
+    "message": "Nuevo vídeo analizado"
+  },
+  "actionTitleUnseen": {
+    "message": "View Digest - Análisis sin leer: $1"
+  },
+  "popupNewBadge": {
+    "message": "NUEVO"
+  },
+  "historyDates": {
+    "message": "Publicado $1 · Analizado $2"
+  },
+  "historyAnalyzed": {
+    "message": "Analizado $1"
+  },
+  "historyPublishedFull": {
+    "message": "Vídeo publicado: $1"
+  },
+  "historyAnalyzedFull": {
+    "message": "Analizado: $1"
+  },
+  "resultsPublished": {
+    "message": "Publicado $1"
+  },
+  "bgAnalysisFailedTitle": {
+    "message": "No se pudo analizar un vídeo nuevo"
+  },
+  "bgMissingKeyBody": {
+    "message": "No hay ninguna clave de API de Gemini, así que los vídeos nuevos de tus canales no se analizaron. Haz clic para añadir una; se analizarán en la próxima comprobación."
+  },
+  "bgRateLimitedTitle": {
+    "message": "Límite diario de análisis alcanzado"
+  },
+  "bgRateLimitedBody": {
+    "message": "Has usado todos los análisis de hoy ($1 al día). Los vídeos nuevos de tus canales se analizarán mañana. Haz clic para cambiar el límite."
+  },
+  "geminiKeyLoadError": {
+    "message": "No se pudo cargar la clave de API."
+  },
+  "geminiVideoTooLong": {
+    "message": "Este vídeo es demasiado largo para que Gemini lo analice en una sola solicitud (supera el límite de tokens de entrada). Prueba con un vídeo más corto."
+  },
+  "geminiVideoNotAccessible": {
+    "message": "Gemini no pudo acceder a este vídeo (permiso denegado). Puede ser un estreno o directo que aún no ha empezado, un directo en curso, un vídeo que aún se está procesando tras subirlo, o un vídeo privado, oculto, solo para miembros o con restricción de edad. Si todos los vídeos fallan así, revisa los permisos de tu clave de API."
+  },
+  "geminiRequestFailed": {
+    "message": "Falló la solicitud a la API de Gemini: $1"
+  },
+  "geminiRequestFailedStatus": {
+    "message": "Falló la solicitud a la API de Gemini. (HTTP $1)"
+  },
+  "geminiMaxTokens": {
+    "message": "Gemini alcanzó su límite de tokens de salida antes de terminar el informe, así que la respuesta quedó cortada. Puede que el vídeo sea muy largo o tenga mucha información. Vuelve a intentarlo en un momento."
+  },
+  "geminiSafety": {
+    "message": "La política de seguridad de Gemini bloqueó la respuesta para este vídeo."
+  },
+  "geminiRecitation": {
+    "message": "Gemini dejó de generar porque el resultado se parecía demasiado al contenido original."
+  },
+  "geminiEmpty": {
+    "message": "Gemini devolvió una respuesta vacía."
+  },
+  "geminiNoData": {
+    "message": "La conexión se cerró antes de que Gemini enviara datos. Vuelve a intentarlo en un momento."
+  },
+  "geminiBlocked": {
+    "message": "Gemini bloqueó la solicitud para este vídeo. (Motivo: $1)"
+  },
+  "geminiInvalidUrl": {
+    "message": "No es una URL válida de un vídeo de YouTube."
+  },
+  "geminiMissingKey": {
+    "message": "No hay ninguna clave de API de Gemini. Añade una primero en la página de ajustes."
+  },
+  "geminiUnknownError": {
+    "message": "Se produjo un error desconocido al llamar a la API de Gemini."
+  },
+  "geminiTimeout": {
+    "message": "Gemini no respondió en $1 minutos. Se volverá a intentar en la próxima comprobación."
+  },
+  "requestTimedOut": {
+    "message": "se agotó el tiempo de espera"
+  },
+  "networkUnavailable": {
+    "message": "no se pudo conectar a la red"
+  },
+  "geminiAnalyzing": {
+    "message": "Gemini está analizando el vídeo. Puede tardar un rato antes de que aparezca el primer texto..."
+  },
+  "channelEnterInput": {
+    "message": "Introduce la URL o el ID del canal."
+  },
+  "channelPageFailed": {
+    "message": "No se pudo cargar la página del canal. (HTTP $1)"
+  },
+  "channelIdNotFound": {
+    "message": "No se encontró el ID del canal. Comprueba que la URL del canal sea correcta."
+  },
+  "channelVideosFailed": {
+    "message": "No se pudieron cargar los últimos vídeos. ($1)"
+  },
+  "channelSourceHttp": {
+    "message": "$1 HTTP $2"
+  },
+  "channelSourcePage": {
+    "message": "página del canal"
+  },
+  "channelPageNoVideos": {
+    "message": "no se encontraron vídeos en la página del canal"
+  },
+  "welcomePageTitle": {
+    "message": "Primeros pasos con View Digest"
+  },
+  "welcomeHeading": {
+    "message": "Te damos la bienvenida a View Digest"
+  },
+  "welcomeSubtitle": {
+    "message": "Convierte vídeos de YouTube en informes con índice, puntos clave y enlaces para saltar a cada escena. Tres pasos y listo."
+  },
+  "welcomeSampleHeading": {
+    "message": "Mira primero el resultado"
+  },
+  "welcomeSampleDesc": {
+    "message": "Puedes abrir un informe de ejemplo sin clave de API. En los informes reales, al hacer clic en el tiempo ▶ junto a una sección, el vídeo salta a ese momento."
+  },
+  "welcomeSampleButton": {
+    "message": "📄 Ver un informe de ejemplo"
+  },
+  "welcomeStep1Heading": {
+    "message": "Consigue una clave de API de Gemini (gratis)"
+  },
+  "welcomeStep1Desc": {
+    "message": "View Digest analiza los vídeos con la API de Gemini en tu propia cuenta de Google. No hay ningún servidor intermedio, así que ni tu clave ni tus informes llegan nunca al desarrollador."
+  },
+  "welcomeStep1Item1": {
+    "message": "Abre Google AI Studio con el botón de abajo e inicia sesión con tu cuenta de Google."
+  },
+  "welcomeStep1Item2": {
+    "message": "Haz clic en <b>Create API key</b> y copia la clave que empieza por <code>AIza</code>."
+  },
+  "welcomeStep1Button": {
+    "message": "Conseguir una clave en Google AI Studio ↗"
+  },
+  "welcomeStep2Heading": {
+    "message": "Pega la clave y pruébala"
+  },
+  "welcomeSaveAndTest": {
+    "message": "Guardar y probar"
+  },
+  "welcomeKeySaved": {
+    "message": "✓ Hay una clave guardada: $1"
+  },
+  "welcomeNoKeyYet": {
+    "message": "Pega abajo la clave que copiaste."
+  },
+  "welcomeEnterKey": {
+    "message": "Pega tu clave de API."
+  },
+  "welcomeChecking": {
+    "message": "Comprobando la clave..."
+  },
+  "welcomeKeyOk": {
+    "message": "¡Todo listo! Ya puedes analizar vídeos en YouTube."
+  },
+  "welcomeKeyInvalid": {
+    "message": "Google no aceptó esta clave (HTTP $1). Asegúrate de haber copiado la clave completa. No se ha guardado."
+  },
+  "welcomeKeyNetwork": {
+    "message": "La clave se guardó, pero no se pudo comprobar por un problema de red. Revisa la conexión e inténtalo de nuevo."
+  },
+  "welcomeStep3Heading": {
+    "message": "Analiza un vídeo en YouTube"
+  },
+  "welcomeStep3Desc": {
+    "message": "Abre cualquier vídeo de YouTube y aparecerá el botón ⚡ Analizar vídeo bajo el título y encima de las recomendaciones. Haz clic y el informe se escribirá en directo en una pestaña nueva."
+  },
+  "welcomeStep3Tip": {
+    "message": "Suscríbete a canales para que sus vídeos nuevos se analicen automáticamente (Ajustes → Suscripciones a canales). Fija View Digest desde el icono del puzle de la barra de herramientas para ver en su icono el número de informes sin leer."
+  },
+  "welcomeOpenYoutube": {
+    "message": "Abrir YouTube ↗"
+  },
+  "welcomeOpenOptions": {
+    "message": "Abrir ajustes"
+  },
+  "welcomeQuotaHeading": {
+    "message": "Si ves «se ha superado el límite de uso»"
+  },
+  "welcomeQuotaDesc": {
+    "message": "Una clave sin facturación está en el nivel gratuito, que limita el uso por minuto y por día. El análisis de vídeo usa muchos tokens, así que el límite se puede alcanzar rápido."
+  },
+  "welcomeQuotaItem1": {
+    "message": "Los límites por minuto se liberan en uno o dos minutos; el límite diario se reinicia al día siguiente."
+  },
+  "welcomeQuotaItem2": {
+    "message": "Si en los ajustes cambias el modelo a «Gemini 3.5 Flash Lite (económico)», alcanzarás el límite con menos frecuencia y costará menos."
+  },
+  "welcomeQuotaItem3": {
+    "message": "Para un uso intensivo, configura la facturación del proyecto de la clave en AI Studio. Pagas lo que usas, y cada análisis registra su coste estimado."
+  },
+  "resultsSampleNotice": {
+    "message": "Este es un informe de ejemplo. Registra una clave de API de Gemini para obtener informes como este de los vídeos que elijas."
+  },
+  "resultsOpenGuide": {
+    "message": "Abrir la guía de primeros pasos"
+  },
+  "resultsRetry": {
+    "message": "🔄 Reintentar"
+  },
+  "resultsUseLiteModel": {
+    "message": "Cambiar al modelo económico y reintentar"
+  },
+  "resultsCheckUsage": {
+    "message": "Ver uso y límites ↗"
+  },
+  "resultsSetUpBilling": {
+    "message": "Configurar facturación ↗"
+  },
+  "resultsQuotaHint": {
+    "message": "Los límites por minuto se liberan en uno o dos minutos y los diarios al día siguiente. Si te pasa a menudo, usa el modelo económico o configura la facturación."
+  },
+  "geminiQuotaExceeded": {
+    "message": "Has alcanzado el límite de uso de la API de Gemini. Las claves sin facturación están en el nivel gratuito, que limita el uso por minuto y por día."
+  },
+  "bgQuotaTitle": {
+    "message": "Límite de uso de la API de Gemini alcanzado"
+  },
+  "bgQuotaBody": {
+    "message": "El análisis automático de canales queda en pausa y seguirá en la próxima comprobación cuando se libere el límite. Haz clic para ver cómo solucionarlo."
+  },
+  "popupNoKey": {
+    "message": "Registra primero una clave de API de Gemini para empezar a analizar."
+  },
+  "popupOpenGuide": {
+    "message": "🔑 Registrar una clave de API (guía de primeros pasos)"
+  },
+  "optionsOpenGuide": {
+    "message": "¿Eres nuevo? Abre la guía de primeros pasos"
+  },
+  "budgetExceeded": {
+    "message": "Has alcanzado el presupuesto de este mes ($1), así que los nuevos análisis y preguntas están en pausa. Puedes cambiar el presupuesto en los ajustes."
+  },
+  "bgBudgetTitle": {
+    "message": "Presupuesto mensual alcanzado"
+  },
+  "bgBudgetBody": {
+    "message": "El coste estimado de este mes alcanzó tu presupuesto ($1), así que el análisis automático de canales está en pausa. Haz clic para cambiar el presupuesto."
+  },
+  "contextMenuAnalyzeLink": {
+    "message": "Analizar este vídeo con View Digest"
+  },
+  "contextMenuAnalyzePage": {
+    "message": "Analizar este vídeo con View Digest"
+  },
+  "contentButtonView": {
+    "message": "📄 Ver resumen"
+  },
+  "contentButtonViewFull": {
+    "message": "Ya analizaste este vídeo. Abre el informe guardado."
+  },
+  "contentEstimate": {
+    "message": "Coste estimado: unos $1"
+  },
+  "resultsOpenSettings": {
+    "message": "Abrir ajustes"
+  },
+  "resultsEstimate": {
+    "message": "Coste estimado: unos $1 (vídeo de unos $2 minutos)"
+  },
+  "printSource": {
+    "message": "Vídeo original: $1"
+  },
+  "resultsCopyTitle": {
+    "message": "Copia el informe en Markdown. El formato se mantiene al pegarlo en Notion, Obsidian y aplicaciones similares."
+  },
+  "resultsDownloadObsidian": {
+    "message": "🗂️ Para Obsidian"
+  },
+  "resultsDownloadObsidianTitle": {
+    "message": "Descarga un archivo Markdown con título, URL de origen, canal, fechas y etiquetas como propiedades (YAML)."
+  },
+  "resultsPrint": {
+    "message": "🖨️ PDF / Imprimir"
+  },
+  "resultsPrintTitle": {
+    "message": "Elige «Guardar como PDF» en el cuadro de impresión para guardar un archivo PDF."
+  },
+  "qaTitle": {
+    "message": "💬 Pregunta sobre este vídeo"
+  },
+  "qaDesc": {
+    "message": "Las respuestas salen del informe. Para lo que el informe no cubre, activa «Buscar en todo el vídeo»."
+  },
+  "qaPlaceholder": {
+    "message": "p. ej.: Enumera en orden los pasos que recomienda el ponente"
+  },
+  "qaUseVideo": {
+    "message": "Buscar en todo el vídeo"
+  },
+  "qaSubmit": {
+    "message": "Preguntar"
+  },
+  "qaThinking": {
+    "message": "Escribiendo una respuesta..."
+  },
+  "qaThinkingVideo": {
+    "message": "Volviendo a ver el vídeo para responder... (puede tardar un poco)"
+  },
+  "qaFromReport": {
+    "message": "Respondido a partir del informe"
+  },
+  "qaFromVideo": {
+    "message": "Buscado en todo el vídeo"
+  },
+  "qaCostReport": {
+    "message": "Responder a partir del informe cuesta muy poco (normalmente menos de $$0.01)."
+  },
+  "qaCostVideo": {
+    "message": "Vuelve a ver el vídeo, así que cuesta lo mismo que un análisis y cuenta para tu límite diario."
+  },
+  "qaExportHeading": {
+    "message": "Preguntas y respuestas"
+  },
+  "optionsReportLengthLabel": {
+    "message": "Extensión del informe"
+  },
+  "optionsReportLengthBrief": {
+    "message": "Resumen en 3 líneas"
+  },
+  "optionsReportLengthStandard": {
+    "message": "Normal (predeterminado)"
+  },
+  "optionsReportLengthDetailed": {
+    "message": "Detallado"
+  },
+  "optionsReportLengthHint": {
+    "message": "El resumen en 3 líneas sirve para echar un vistazo rápido; el detallado, para vídeos densos como clases y entrevistas. También se aplica al análisis automático de canales."
+  },
+  "optionsMonthlyBudgetLabel": {
+    "message": "Presupuesto mensual (USD)"
+  },
+  "optionsMonthlyBudgetPlaceholder": {
+    "message": "Sin límite"
+  },
+  "optionsMonthlyBudgetHint": {
+    "message": "Cuando el coste estimado del mes llegue a esta cantidad, se detendrán los nuevos análisis y preguntas. Déjalo vacío para no poner límite. Consulta tu factura real en Google AI Studio."
+  },
+  "optionsMonthlyBudgetInvalid": {
+    "message": "El presupuesto mensual debe ser un número igual o mayor que 0 (déjalo vacío para no poner límite)."
+  },
+  "popupViewSaved": {
+    "message": "📄 Ver resumen guardado"
+  },
+  "popupEstimate": {
+    "message": "Coste estimado del análisis: unos $1"
+  },
+  "popupBudgetStatus": {
+    "message": "Presupuesto del mes: $1 / $2"
+  },
+  "popupBudgetReached": {
+    "message": "Presupuesto del mes alcanzado: $1 / $2"
+  }
+}

@@ -1,4 +1,4 @@
-// ViewDigest - options script
+// View Digest - options script
 
 import {
   getSettings,
@@ -119,7 +119,9 @@ async function setupThemePicker() {
 
 const modelSelect = document.getElementById("model-select");
 const reportLanguageSelect = document.getElementById("report-language-select");
+const reportLengthSelect = document.getElementById("report-length-select");
 const shareAttributionInput = document.getElementById("share-attribution-input");
+const monthlyBudgetInput = document.getElementById("monthly-budget-input");
 const dailyLimitInput = document.getElementById("daily-limit-input");
 const settingsFeedback = document.getElementById("settings-feedback");
 const saveSettingsBtn = document.getElementById("save-settings-btn");
@@ -128,8 +130,10 @@ async function loadSettingsForm() {
   const settings = await getSettings();
   modelSelect.value = settings.model ?? DEFAULT_MODEL;
   reportLanguageSelect.value = settings.reportLanguage ?? "auto";
+  reportLengthSelect.value = settings.reportLength ?? "standard";
   shareAttributionInput.checked = settings.shareAttribution !== false;
   dailyLimitInput.value = settings.dailyLimit ?? DEFAULT_DAILY_LIMIT;
+  monthlyBudgetInput.value = settings.monthlyBudget ?? "";
 }
 
 function setupSettingsSection() {
@@ -137,6 +141,13 @@ function setupSettingsSection() {
     const dailyLimit = Number(dailyLimitInput.value);
     if (!Number.isFinite(dailyLimit) || dailyLimit < 1) {
       showFeedback(settingsFeedback, t("optionsDailyLimitInvalid"), "error");
+      return;
+    }
+    // 비워 두거나 0이면 예산 제한 없음.
+    const budgetText = monthlyBudgetInput.value.trim();
+    const monthlyBudget = budgetText === "" ? null : Number(budgetText);
+    if (monthlyBudget !== null && (!Number.isFinite(monthlyBudget) || monthlyBudget < 0)) {
+      showFeedback(settingsFeedback, t("optionsMonthlyBudgetInvalid"), "error");
       return;
     }
 
@@ -147,8 +158,10 @@ function setupSettingsSection() {
       await setSettings({
         model: modelSelect.value,
         reportLanguage: reportLanguageSelect.value,
+        reportLength: reportLengthSelect.value,
         shareAttribution: shareAttributionInput.checked,
         dailyLimit,
+        monthlyBudget: monthlyBudget > 0 ? monthlyBudget : null,
       });
       showFeedback(settingsFeedback, t("optionsSettingsSaved"), "success");
     } finally {

@@ -1,10 +1,10 @@
-// ViewDigest - background service worker
+// View Digest - background service worker
 //
 // content.js / popup.js 로부터 오는 메시지를 받아 실제 분석 파이프라인을 조율한다.
 // manifest.json의 background.type이 "module"이므로 ES import를 사용할 수 있다.
 
 import { analyzeYouTubeVideo, GeminiApiError } from "./utils/gemini.js";
-import { checkRateLimit, getDateKey } from "./utils/cost.js";
+import { checkRateLimit, getDateKey, limitError, formatUsd, estimateAnalysisCost } from "./utils/cost.js";
 import {
   getSettings,
   setSettings,
@@ -39,7 +39,7 @@ const MAX_NEW_VIDEOS_PER_CHECK = 3;
 // 채널 자동 분석을 막는 원인 중, 영상마다가 아니라 전체에 걸리는 것. 채널·영상마다
 // 알리면 알림이 쏟아지므로 하루 한 번만 알리고, 기준선을 전진시키지 않아 원인이
 // 해결된 뒤 다음 확인 때 같은 영상부터 다시 분석한다.
-const BLOCKING_ERROR_CODES = ["RATE_LIMITED", "MISSING_API_KEY", "QUOTA_EXCEEDED"];
+const BLOCKING_ERROR_CODES = ["RATE_LIMITED", "MISSING_API_KEY", "QUOTA_EXCEEDED", "BUDGET_EXCEEDED"];
 const NOTICE_DATES_KEY = "blockingNoticeDates";
 
 // 지금은 실패했지만 시간이 지나면 풀릴 수 있는 실패. 업로드 직후 처리 중이거나 아직 공개 전인
@@ -109,6 +109,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     // 처음 설치하면 시작 가이드를 연다(API 키 발급·등록·첫 분석까지 안내).
     chrome.tabs.create({ url: chrome.runtime.getURL("welcome/welcome.html") });
   }
+  setupContextMenus();
   await setupChannelCheckAlarm();
   await scheduleCatchUpCheckIfOverdue();
   await removeDuplicateHistory();
@@ -223,10 +224,7 @@ async function handleAnalyzeVideo(url, { tab, titleOverride, channelTitle, publi
     // 불필요한 설정 조회/API 호출 준비 없이 빠르게 실패할 수 있다.
     const rateLimit = await checkRateLimit();
     if (!rateLimit.allowed) {
-      const error = {
-        code: "RATE_LIMITED",
-        message: t("rateLimited", rateLimit.limit),
-      };
+      const error = limitError(rateLimit);
       notifyPopup({ action: "analysisError", url, error });
       return { success: false, error };
     }
@@ -238,6 +236,7 @@ async function handleAnalyzeVideo(url, { tab, titleOverride, channelTitle, publi
       model: settings.model,
       customPrompt: settings.customPrompt,
       reportLanguage: settings.reportLanguage,
+      reportLength: settings.reportLength,
     });
 
     const videoId = extractVideoId(url);
@@ -281,16 +280,109 @@ async function handleAnalyzeVideo(url, { tab, titleOverride, channelTitle, publi
  * 직접 수행하도록 그 페이지를 새 탭으로 연다. 스트리밍 진행 상황을 보여줘야
  * 하므로, 분석 자체를 여기서 기다리지 않고 탭만 열어준다.
  */
-async function handleOpenResultsTab(url, { tab } = {}) {
+async function handleOpenResultsTab(url, { tab, duration, openerTab } = {}) {
   const videoId = extractVideoId(url);
-  const title = extractTitle(tab, videoId);
 
   const resultsUrl = new URL(chrome.runtime.getURL("results/results.html"));
   resultsUrl.searchParams.set("url", url);
-  resultsUrl.searchParams.set("title", title);
+  // 탭 제목을 모르면(오른쪽 클릭으로 다른 영상의 링크를 분석) 결과 탭이 YouTube에 물어 채운다.
+  if (tab) resultsUrl.searchParams.set("title", extractTitle(tab, videoId));
+  if (Number.isFinite(duration) && duration > 0) {
+    resultsUrl.searchParams.set("duration", String(Math.round(duration)));
+  }
 
-  await chrome.tabs.create({ url: resultsUrl.toString() });
+  const opener = openerTab ?? tab;
+  await chrome.tabs.create({
+    url: resultsUrl.toString(),
+    ...(opener?.index !== undefined ? { index: opener.index + 1, openerTabId: opener.id } : {}),
+  });
   return { success: true };
+}
+
+// ---------------------------------------------------------------------
+// 오른쪽 클릭 메뉴: YouTube 링크·썸네일·영상 페이지에서 바로 분석
+// ---------------------------------------------------------------------
+
+const CONTEXT_MENU = { LINK: "viewdigest-analyze-link", PAGE: "viewdigest-analyze-page" };
+const VIDEO_LINK_PATTERNS = [
+  "*://www.youtube.com/watch*",
+  "*://youtube.com/watch*",
+  "*://m.youtube.com/watch*",
+  "*://www.youtube.com/shorts/*",
+  "*://youtube.com/shorts/*",
+  "*://m.youtube.com/shorts/*",
+  "*://youtu.be/*",
+];
+
+/**
+ * 영상 링크를 Gemini가 받는 표준 시청 주소(https://www.youtube.com/watch?v=ID)로 바꾼다.
+ * 쇼츠·youtu.be·모바일 주소와 재생목록·시각 같은 덧붙은 값을 정리한다. 영상 링크가 아니면 null.
+ */
+function canonicalVideoUrl(rawUrl) {
+  let parsed;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    return null;
+  }
+  const host = parsed.hostname.replace(/^(www|m)\./, "");
+  let videoId = null;
+  if (host === "youtu.be") {
+    videoId = parsed.pathname.slice(1).split("/")[0];
+  } else if (host === "youtube.com") {
+    if (parsed.pathname === "/watch") videoId = parsed.searchParams.get("v");
+    else if (parsed.pathname.startsWith("/shorts/")) videoId = parsed.pathname.split("/")[2];
+  }
+  return videoId && /^[\w-]{6,}$/.test(videoId)
+    ? `https://www.youtube.com/watch?v=${videoId}`
+    : null;
+}
+
+function setupContextMenus() {
+  chrome.contextMenus.removeAll(() => {
+    void chrome.runtime.lastError;
+    chrome.contextMenus.create({
+      id: CONTEXT_MENU.LINK,
+      title: t("contextMenuAnalyzeLink"),
+      contexts: ["link"],
+      targetUrlPatterns: VIDEO_LINK_PATTERNS,
+    });
+    chrome.contextMenus.create({
+      id: CONTEXT_MENU.PAGE,
+      title: t("contextMenuAnalyzePage"),
+      contexts: ["page", "video"],
+      documentUrlPatterns: ["*://www.youtube.com/watch*", "*://www.youtube.com/shorts/*"],
+    });
+  });
+}
+
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (info.menuItemId === CONTEXT_MENU.LINK) {
+    const url = canonicalVideoUrl(info.linkUrl);
+    // 링크는 지금 보고 있는 탭과 다른 영상이므로 탭 제목을 쓰지 않는다.
+    if (url) handleOpenResultsTab(url, { openerTab: tab });
+  } else if (info.menuItemId === CONTEXT_MENU.PAGE) {
+    const url = canonicalVideoUrl(info.pageUrl ?? tab?.url);
+    if (url) handleOpenResultsTab(url, { tab });
+  }
+});
+
+// ---------------------------------------------------------------------
+// 영상 상태: 이미 분석했는지, 분석하면 대략 얼마인지 (YouTube 버튼·팝업이 묻는다)
+// ---------------------------------------------------------------------
+
+async function handleGetVideoState(url, duration) {
+  const videoId = extractVideoId(canonicalVideoUrl(url) ?? url);
+  if (!videoId) return { success: false };
+  const [history, settings] = await Promise.all([getHistory(), getSettings()]);
+  const entry = history.find((item) => item.videoId === videoId);
+  const estimate = estimateAnalysisCost(duration, settings.model, settings.reportLength);
+  return {
+    success: true,
+    analyzed: Boolean(entry),
+    entryId: entry?.id ?? null,
+    estimate: estimate ? { cost: estimate.cost, formatted: formatUsd(estimate.cost) } : null,
+  };
 }
 
 // ---------------------------------------------------------------------
@@ -381,6 +473,9 @@ async function notifyBlockingErrorOncePerDay(error) {
     showNotification(id, t("bgRateLimitedTitle"), t("bgRateLimitedBody", limit));
   } else if (error.code === "QUOTA_EXCEEDED") {
     showNotification(id, t("bgQuotaTitle"), t("bgQuotaBody"));
+  } else if (error.code === "BUDGET_EXCEEDED") {
+    const { budget } = await checkRateLimit();
+    showNotification(id, t("bgBudgetTitle"), t("bgBudgetBody", formatUsd(budget ?? 0)));
   } else {
     showNotification(id, t("bgAnalysisFailedTitle"), t("bgMissingKeyBody"));
   }
@@ -704,9 +799,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return true; // 비동기 응답
 
     case "openResultsTab":
-      handleOpenResultsTab(message.url, { tab: sender.tab })
+      handleOpenResultsTab(message.url, { tab: sender.tab, duration: Number(message.duration) })
         .then(sendResponse)
         .catch((error) => sendResponse({ success: false, error: normalizeError(error) }));
+      return true; // 비동기 응답
+
+    case "getVideoState":
+      handleGetVideoState(message.url, Number(message.duration))
+        .then(sendResponse)
+        .catch(() => sendResponse({ success: false }));
       return true; // 비동기 응답
 
     case "checkChannelsNow":

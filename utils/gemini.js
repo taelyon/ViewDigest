@@ -1,4 +1,4 @@
-// ViewDigest - Gemini API 클라이언트
+// View Digest - Gemini API 클라이언트
 //
 // 영상 URL(fileData)을 그대로 Gemini에 넘겨, Gemini 자체의 오디오/화면 인식으로
 // 분석한다.
@@ -11,7 +11,7 @@
 // 확장 프로그램이 그 토큰을 만들어낼 방법은 없다.
 
 import { getSystemInstruction, getUserPrompt, resolveReportLanguage } from "./prompt.js";
-import { checkRateLimit, estimateCost, recordUsage } from "./cost.js";
+import { checkRateLimit, estimateCost, limitError, recordUsage, USAGE_KIND } from "./cost.js";
 import { t } from "./i18n.js";
 
 // 기본 분석 모델. options.model 로 호출 시 덮어쓸 수 있음
@@ -52,6 +52,8 @@ const ERROR_CODES = {
   VIDEO_NOT_ACCESSIBLE: "VIDEO_NOT_ACCESSIBLE",
   // 내 Gemini API 키(프로젝트)의 사용 한도 초과. 우리 확장의 일일 분석 횟수 제한(RATE_LIMITED)과 다르다.
   QUOTA_EXCEEDED: "QUOTA_EXCEEDED",
+  // 설정에서 정한 이번 달 예산(예상 비용 기준)을 다 쓴 경우.
+  BUDGET_EXCEEDED: "BUDGET_EXCEEDED",
 };
 
 // 영상 자체를 인식해야 하므로 추론과 검색 그라운딩이 실제로 필요하다. 다만
@@ -104,7 +106,7 @@ function isLikelyYoutubeUrl(url) {
  * - `mediaResolution: { level: "media_resolution_low" }` 로 프레임당 토큰
  *   사용량을 낮춘다.
  */
-function buildRequestBody(youtubeUrl, customPrompt, language) {
+function buildRequestBody(youtubeUrl, customPrompt, language, length) {
   return {
     systemInstruction: {
       parts: [{ text: getSystemInstruction(language) }],
@@ -113,7 +115,7 @@ function buildRequestBody(youtubeUrl, customPrompt, language) {
       {
         role: "user",
         parts: [
-          { text: getUserPrompt(customPrompt, language) },
+          { text: getUserPrompt(customPrompt, language, length) },
           {
             fileData: { fileUri: youtubeUrl, mimeType: "video/mp4" },
             mediaResolution: { level: "media_resolution_low" },
@@ -266,30 +268,41 @@ async function prepareRequest(youtubeUrl, options) {
     );
   }
 
-  // 1. 호출 전 일일 사용량 제한을 먼저 확인해 불필요한 API 호출을 막는다.
-  const rateLimit = await checkRateLimit();
-  if (!rateLimit.allowed) {
-    throw new GeminiApiError(
-      t("rateLimited", rateLimit.limit),
-      ERROR_CODES.RATE_LIMITED,
-      rateLimit
-    );
-  }
+  // 1. 호출 전 일일 사용량 제한과 월 예산을 먼저 확인해 불필요한 API 호출을 막는다.
+  await assertWithinLimits({ countsAsAnalysis: true });
 
   // 2. API 키가 없으면 요청을 보내기 전에 명확한 에러로 안내한다.
-  const apiKey = await getApiKey();
-  if (!apiKey) {
-    throw new GeminiApiError(
-      t("geminiMissingKey"),
-      ERROR_CODES.MISSING_API_KEY
-    );
-  }
+  const apiKey = await requireApiKey();
 
   const language = resolveReportLanguage(options.reportLanguage, chrome.i18n.getUILanguage());
   return {
     apiKey,
-    requestBody: buildRequestBody(youtubeUrl, options.customPrompt ?? null, language),
+    requestBody: buildRequestBody(
+      youtubeUrl,
+      options.customPrompt ?? null,
+      language,
+      options.reportLength ?? "standard"
+    ),
   };
+}
+
+/**
+ * 일일 분석 횟수(영상을 보는 요청일 때만)와 월 예산을 확인한다. 넘었으면 GeminiApiError를 던진다.
+ */
+async function assertWithinLimits({ countsAsAnalysis }) {
+  const rateLimit = await checkRateLimit();
+  if (rateLimit.budgetExceeded || (countsAsAnalysis && rateLimit.dailyLimitReached)) {
+    const { code, message } = limitError(rateLimit);
+    throw new GeminiApiError(message, code, rateLimit);
+  }
+}
+
+async function requireApiKey() {
+  const apiKey = await getApiKey();
+  if (!apiKey) {
+    throw new GeminiApiError(t("geminiMissingKey"), ERROR_CODES.MISSING_API_KEY);
+  }
+  return apiKey;
 }
 
 function toGeminiApiError(error) {
@@ -315,7 +328,8 @@ function toGeminiApiError(error) {
  * @param {object} [options]
  * @param {string} [options.model] 사용할 모델명 (기본값: DEFAULT_MODEL)
  * @param {string} [options.customPrompt] 기본 프롬프트 대신 사용할 커스텀 프롬프트
- * @param {string} [options.reportLanguage] 리포트 언어 설정("auto" / "ko" / "en", 기본 "auto")
+ * @param {string} [options.reportLanguage] 리포트 언어 설정("auto" / "ko" / "en" / "ja" / "es", 기본 "auto")
+ * @param {string} [options.reportLength] 리포트 분량("brief" / "standard" / "detailed", 기본 "standard")
  * @returns {Promise<{markdown: string, model: string, usage: {inputTokens: number, outputTokens: number, totalTokens: number}, estimatedCost: number}>}
  */
 async function analyzeYouTubeVideo(youtubeUrl, options = {}) {
@@ -511,7 +525,104 @@ async function* analyzeYouTubeVideoStream(youtubeUrl, options = {}) {
   }
 }
 
+// ---------------------------------------------------------------------
+// 리포트에 질문하기
+// ---------------------------------------------------------------------
+
+// 질문 답변은 리포트 분석보다 훨씬 짧으므로 추론 예산을 작게 둔다.
+const QUESTION_THINKING_BUDGET = { reportOnly: 1024, withVideo: 4096 };
+// 이전 질문은 최근 몇 개만 맥락으로 보낸다(토큰을 아끼고, 오래된 대화에 끌려가지 않게).
+const QUESTION_HISTORY_LIMIT = 4;
+
+const QUESTION_SYSTEM_INSTRUCTION = `You answer a user's questions about one YouTube video.
+- You are given an analysis report of the video. When the video itself is attached, use it as the primary source; otherwise answer only from the report.
+- Answer in the same language as the user's question.
+- Be concise: a few sentences or a short bullet list. Do not restate the whole report.
+- When the answer comes from a specific part of the video and you know when it starts, mention the time as [m:ss].
+- If the report (or video) does not contain the answer, say so plainly in one sentence. Do not guess or invent facts.`;
+
+function buildQuestionBody({ question, reportMarkdown, youtubeUrl, useVideo, previous }) {
+  const earlier = (previous ?? [])
+    .slice(-QUESTION_HISTORY_LIMIT)
+    .map((item) => `Q: ${item.question}\nA: ${item.answer}`)
+    .join("\n\n");
+  const context = [
+    `<report>\n${reportMarkdown}\n</report>`,
+    earlier ? `<earlier_questions>\n${earlier}\n</earlier_questions>` : "",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+
+  const parts = [{ text: context }];
+  if (useVideo) {
+    parts.push({
+      fileData: { fileUri: youtubeUrl, mimeType: "video/mp4" },
+      mediaResolution: { level: "media_resolution_low" },
+    });
+  }
+  parts.push({ text: `Question: ${question}` });
+
+  return {
+    systemInstruction: { parts: [{ text: QUESTION_SYSTEM_INSTRUCTION }] },
+    contents: [{ role: "user", parts }],
+    generationConfig: {
+      thinkingConfig: {
+        thinkingBudget: useVideo ? QUESTION_THINKING_BUDGET.withVideo : QUESTION_THINKING_BUDGET.reportOnly,
+      },
+    },
+  };
+}
+
+/**
+ * 분석이 끝난 영상에 대해 질문한다.
+ * - 기본은 리포트만 보고 답한다(빠르고 비용이 매우 적다). 일일 분석 횟수에 세지 않는다.
+ * - useVideo면 영상 전체를 다시 보고 답한다(분석 1회만큼 비용이 든다). 일일 분석 횟수에 센다.
+ * 둘 다 월 예산은 확인한다.
+ *
+ * @param {object} params
+ * @param {string} params.question
+ * @param {string} params.reportMarkdown 저장된 리포트
+ * @param {string} [params.youtubeUrl] useVideo일 때 필요
+ * @param {boolean} [params.useVideo]
+ * @param {{question: string, answer: string}[]} [params.previous] 이 리포트에 앞서 한 질문들
+ * @param {string} [params.model]
+ * @returns {Promise<{answer: string, model: string, usage: object, estimatedCost: number}>}
+ */
+async function askAboutVideo({ question, reportMarkdown, youtubeUrl, useVideo = false, previous = [], model }) {
+  const usedModel = model ?? DEFAULT_MODEL;
+  try {
+    if (useVideo && !isLikelyYoutubeUrl(youtubeUrl)) {
+      throw new GeminiApiError(t("geminiInvalidUrl"), ERROR_CODES.INVALID_URL, { youtubeUrl });
+    }
+    await assertWithinLimits({ countsAsAnalysis: useVideo });
+    const apiKey = await requireApiKey();
+
+    const response = await fetch(`${API_BASE_URL}/${usedModel}:generateContent?key=${apiKey}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(buildQuestionBody({ question, reportMarkdown, youtubeUrl, useVideo, previous })),
+      signal: AbortSignal.timeout(BACKGROUND_REQUEST_TIMEOUT_MS),
+    });
+    await assertOkResponse(response);
+    const data = await response.json();
+
+    const { markdown, inputTokens, outputTokens, totalTokens } = parseResponse(data);
+    const estimatedCost = estimateCost({ inputTokens, outputTokens }, usedModel);
+    await recordUsage(totalTokens, estimatedCost, useVideo ? USAGE_KIND.ANALYSIS : USAGE_KIND.QUESTION);
+
+    return {
+      answer: markdown,
+      model: usedModel,
+      usage: { inputTokens, outputTokens, totalTokens },
+      estimatedCost,
+    };
+  } catch (error) {
+    throw toGeminiApiError(error);
+  }
+}
+
 export {
+  askAboutVideo,
   analyzeYouTubeVideo,
   analyzeYouTubeVideoStream,
   DEFAULT_MODEL,

@@ -12,30 +12,36 @@ View Digest
 
 ## 간단한 설명 (132자 제한)
 
+`_locales/ko/messages.json`의 `extDescription`과 같은 문장입니다(대시보드가 패키지에서 읽어 옵니다).
+검색에 잘 걸리도록 "유튜브 요약", "AI", "Gemini" 같은 검색어를 앞쪽에 넣었습니다.
+
 ```
-YouTube 영상을 Gemini API로 분석해 목차와 챕터별 상세 리포트를 만들어 줍니다. 본인 Gemini API 키가 필요합니다.
+유튜브 영상 AI 요약: Gemini로 목차·챕터별 핵심 정리, 3줄 요약, 영상에 질문하기, 장면 바로가기까지 (본인 API 키 사용)
 ```
 
 ## 자세한 설명
 
 ```
-View Digest는 YouTube 영상을 Google Gemini API로 분석해, 영상을 보지 않고도 내용을 파악할 수 있는
-구조화된 리포트를 만들어 주는 확장프로그램입니다.
+유튜브 영상 요약 AI, View Digest. YouTube 영상을 Google Gemini로 분석해, 영상을 보지 않고도 내용을
+파악할 수 있는 목차·챕터별 요약 리포트를 만들어 줍니다. 강의, 인터뷰, 뉴스, 리뷰 영상 정리에 좋습니다.
 
 ■ 사용 방법
-1. Google AI Studio(https://aistudio.google.com/apikey)에서 본인의 Gemini API 키를 발급받습니다.
-2. 확장프로그램 옵션 페이지에 키를 입력하고 "연결 테스트"로 확인합니다.
-3. YouTube 영상 페이지에서 "⚡ 영상 분석" 버튼을 누르면 새 탭에 리포트가 실시간으로 작성됩니다.
+1. 설치하면 열리는 시작 가이드를 따라 Google AI Studio에서 본인의 Gemini API 키(무료)를 발급받아 붙여 넣습니다.
+2. YouTube 영상 페이지에서 "⚡ 영상 분석" 버튼을 누르면 새 탭에 리포트가 실시간으로 작성됩니다.
+3. 추천 영상·검색 결과의 썸네일을 오른쪽 클릭해 "View Digest로 이 영상 분석"을 골라도 됩니다.
 
 ■ 리포트 구성
-- 목차와 대주제(1.) → 소주제(1-1.) 계층 구조
-- 소주제마다 인물 발언, 사건 경위, 핵심 수치를 담은 상세 포인트
+- 목차와 대주제(1.) → 소주제(1-1.) 계층 구조, 소주제마다 발언·경위·수치를 담은 핵심 정리
+- 분량 선택: 3줄 요약 / 보통 / 상세
 - 소제목 옆 ▶ 시각을 누르면 영상의 그 장면으로 바로 이동
-- 복사 및 Markdown 파일 다운로드 (끝에 원본 영상 링크와 출처가 붙으며, 설정에서 끌 수 있음)
+- 💬 영상에 질문하기: 리포트를 바탕으로 궁금한 점에 답하고, 필요하면 영상 전체에서 찾아 답합니다
+- 복사(Notion 붙여넣기), Markdown·Obsidian용 다운로드, PDF 저장·인쇄
+- 리포트 언어: 한국어·영어·일본어·스페인어 (영상 언어와 관계없음)
+- 이미 분석한 영상은 버튼이 "📄 요약 보기"로 바뀌어 같은 영상에 비용을 두 번 쓰지 않습니다
 
 ■ 비용 관리
-- 분석마다 실제 사용 토큰 기준으로 예상 비용을 계산해 기록합니다.
-- 하루 분석 횟수 제한(기본 20회)을 두어 의도치 않은 과금을 막습니다.
+- 분석 전에 예상 비용을 보여 주고, 분석마다 실제 사용 토큰 기준으로 비용을 기록합니다.
+- 하루 분석 횟수 제한(기본 20회)과 월 예산 한도를 정할 수 있습니다.
 - 오늘/이번 달 사용량과 예상 비용을 팝업에서 확인할 수 있습니다.
 
 ■ 채널 구독 (선택)
@@ -63,31 +69,34 @@ English를 고르고 아래 문구를 넣습니다. 이름은 두 언어 모두 
 오므로, 문구를 바꾸려면 messages.json을 고쳐 새 버전을 올려야 합니다.
 
 ```
-Analyzes YouTube videos with the Gemini API into a report with a table of contents and chapter-by-chapter breakdown (own API key)
+AI YouTube video summary with Gemini: chapter notes, 3-line summaries, Q&A about the video and timestamps. Uses your own API key.
 ```
 
 ### Detailed description
 
 ```
-View Digest analyzes YouTube videos with the Google Gemini API and turns them into structured reports,
-so you can understand a video without watching it.
+View Digest is an AI YouTube summarizer powered by Google Gemini. It turns any YouTube video into a
+structured summary with a table of contents and chapter notes, so you can understand a video without
+watching it. Great for lectures, interviews, news, podcasts and reviews.
 
 ■ How to use
-1. Get your own Gemini API key from Google AI Studio (https://aistudio.google.com/apikey).
-2. Enter the key on the extension's options page and click "Test connection".
-3. On any YouTube video page, click the "⚡ Analyze video" button. The report is written live in a new tab.
+1. Follow the getting-started guide that opens on install: get your own free Gemini API key from
+   Google AI Studio and paste it in.
+2. On any YouTube video page, click the "⚡ Analyze video" button. The report is written live in a new tab.
+3. Or right-click any video link or thumbnail and choose "Analyze this video with View Digest".
 
-■ What the report contains
-- A table of contents with chapters (1.) and sections (1-1.)
-- Specific points for each section: who said what, how events unfolded, and the key figures
+■ What you get
+- A table of contents with chapters (1.) and sections (1-1.), with who said what and the key figures
+- Choose the length: 3-line summary, standard or detailed
 - Click the ▶ time next to a section to jump to that moment in the video
-- Copy to clipboard or download as a Markdown file (with a link to the original video and a credit line
-  at the end, which you can turn off on the options page)
-- Reports in English or Korean, whatever language the video is in (set it on the options page)
+- 💬 Ask about the video: get answers from the report, or have it search the whole video
+- Copy (pastes cleanly into Notion), download Markdown or an Obsidian note, save as PDF or print
+- Reports in English, Korean, Japanese or Spanish, whatever language the video is in
+- Videos you've already summarized show "📄 View summary", so you never pay twice for the same video
 
 ■ Cost control
-- The estimated cost of each analysis is recorded, based on the tokens actually used.
-- A daily analysis limit (20 by default) prevents unexpected charges.
+- See the estimated cost before you analyze; each analysis records its cost from the tokens actually used.
+- Set a daily analysis limit (20 by default) and a monthly budget.
 - The popup shows today's and this month's usage and estimated cost.
 
 ■ Channel subscriptions (optional)
@@ -133,6 +142,7 @@ YouTube 영상 페이지에서 해당 영상을 Google Gemini API로 분석해 �
 | `tabs` | 분석 결과를 표시할 새 탭을 열고, 현재 열려 있는 YouTube 탭의 URL과 제목을 읽어 분석 대상을 식별하기 위해 필요합니다. |
 | `alarms` | 구독한 채널에 새 영상이 올라왔는지 주기적으로 확인하기 위해 필요합니다. |
 | `notifications` | 채널 자동 분석이 완료되거나 실패했을 때 사용자에게 알리고, 알림을 누르면 해당 리포트나 설정 페이지를 열기 위해 필요합니다. |
+| `contextMenus` | YouTube 영상 링크·썸네일과 영상 페이지의 오른쪽 클릭 메뉴에 "View Digest로 이 영상 분석" 항목을 추가해, 영상을 열지 않고도 바로 분석을 시작할 수 있게 하기 위해 필요합니다. 메뉴는 YouTube 영상 주소에서만 나타납니다. |
 | 호스트 `https://www.youtube.com/*` | 영상 시청 페이지에 분석 버튼을 삽입하고, 구독 채널의 공개 RSS 피드(피드를 쓸 수 없을 때는 채널의 공개 동영상 페이지)를 조회해 새 영상을 확인하며, 분석 기록에 표시할 영상의 채널 이름과 게시일을 공개 페이지에서 읽기 위해 필요합니다. |
 | 호스트 `https://generativelanguage.googleapis.com/*` | 사용자의 API 키로 Gemini API에 분석을 요청하기 위해 필요합니다. |
 | 원격 코드 사용 | 사용하지 않습니다. 모든 코드가 패키지에 포함되어 있습니다. |
@@ -145,6 +155,8 @@ YouTube 영상 페이지에서 해당 영상을 Google Gemini API로 분석해 �
   (개발자 서버로는 전송되지 않으며, 저장은 사용자 브라우저 로컬에만 이루어집니다.)
 - **인증 정보** — 사용자가 입력한 Gemini API 키를 `chrome.storage.sync`에 저장합니다.
   개발자에게 전송되지 않습니다.
+- **웹사이트 콘텐츠** (v1.4.0부터) — "영상에 질문하기"를 쓰면 사용자가 입력한 질문과 그 영상의 리포트
+  내용이 사용자의 API 키로 Gemini API에 전송됩니다. 개발자 서버로는 전송되지 않습니다.
 
 체크해야 하는 인증 항목:
 
@@ -240,6 +252,124 @@ API 키가 없으면 옵션 페이지에 키 등록을 안내하는 오류 메�
 3. **한국어 스크린샷은 선택.** 기존 3장도 여전히 정확합니다. 설정 페이지 사진에 새 "리포트 언어"
    항목이 없을 뿐입니다.
 4. **권한 변경 없음.** 기존 사용자에게 권한 경고가 뜨지 않습니다.
+
+## v1.4.0 제출 메모 (분량 선택·영상에 질문하기·예상 비용과 월 예산·오른쪽 클릭·일본어/스페인어·PDF/Obsidian)
+
+**v1.3.0이 아직 심사 중이라면:** 대시보드에서 v1.3.0 제출을 취소(Cancel review)하고 이 패키지를 올리면
+됩니다. 1.4.0에 1.3.0의 내용이 모두 들어 있습니다. 1.3.0이 이미 게시됐다면 그 위에 그대로 올립니다.
+
+**대시보드에서 바꿀 것**
+1. **패키지 업로드** 후 스토어 등록정보 탭 언어 목록에 **日本語, Español**이 새로 생깁니다(새 `_locales`).
+   각 언어의 간단한 설명은 패키지에서 자동으로 채워집니다. 자세한 설명은 아래 "일본어·스페인어
+   등록정보"를 넣거나, 비워 두면 기본 언어(English) 문구가 보입니다.
+2. **자세한 설명(한국어·영어)**: 이 문서 위쪽의 새 문구로 바꿉니다(검색어 보강, 새 기능).
+3. **개인정보 보호 탭 → 권한 사유**: 새 권한 `contextMenus` 사유를 위 "권한별 사유" 표에서 붙여 넣습니다.
+   이 권한은 설치 경고가 없으므로 기존 사용자의 확장프로그램이 비활성화되지 않습니다.
+4. **데이터 사용 공시**: "웹사이트 콘텐츠" 항목을 추가로 체크합니다. 질문하기는 사용자가 입력한 질문과
+   저장된 리포트를 사용자의 키로 Google Gemini에 보냅니다(개발자에게는 가지 않음). 아래 "데이터 사용
+   공시"와 개인정보처리방침에 반영했습니다.
+5. 스크린샷(선택): 질문하기가 보이는 리포트 화면을 1장 추가하면 좋습니다.
+
+**바뀐 점**
+- 리포트 분량: 3줄 요약 / 보통 / 상세 (설정, 채널 자동 분석에도 적용)
+- 💬 영상에 질문하기: 리포트로 답하기(비용 매우 적음, 일일 횟수에 안 셈) 또는 영상 전체에서 찾기
+  (분석 1회만큼, 일일 횟수에 셈). 질문과 답은 리포트와 함께 저장되고 복사·다운로드에 포함
+- 분석 전 예상 비용: YouTube 버튼에 마우스를 올리거나 팝업에서 확인, 분석 중에도 표시
+- 월 예산(USD): 이번 달 예상 비용이 예산에 이르면 새 분석·질문·채널 자동 분석을 멈춤
+- 오른쪽 클릭 "View Digest로 이 영상 분석"(링크·썸네일·쇼츠·youtu.be·영상 페이지)
+- 이미 분석한 영상은 YouTube 버튼과 팝업 버튼이 "📄 요약 보기"로 바뀜
+- 화면·리포트 언어에 일본어·스페인어 추가
+- 내보내기: PDF·인쇄, Obsidian용 Markdown(속성 포함), 복사·다운로드한 리포트의 소제목 시각이
+  YouTube 링크로 바뀜
+- 리뷰·출처 링크가 설치한 스토어(Chrome 웹 스토어 / Edge 추가 기능 / 웨일 스토어)를 가리킴
+
+게시 후 태그는 `v1.4.0`.
+
+### 일본어·스페인어 등록정보 (자세한 설명)
+
+日本語:
+```
+View Digest は Google Gemini を使った YouTube 動画の AI 要約ツールです。動画を見なくても内容がわかる、
+目次とチャプター別の要約レポートを作ります。講義、インタビュー、ニュース、レビュー動画の整理に便利です。
+
+■ 使い方
+1. インストール時に開くガイドに従って、Google AI Studio で自分の Gemini API キー(無料)を取得して貼り付けます。
+2. YouTube の動画ページで「⚡ 動画を分析」ボタンを押すと、新しいタブでレポートがリアルタイムに書かれます。
+3. 動画のリンクやサムネイルを右クリックして「View Digest でこの動画を分析」を選ぶこともできます。
+
+■ 主な機能
+- 目次、チャプター(1.)とセクション(1-1.)、発言・経緯・数値を含む要点
+- 分量を選択:3行要約 / 標準 / 詳細
+- セクション横の ▶ 時刻をクリックすると動画のその場面へ移動
+- 💬 動画に質問する:レポートをもとに回答、必要なら動画全体から探して回答
+- コピー(Notion に貼り付け可)、Markdown・Obsidian 用ダウンロード、PDF 保存・印刷
+- レポートの言語:日本語・英語・韓国語・スペイン語(動画の言語に関係なく)
+- 分析前の推定コスト表示、1日の分析回数の上限、月の予算
+
+■ プライバシー
+バックエンドサーバーはありません。分析リクエストはブラウザから Google に直接送られ、開発者が API キーや
+分析内容を受け取ることはありません。API の利用料金はご自身の Google アカウントに請求されます(表示額は推定)。
+```
+
+Español:
+```
+View Digest es un resumidor de vídeos de YouTube con IA basado en Google Gemini. Convierte cualquier vídeo
+en un resumen estructurado con índice y notas por capítulos, para entenderlo sin verlo. Ideal para clases,
+entrevistas, noticias, pódcasts y reseñas.
+
+■ Cómo usarlo
+1. Sigue la guía que se abre al instalar: consigue tu propia clave de API de Gemini (gratis) en Google AI
+   Studio y pégala.
+2. En cualquier vídeo de YouTube, pulsa «⚡ Analizar vídeo». El informe se escribe en directo en una pestaña nueva.
+3. O haz clic derecho en un enlace o miniatura y elige «Analizar este vídeo con View Digest».
+
+■ Funciones
+- Índice, capítulos (1.) y secciones (1-1.) con declaraciones, hechos y cifras clave
+- Elige la extensión: resumen en 3 líneas, normal o detallado
+- Pulsa el tiempo ▶ junto a una sección para saltar a ese momento del vídeo
+- 💬 Pregunta sobre el vídeo: respuestas a partir del informe o buscando en todo el vídeo
+- Copiar (se pega bien en Notion), descargar Markdown o una nota de Obsidian, guardar en PDF o imprimir
+- Informes en español, inglés, coreano o japonés, sea cual sea el idioma del vídeo
+- Coste estimado antes de analizar, límite diario y presupuesto mensual
+
+■ Privacidad
+No hay servidor intermedio. Las solicitudes van directamente de tu navegador a Google y el desarrollador
+nunca recibe tu clave ni tus análisis. El uso de la API se factura a tu propia cuenta de Google (los
+importes mostrados son estimaciones).
+```
+
+## 다른 브라우저 스토어에 등록하기 (Microsoft Edge·네이버 웨일)
+
+같은 zip(`dist/viewdigest-<버전>.zip`)을 그대로 올릴 수 있습니다. 코드 수정은 필요 없습니다. 리뷰·출처
+링크는 설치한 스토어를 알아서 가리킵니다. 각 스토어에서 받은 확장프로그램 ID는 Chrome 웹 스토어와
+다르며, 버전을 올릴 때마다 스토어마다 따로 올려야 합니다.
+
+### Microsoft Edge 추가 기능 (Edge Add-ons)
+1. Microsoft Partner Center(https://partner.microsoft.com/dashboard/microsoftedge)에 Microsoft 계정으로
+   로그인해 Edge 개발자로 등록합니다(무료).
+2. **Create new extension** → zip 업로드.
+3. **Availability**: 공개(Public), 지역은 전체.
+4. **Properties**: 카테고리 "Productivity", 개인정보처리방침 URL(위 주소), 웹사이트·지원 주소
+   (GitHub 저장소 주소).
+5. **Store listings**: 한국어·English(필요하면 日本語·Español)에 위의 설명과 스크린샷(1280×800), 로고
+   (300×300 PNG; `icons/icon128.png`를 키워 쓰거나 새로 만듭니다)를 넣습니다.
+6. 심사자 노트(Notes for certification)에 이 문서의 "심사자 노트"를 붙여 넣고 **Publish**. 심사는 보통
+   영업일 기준 최대 7일입니다.
+7. 게시되면 Edge 등록정보 주소는 `https://microsoftedge.microsoft.com/addons/detail/<Edge 확장 ID>`입니다.
+
+### 네이버 웨일 스토어
+1. 웨일 스토어(https://store.whale.naver.com) 아래쪽의 개발자 센터로 들어가 네이버 아이디로 개발자 등록을
+   합니다.
+2. 새 확장앱 등록 → zip 업로드. 웨일은 Chrome 확장(Manifest V3)을 그대로 지원합니다.
+3. 이름·설명(한국어 문구 그대로)·카테고리(생산성)·스크린샷·아이콘·개인정보처리방침 URL을 넣고 심사를
+   요청합니다.
+4. 웨일 사용자는 Chrome 웹 스토어에서도 설치할 수 있으므로, 웨일 스토어 등록은 검색 노출을 늘리는
+   목적입니다.
+
+### 검색어 메모
+스토어 검색은 이름·간단한 설명·자세한 설명의 단어를 봅니다. 위 문구에 "유튜브 요약", "AI 요약",
+"YouTube summary", "summarizer", "Gemini", "Notion", "Obsidian", "PDF", "강의 정리" 같은 단어를 자연스럽게
+넣었습니다. 같은 단어를 반복해 나열하면 스토어 정책(키워드 스팸) 위반이므로 문장 안에서만 씁니다.
 
 ## v1.3.0 제출 메모 (시작 가이드·예시 리포트·한도 초과 안내)
 

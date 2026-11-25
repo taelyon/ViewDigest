@@ -3,7 +3,7 @@
     "message": "en"
   },
   "extDescription": {
-    "message": "Analyzes YouTube videos with the Gemini API into a report with a table of contents and chapter-by-chapter breakdown (own API key)"
+    "message": "AI YouTube video summary with Gemini: chapter notes, 3-line summaries, Q&A about the video and timestamps. Uses your own API key."
   },
   "untitled": {
     "message": "Untitled"
@@ -162,7 +162,7 @@
     "message": "Automatic (browser language)"
   },
   "optionsReportLanguageHint": {
-    "message": "Automatic writes in Korean when your browser is set to Korean, and in English otherwise. The language spoken in the video doesn't matter."
+    "message": "Automatic writes in your browser's language if it is Korean, Japanese or Spanish, and in English otherwise. The language spoken in the video doesn't matter."
   },
   "optionsShareAttribution": {
     "message": "Include the original video and a source link (Made with View Digest) when copying or downloading"
@@ -282,7 +282,7 @@
     "message": "Is View Digest helping you?"
   },
   "reviewText": {
-    "message": "You've analyzed $1 videos so far. A short review on the Chrome Web Store helps other people find View Digest."
+    "message": "You've analyzed $1 videos so far. A short review in the extension store helps other people find View Digest."
   },
   "reviewNow": {
     "message": "⭐ Leave a review"
@@ -565,5 +565,128 @@
   },
   "optionsOpenGuide": {
     "message": "New here? Open the getting-started guide"
+  },
+  "budgetExceeded": {
+    "message": "You've reached this month's budget ($1), so new analyses and questions are paused. You can change the budget in settings."
+  },
+  "bgBudgetTitle": {
+    "message": "Monthly budget reached"
+  },
+  "bgBudgetBody": {
+    "message": "This month's estimated cost reached your budget ($1), so channel auto-analysis is paused. Click to change the budget."
+  },
+  "contextMenuAnalyzeLink": {
+    "message": "Analyze this video with View Digest"
+  },
+  "contextMenuAnalyzePage": {
+    "message": "Analyze this video with View Digest"
+  },
+  "contentButtonView": {
+    "message": "📄 View summary"
+  },
+  "contentButtonViewFull": {
+    "message": "You already analyzed this video. Opens the saved report."
+  },
+  "contentEstimate": {
+    "message": "Estimated cost about $1"
+  },
+  "resultsOpenSettings": {
+    "message": "Open settings"
+  },
+  "resultsEstimate": {
+    "message": "Estimated cost about $1 (about a $2-minute video)"
+  },
+  "printSource": {
+    "message": "Original video: $1"
+  },
+  "resultsCopyTitle": {
+    "message": "Copies the report as Markdown. Formatting is kept when you paste it into Notion, Obsidian and similar apps."
+  },
+  "resultsDownloadObsidian": {
+    "message": "🗂️ For Obsidian"
+  },
+  "resultsDownloadObsidianTitle": {
+    "message": "Downloads a Markdown file with title, source URL, channel, dates and tags as properties (YAML)."
+  },
+  "resultsPrint": {
+    "message": "🖨️ PDF / Print"
+  },
+  "resultsPrintTitle": {
+    "message": "Choose \"Save as PDF\" in the print dialog to save a PDF file."
+  },
+  "qaTitle": {
+    "message": "💬 Ask about this video"
+  },
+  "qaDesc": {
+    "message": "Answers come from the report. For things the report doesn't cover, turn on \"Search the whole video\"."
+  },
+  "qaPlaceholder": {
+    "message": "e.g. List the steps the speaker recommends, in order"
+  },
+  "qaUseVideo": {
+    "message": "Search the whole video"
+  },
+  "qaSubmit": {
+    "message": "Ask"
+  },
+  "qaThinking": {
+    "message": "Writing an answer..."
+  },
+  "qaThinkingVideo": {
+    "message": "Watching the video again to answer... (this can take a while)"
+  },
+  "qaFromReport": {
+    "message": "Answered from the report"
+  },
+  "qaFromVideo": {
+    "message": "Searched the whole video"
+  },
+  "qaCostReport": {
+    "message": "Answering from the report costs very little (usually under $$0.01)."
+  },
+  "qaCostVideo": {
+    "message": "This watches the video again, so it costs about one analysis and counts toward your daily limit."
+  },
+  "qaExportHeading": {
+    "message": "Questions and answers"
+  },
+  "optionsReportLengthLabel": {
+    "message": "Report length"
+  },
+  "optionsReportLengthBrief": {
+    "message": "3-line summary"
+  },
+  "optionsReportLengthStandard": {
+    "message": "Standard (default)"
+  },
+  "optionsReportLengthDetailed": {
+    "message": "Detailed"
+  },
+  "optionsReportLengthHint": {
+    "message": "The 3-line summary is good for a quick skim; Detailed suits dense videos like lectures and interviews. Also applies to channel auto-analysis."
+  },
+  "optionsMonthlyBudgetLabel": {
+    "message": "Monthly budget (USD)"
+  },
+  "optionsMonthlyBudgetPlaceholder": {
+    "message": "No limit"
+  },
+  "optionsMonthlyBudgetHint": {
+    "message": "When this month's estimated cost reaches this amount, new analyses and questions stop. Leave it empty for no limit. Check your actual bill in Google AI Studio."
+  },
+  "optionsMonthlyBudgetInvalid": {
+    "message": "The monthly budget must be a number of 0 or more (leave it empty for no limit)."
+  },
+  "popupViewSaved": {
+    "message": "📄 View saved summary"
+  },
+  "popupEstimate": {
+    "message": "Estimated cost to analyze: about $1"
+  },
+  "popupBudgetStatus": {
+    "message": "This month's budget: $1 / $2"
+  },
+  "popupBudgetReached": {
+    "message": "Monthly budget reached: $1 / $2"
   }
 }

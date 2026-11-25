@@ -1,4 +1,4 @@
-// ViewDigest - 분석 결과 탭 스크립트
+// View Digest - 분석 결과 탭 스크립트
 //
 // 두 가지 방식으로 열린다:
 // 1. content.js의 "⚡ 영상 분석" 버튼 / popup의 "🔍 지금 분석하기" 버튼이
@@ -8,7 +8,7 @@
 // 2. popup의 히스토리 항목 클릭이 ?entryId=로 이 페이지를 연다. 이때는 이미
 //    저장된 분석 결과를 그대로 불러와 즉시 렌더링한다(재분석하지 않음).
 
-import { analyzeYouTubeVideoStream, GeminiApiError } from "../utils/gemini.js";
+import { analyzeYouTubeVideoStream, askAboutVideo, GeminiApiError } from "../utils/gemini.js";
 import {
   getSettings,
   setSettings,
@@ -19,7 +19,8 @@ import {
   patchHistoryEntries,
 } from "../utils/storage.js";
 import { renderMarkdown } from "../utils/markdown.js";
-import { fetchVideoChannelName, fetchVideoPublishDate } from "../utils/channels.js";
+import { fetchVideoOEmbed, fetchVideoPageInfo, fetchVideoPublishDate } from "../utils/channels.js";
+import { estimateAnalysisCost, formatUsd } from "../utils/cost.js";
 import { t, localizePage, formatDateTime, formatDate, displayLanguage } from "../utils/i18n.js";
 import { getSampleReport } from "../utils/sample-report.js";
 import { refreshBadge } from "../utils/badge.js";
@@ -41,6 +42,8 @@ const entryId = params.get("entryId");
 const reanalyze = params.get("reanalyze") === "1";
 // 시작 가이드에서 연 예시 리포트. API 키 없이 결과물의 모습을 보여 준다.
 const sample = params.get("sample") === "1";
+// YouTube 탭의 분석 버튼이 알려 준 영상 길이(초). 예상 비용 계산에 쓴다.
+const durationParam = Number(params.get("duration"));
 const GUIDE_URL = chrome.runtime.getURL("welcome/welcome.html");
 const LITE_MODEL = "gemini-3.5-flash-lite";
 
@@ -74,6 +77,10 @@ const els = {
   errorActions: document.getElementById("error-actions"),
   sampleNotice: document.getElementById("sample-notice"),
   sampleGuideBtn: document.getElementById("sample-guide-btn"),
+  statusEstimate: document.getElementById("status-estimate"),
+  obsidianBtn: document.getElementById("obsidian-btn"),
+  printBtn: document.getElementById("print-btn"),
+  printSource: document.getElementById("print-source"),
 };
 
 let finalEntry = null;
@@ -144,6 +151,8 @@ async function showErrorActions(code) {
     items.push(hint);
   } else if (code === "MISSING_API_KEY") {
     items.push(actionButton(t("resultsOpenGuide"), () => window.open(GUIDE_URL, "_blank"), true));
+  } else if (code === "BUDGET_EXCEEDED" || code === "RATE_LIMITED") {
+    items.push(actionButton(t("resultsOpenSettings"), () => chrome.runtime.openOptionsPage(), true));
   }
   els.errorActions.append(...items);
   els.errorActions.classList.toggle("hidden", items.length === 0);
@@ -209,15 +218,72 @@ function formatCost(usd) {
  */
 async function markdownForSharing(entry) {
   const settings = await getSettings();
-  if (settings.shareAttribution === false) return entry.markdown;
+  const body = [linkHeadingTimestamps(entry.markdown, entry.url).trimEnd()];
+  const qa = qaMarkdown(entry.qa);
+  if (qa) body.push("", qa);
+  if (settings.shareAttribution === false) return `${body.join("\n")}\n`;
 
-  const lines = [entry.markdown.trimEnd(), "", "---", ""];
+  const lines = [...body, "", "---", ""];
   if (entry.url) {
     const title = (entry.title ?? entry.url).replace(/[[\]]/g, "\\$&");
     lines.push(t("shareSourceVideo", `[${title}](${entry.url})`), "");
   }
   lines.push(`Made with [View Digest](${storePageUrl()})`, "");
   return lines.join("\n");
+}
+
+const HEADING_TIMESTAMP_RE = /\[\s*(?:(\d{1,2}):)?(\d{1,2}):(\d{2})\s*\]\s*$/;
+
+/**
+ * 소제목 끝의 [분:초]를 그 장면으로 가는 YouTube 링크로 바꾼다. 복사·다운로드한 리포트를
+ * Notion·Obsidian 같은 곳에서 읽을 때도 시각을 눌러 바로 그 장면을 볼 수 있다.
+ */
+function linkHeadingTimestamps(markdown, url) {
+  const videoId = url ? extractVideoId(url) : null;
+  if (!videoId) return markdown;
+  return markdown
+    .split("\n")
+    .map((line) => {
+      if (!/^#{1,6}\s/.test(line)) return line;
+      return line.replace(HEADING_TIMESTAMP_RE, (match, h, m, sec) => {
+        const seconds = Number(h ?? 0) * 3600 + Number(m) * 60 + Number(sec);
+        const label = match.replace(/[[\]\s]/g, "");
+        return `[${label}](https://www.youtube.com/watch?v=${videoId}&t=${seconds}s)`;
+      });
+    })
+    .join("\n");
+}
+
+/** 질문과 답변을 리포트 끝에 붙일 Markdown. 질문이 없으면 빈 문자열. */
+function qaMarkdown(qa) {
+  if (!qa?.length) return "";
+  const lines = [`# ${t("qaExportHeading")}`, ""];
+  for (const item of qa) {
+    lines.push(`**Q. ${item.question.replace(/\s+/g, " ").trim()}**`, "", item.answer.trim(), "");
+  }
+  return lines.join("\n").trimEnd();
+}
+
+/** Obsidian 속성(YAML front matter). 값은 JSON 문자열로 써서 따옴표·콜론이 있어도 깨지지 않게 한다. */
+function frontMatter(entry) {
+  const quote = (value) => JSON.stringify(String(value));
+  const date = (iso) => (iso ? String(iso).slice(0, 10) : null);
+  const fields = [
+    ["title", entry.title],
+    ["source", entry.url],
+    ["channel", entry.channelTitle],
+    ["published", date(entry.publishedAt)],
+    ["analyzed", date(entry.createdAt)],
+  ].filter(([, value]) => value);
+  return [
+    "---",
+    ...fields.map(([key, value]) => `${key}: ${quote(value)}`),
+    "tags:",
+    "  - youtube",
+    "  - view-digest",
+    "---",
+    "",
+  ].join("\n");
 }
 
 async function copyMarkdown() {
@@ -242,10 +308,12 @@ async function copyMarkdown() {
   }, 1500);
 }
 
-async function downloadMarkdown() {
+async function downloadMarkdown({ withFrontMatter = false } = {}) {
   if (!finalEntry?.markdown) return;
   const safeTitle = (finalEntry.title ?? "analysis").replace(/[\\/:*?"<>|]/g, "_").slice(0, 80);
-  const blob = new Blob([await markdownForSharing(finalEntry)], { type: "text/markdown;charset=utf-8" });
+  const text = await markdownForSharing(finalEntry);
+  const content = withFrontMatter ? `${frontMatter(finalEntry)}\n${text}` : text;
+  const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -303,6 +371,8 @@ function showSavedEntry(entry, { alreadyAnalyzed = false } = {}) {
   renderReport(entry.markdown ?? "");
   els.actions.classList.remove("hidden");
   els.reanalyzeBtn.classList.toggle("hidden", !entry.url);
+  showPrintSource(entry);
+  showQa(entry);
   if (alreadyAnalyzed) {
     els.savedNoticeText.textContent = t("resultsAlreadyAnalyzed", formatDateTime(entry.createdAt));
     els.savedNotice.classList.remove("hidden");
@@ -336,10 +406,18 @@ function reanalyzeCurrent() {
 
 async function runNewAnalysis() {
   const videoId = extractVideoId(videoUrl);
-  const initialTitle = videoTitle || videoId || t("untitled");
+  let currentTitle = videoTitle || videoId || t("untitled");
+  const setTitle = (title) => {
+    currentTitle = title;
+    document.title = `${title} - View Digest`;
+    els.title.textContent = title;
+  };
   // 히스토리에 채널 이름을 함께 남긴다. 분석이 한참 걸리므로 그동안 미리 알아 둔다.
-  const channelTitlePromise = fetchVideoChannelName(videoUrl);
-  const publishedAtPromise = fetchVideoPublishDate(videoUrl);
+  // 제목을 모르고 열렸으면(오른쪽 클릭으로 링크를 분석) 제목도 YouTube에 묻는다.
+  const oembedPromise = fetchVideoOEmbed(videoUrl);
+  const channelTitlePromise = oembedPromise.then((info) => (info === undefined ? undefined : info?.channelTitle ?? null));
+  const pageInfoPromise = fetchVideoPageInfo(videoUrl);
+  const publishedAtPromise = pageInfoPromise.then((info) => (info === undefined ? undefined : info?.publishedAt ?? null));
   // 분석은 한참 걸리므로, 채널 이름과 게시일은 알게 되는 즉시 보여준다.
   Promise.all([channelTitlePromise, publishedAtPromise]).then(([channelTitle, publishedAt]) => {
     if (!finalEntry) showMeta({ channelTitle, publishedAt });
@@ -347,26 +425,36 @@ async function runNewAnalysis() {
   channelTitlePromise.then((channelTitle) => {
     if (channelTitle && !finalEntry) showMeta({ channelTitle });
   });
-  document.title = `${initialTitle} - View Digest`;
-  els.title.textContent = initialTitle;
+  if (!videoTitle) {
+    oembedPromise.then((info) => {
+      if (info?.title && !finalEntry) setTitle(info.title);
+    });
+  }
+  setTitle(currentTitle);
   if (videoId) await setAnalysisInProgress(videoId, true);
 
   try {
     const settings = await getSettings();
+    showEstimate(settings, pageInfoPromise);
 
     for await (const event of analyzeYouTubeVideoStream(videoUrl, {
       model: settings.model,
       customPrompt: settings.customPrompt,
       reportLanguage: settings.reportLanguage,
+      reportLength: settings.reportLength,
     })) {
       if (event.type === "status") {
         showStatus(event.message);
       } else if (event.type === "delta") {
         renderReport(event.markdown);
       } else if (event.type === "done") {
+        if (!videoTitle) {
+          const info = await oembedPromise;
+          if (info?.title) currentTitle = info.title;
+        }
         const savedEntry = await saveAnalysis({
           videoId,
-          title: initialTitle,
+          title: currentTitle,
           channelTitle: await channelTitlePromise,
           publishedAt: await publishedAtPromise,
           url: videoUrl,
@@ -381,6 +469,9 @@ async function runNewAnalysis() {
         els.title.textContent = savedEntry.title;
         showMeta(savedEntry);
         els.actions.classList.remove("hidden");
+        els.statusEstimate.classList.add("hidden");
+        showPrintSource(savedEntry);
+        showQa(savedEntry);
 
         await recordSuccessfulAnalysis();
         maybeAskForReview();
@@ -402,6 +493,149 @@ async function runNewAnalysis() {
   } finally {
     if (videoId) await setAnalysisInProgress(videoId, false);
   }
+}
+
+/**
+ * 분석하는 동안 예상 비용을 보여 준다. 영상 길이는 YouTube 탭이 알려 준 값을 먼저 쓰고,
+ * 없으면(팝업·오른쪽 클릭으로 연 경우) 시청 페이지에서 읽는다.
+ */
+async function showEstimate(settings, pageInfoPromise) {
+  let duration = Number.isFinite(durationParam) && durationParam > 0 ? durationParam : null;
+  if (!duration) duration = (await pageInfoPromise)?.lengthSeconds ?? null;
+  const estimate = estimateAnalysisCost(duration, settings.model, settings.reportLength);
+  if (!estimate || finalEntry) return;
+  els.statusEstimate.textContent = t(
+    "resultsEstimate",
+    formatUsd(estimate.cost),
+    String(Math.max(1, Math.round(duration / 60)))
+  );
+  els.statusEstimate.classList.remove("hidden");
+}
+
+/** 인쇄·PDF에만 보이는 원본 영상 주소. */
+function showPrintSource(entry) {
+  els.printSource.textContent = entry.url ? t("printSource", entry.url) : "";
+}
+
+// ---------------------------------------------------------------------
+// 영상에 질문하기
+// ---------------------------------------------------------------------
+
+const qa = {
+  section: document.getElementById("qa-section"),
+  list: document.getElementById("qa-list"),
+  form: document.getElementById("qa-form"),
+  input: document.getElementById("qa-input"),
+  useVideo: document.getElementById("qa-use-video"),
+  costHint: document.getElementById("qa-cost-hint"),
+  submit: document.getElementById("qa-submit"),
+  error: document.getElementById("qa-error"),
+};
+let qaBusy = false;
+
+function qaItemElement(item) {
+  const li = document.createElement("li");
+  li.className = "qa-item";
+  const question = document.createElement("p");
+  question.className = "qa-question";
+  question.textContent = item.question;
+  const answer = document.createElement("div");
+  answer.className = "qa-answer markdown-body";
+  if (item.pending) {
+    answer.classList.add("qa-pending");
+    answer.textContent = t(item.useVideo ? "qaThinkingVideo" : "qaThinking");
+  } else {
+    answer.innerHTML = renderMarkdown(item.answer);
+  }
+  li.append(question, answer);
+  if (!item.pending) {
+    const meta = document.createElement("p");
+    meta.className = "qa-meta";
+    meta.textContent = [
+      item.useVideo ? t("qaFromVideo") : t("qaFromReport"),
+      typeof item.estimatedCost === "number" ? formatUsd(item.estimatedCost) : null,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+    li.append(meta);
+  }
+  return li;
+}
+
+function renderQaList(items) {
+  qa.list.replaceChildren(...items.map(qaItemElement));
+}
+
+function updateQaCostHint() {
+  qa.costHint.textContent = qa.useVideo.checked ? t("qaCostVideo") : t("qaCostReport");
+}
+
+/** 리포트가 준비되면 질문 영역을 보여 준다. 저장된 질문·답변이 있으면 함께 보여 준다. */
+function showQa(entry) {
+  qa.section.classList.remove("hidden");
+  // 영상 URL이 없는 항목(예시 리포트 등)은 영상 전체에서 찾을 수 없다.
+  qa.useVideo.disabled = !entry.url;
+  renderQaList(entry.qa ?? []);
+  updateQaCostHint();
+}
+
+async function submitQuestion() {
+  const question = qa.input.value.trim();
+  if (!question || qaBusy || !finalEntry?.markdown) return;
+  const useVideo = qa.useVideo.checked && Boolean(finalEntry.url);
+  const previous = finalEntry.qa ?? [];
+
+  qaBusy = true;
+  qa.submit.disabled = true;
+  qa.error.classList.add("hidden");
+  renderQaList([...previous, { question, useVideo, pending: true }]);
+
+  try {
+    const settings = await getSettings();
+    const result = await askAboutVideo({
+      question,
+      reportMarkdown: finalEntry.markdown,
+      youtubeUrl: finalEntry.url,
+      useVideo,
+      previous,
+      model: settings.model,
+    });
+    const item = {
+      question,
+      answer: result.answer,
+      useVideo,
+      model: result.model,
+      estimatedCost: result.estimatedCost,
+      createdAt: new Date().toISOString(),
+    };
+    finalEntry = { ...finalEntry, qa: [...previous, item] };
+    renderQaList(finalEntry.qa);
+    qa.input.value = "";
+    if (finalEntry.id) await patchHistoryEntries(new Map([[finalEntry.id, { qa: finalEntry.qa }]]));
+  } catch (error) {
+    (error instanceof GeminiApiError ? console.log : console.error)("[질문 실패]", error);
+    renderQaList(previous);
+    qa.error.textContent = error instanceof GeminiApiError ? error.message : t("resultsUnknownError");
+    qa.error.classList.remove("hidden");
+  } finally {
+    qaBusy = false;
+    qa.submit.disabled = false;
+  }
+}
+
+function setupQa() {
+  qa.form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    submitQuestion();
+  });
+  // Enter로 보내고 Shift+Enter로 줄을 바꾼다. 한글 입력 중(조합 중) Enter는 글자 확정이므로 보내지 않는다.
+  qa.input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !event.shiftKey && !event.isComposing && event.keyCode !== 229) {
+      event.preventDefault();
+      submitQuestion();
+    }
+  });
+  qa.useVideo.addEventListener("change", updateQaCostHint);
 }
 
 /**
@@ -444,7 +678,10 @@ async function run() {
 
 document.addEventListener("DOMContentLoaded", () => {
   els.copyBtn.addEventListener("click", copyMarkdown);
-  els.downloadBtn.addEventListener("click", downloadMarkdown);
+  els.downloadBtn.addEventListener("click", () => downloadMarkdown());
+  els.obsidianBtn.addEventListener("click", () => downloadMarkdown({ withFrontMatter: true }));
+  els.printBtn.addEventListener("click", () => window.print());
+  setupQa();
   els.reanalyzeBtn.addEventListener("click", reanalyzeCurrent);
   setupReviewCard();
   // 소제목 옆 ▶ 시각 버튼. 리포트는 스트리밍 중에 계속 다시 그려지므로 위임으로 받는다.

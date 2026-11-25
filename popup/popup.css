@@ -637,3 +637,9 @@ body {
 .setup-guide-btn.hidden {
   display: none;
 }
+
+/* 월 예산 사용 현황(설정에서 예산을 정했을 때만) */
+.budget-status.is-over {
+  color: var(--danger);
+  font-weight: 600;
+}
