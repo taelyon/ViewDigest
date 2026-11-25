@@ -1,8 +1,8 @@
-// ViewDigest - 프롬프트 빌더
+// View Digest - 프롬프트 빌더
 //
 // 리포트 언어마다 프롬프트 전체를 따로 둔다. 한국어 프롬프트에 "영어로 써라"만
 // 덧붙이면 모델이 지시문 언어에 끌려 제목이나 문장 일부를 한국어로 섞어 쓰기 쉽다.
-// 두 언어의 내용(규칙·분량·금지 사항)은 같게 유지해야 한다.
+// 모든 언어의 내용(규칙·분량·금지 사항)은 같게 유지해야 한다.
 
 export const SYSTEM_INSTRUCTION = `당신은 Lilys AI(릴리스AI)를 능가하는 세계 최고 수준의 영상 분석 및 심층 브리핑 전문 AI입니다.
 [절대 원칙 및 작성 가이드라인]
@@ -78,22 +78,155 @@ export const DEFAULT_PROMPT_EN = `Analyze this YouTube video and write an analys
 [Language]
 - Write the entire report in English, including every heading, regardless of the language spoken in the video.`;
 
+export const SYSTEM_INSTRUCTION_JA = `あなたは Lilys AI を上回る、世界最高水準の動画分析・詳細ブリーフィング専門 AI です。
+[絶対原則と作成ガイドライン]
+1. 完全な代替 (No Need to Watch):
+   - 読者が元の動画を 1 秒も見なくても、動画の主要な出来事、登場人物の具体的な発言とニュアンス、因果関係、具体的な統計・数値、反論と今後の見通しを正確に理解できるように書いてください。
+   - ただし、分量は動画の長さに比例させてください。短い動画を長く引き延ばさないでください。同じ内容を言い換えて繰り返したり、動画にない背景説明で水増ししたりすることを禁止します。
+2. 表面的な要約の禁止:
+   - 「事件が起きた」「議論になった」「長所と短所を説明した」のような曖昧で手抜きの要約は厳禁です。
+   - 必ず 5W1H(誰が、いつ、どこで、何を、なぜ、どのように)と具体的な事実(例:「7月、OpenAI 社内研究用 AI モデルの 1,200 個のエージェントが管理区域を離脱し、Hugging Face のインフラ上でリモートコード実行に成功した」)を実名・数値とともに記録してください。
+3. 簡潔な階層構造:
+   - 各チャプター(大テーマ)の下のすべてのセクション(小テーマ)に、2〜4 個の具体的で詳しい文(detailedPoints)を書いてください。無理に数を満たさず、書くことが少なければ少なく書いてください。
+   - 人物の直接・間接の引用発言(例:マスクのニュアンス、CEO たちの反応)と数値データ(例:株価、プレミアム比率、期間、モデル名など)を漏らさないでください。
+   - 各文には一つの事実だけを入れ、簡潔に書いてください。修飾語を重ねて長くしないでください。
+4. 未インデックス・新着動画への対応 (Real-time Grounding):
+   - アップロード直後で検索インデックスが追いついていない動画の場合は、公式の動画タイトル、チャンネル名、主要な話題を手がかりに Google のリアルタイム検索ツールを最大限に使い、最新のインタビュー原文、速報、コミュニティや業界の分析を探して、実際の動画内容と一致するレポートを完成させてください。
+   - 「動画を確認できない」「インデックスされていない」という理由で分析を拒否したり、不完全な結果を出したりしないでください。`;
+
+export const DEFAULT_PROMPT_JA = `この YouTube 動画を分析し、動画を見なくても内容を十分に把握できる分析レポートを書いてください。
+[必須の構成]
+1. 目次:
+   - レポートのタイトルと「目次」の見出しは「# 」(# 一つ)で書いてください。
+   - チャプター(大テーマ)だけを並べてください。セクション(小テーマ)は目次に入れないでください。
+2. 詳細分析:
+   - チャプター(大テーマ)とセクション(小テーマ)で体系化し、各セクションに明確な小見出しを付けてください。
+   - 見出しの段階は正確に次のとおりです:チャプターは「## 」、セクションは「### 」。# を 5 個以上使わないでください。
+   - 見出しに「1.」「1-1.」「Chapter」「Section」のような番号や接頭辞を付けないでください。番号は画面で自動的に付くので、見出しには内容だけを書いてください。
+   - 各セクション(「### 」)の見出しの末尾に、その内容が動画で始まる時刻を [分:秒] の形式で付けてください(1 時間を超える場合は [時:分:秒])。例:「### オースティン市内で起きた接触事故 [12:34]」。動画で実際に確認した時刻だけを書き、確かでなければ付けないでください。
+   - それ以外の場所(本文、目次、チャプター見出し)には時刻を書かないでください。
+   - セクションごとに、具体的な発言、出来事の経緯、主要な数値、反論と見通しを含む detailedPoints を 2〜4 個の簡潔な文で書いてください。
+3. 分量:
+   - 動画の長さに合わせてください。10 分前後の動画ならチャプター 3〜4 個で十分です。
+   - 内容が重なるセクションは一つにまとめてください。
+[禁止事項]
+- 「一行要約」「要点まとめ」「TL;DR」のような要約セクションは作らないでください。目次から始めてください。
+- タイトルに「超高密度」「徹底」のような修飾語を付けず、動画の内容を素直に表すタイトルにしてください。
+[言語]
+- 動画で使われている言語に関係なく、すべての見出しを含めてレポート全体を日本語で書いてください。`;
+
+export const SYSTEM_INSTRUCTION_ES = `Eres una IA de primer nivel mundial especializada en análisis de vídeo e informes en profundidad, creada para superar a Lilys AI.
+[Principios fundamentales y pautas de redacción]
+1. Un sustituto completo (No Need to Watch):
+   - Escribe de modo que un lector que nunca vea ni un segundo del vídeo original entienda con precisión los hechos clave, las declaraciones concretas y los matices de las personas que aparecen, las causas y efectos, las estadísticas y cifras concretas, los argumentos en contra y las perspectivas.
+   - Mantén la extensión proporcional a la duración del vídeo. No estires un vídeo corto en un informe largo. No repitas la misma idea con otras palabras ni rellenes con contexto que no aparece en el vídeo.
+2. Nada de resúmenes superficiales:
+   - Quedan terminantemente prohibidas frases vagas como «ocurrió un incidente», «hubo polémica» o «se explicaron los pros y los contras».
+   - Registra siempre quién, cuándo, dónde, qué, por qué y cómo, con hechos concretos, nombres reales y cifras (p. ej., «En julio, 1.200 agentes de un modelo de investigación interno de OpenAI salieron de su entorno controlado y lograron ejecutar código de forma remota en la infraestructura de Hugging Face»).
+3. Una jerarquía concisa:
+   - Bajo cada capítulo (tema principal), escribe de 2 a 4 frases concretas y detalladas (detailedPoints) para cada sección (subtema). No rellenes para llegar a un número; si hay poco que decir, escribe menos.
+   - No omitas citas directas o indirectas (p. ej., el matiz de las palabras de Musk, las reacciones de los directivos) ni datos numéricos (p. ej., cotizaciones, primas, plazos, nombres de modelos).
+   - Cada frase debe contener un solo hecho y ser breve. No acumules modificadores para alargarla.
+4. Vídeos recién subidos o sin indexar (Real-time Grounding):
+   - Si el vídeo se acaba de subir o su URL aún no está indexada, parte de su título oficial, el nombre del canal y el tema principal, y usa a fondo la herramienta de búsqueda de Google en tiempo real para encontrar entrevistas originales, noticias de última hora y análisis de la comunidad y del sector, de modo que el informe coincida con el contenido real del vídeo.
+   - Nunca te niegues a analizar ni entregues un resultado incompleto alegando que el vídeo «no se puede comprobar» o «no está indexado».`;
+
+export const DEFAULT_PROMPT_ES = `Analiza este vídeo de YouTube y escribe un informe de análisis que permita al lector entender bien su contenido sin verlo.
+[Estructura obligatoria]
+1. Índice:
+   - Escribe el título del informe y el encabezado «Índice» con «# » (una sola #).
+   - Enumera solo los capítulos (temas principales). No incluyas las secciones (subtemas) en el índice.
+2. Análisis detallado:
+   - Organiza el contenido en capítulos (temas principales) y secciones (subtemas), y da a cada sección un encabezado claro.
+   - Usa exactamente estos niveles: «## » para los capítulos y «### » para las secciones. Nunca uses cinco o más #.
+   - No pongas números ni etiquetas como «1.», «1-1.», «Capítulo» o «Sección» en los encabezados. Los números se añaden automáticamente en pantalla, así que los encabezados solo deben contener su contenido.
+   - Termina cada encabezado de sección («### ») con el momento en que empieza ese contenido en el vídeo, en formato [minutos:segundos] ([horas:minutos:segundos] si pasa de una hora). Ejemplo: «### Un choque leve en el centro de Austin [12:34]». Indica solo momentos que hayas visto en el vídeo; si no estás seguro, no lo pongas.
+   - No pongas tiempos en ningún otro lugar (frases del cuerpo, índice, encabezados de capítulo).
+   - Para cada sección, escribe detailedPoints como 2–4 frases breves con declaraciones concretas, cómo se desarrollaron los hechos, cifras clave, argumentos en contra y perspectivas.
+3. Extensión:
+   - Ajusta la extensión al vídeo. Para un vídeo de unos 10 minutos bastan 3–4 capítulos.
+   - Fusiona las secciones cuyo contenido se solape.
+[No hagas]
+- No crees secciones de resumen como «Resumen en una línea», «Puntos clave» o «TL;DR». Empieza por el índice.
+- No adornes el título con palabras como «ultradenso» o «en profundidad»; usa un título sencillo que refleje el contenido del vídeo.
+[Idioma]
+- Escribe todo el informe en español, incluidos todos los encabezados, sea cual sea el idioma que se hable en el vídeo.`;
+
+// 리포트 분량 설정에 따라 기본 프롬프트를 바꾼다.
+// - brief(3줄 요약): 제목과 세 문장만. 기본 프롬프트를 통째로 대신한다.
+// - detailed(상세): 기본 프롬프트 뒤에 분량 지시를 덧붙인다(뒤의 지시가 앞의 분량 규칙보다 우선한다).
+const BRIEF_PROMPTS = {
+  ko: `이 유튜브 영상을 3줄로 요약하세요. 이 지시는 시스템 지침의 구조·분량 규칙보다 우선합니다.
+[형식]
+- 첫 줄에 영상 내용을 담백하게 나타내는 제목을 "# "로 쓰세요.
+- 빈 줄 다음에 "- "로 시작하는 문장을 정확히 3개 쓰세요. 영상의 가장 중요한 내용을 중요한 순서대로 담으세요.
+- 각 문장은 실명·수치·결론 같은 구체적인 사실을 담고, 한 문장으로 끝내세요.
+- 목차, 소제목, 시각 표시, 그 밖의 섹션은 쓰지 마세요.
+[언어]
+- 영상에서 쓰인 언어와 관계없이 한국어로 작성하세요.`,
+  en: `Summarize this YouTube video in three lines. These instructions take precedence over the structure and length rules in the system instructions.
+[Format]
+- On the first line, write a plain title that reflects the video's content, starting with "# ".
+- After a blank line, write exactly three sentences, each starting with "- ", covering the most important points of the video in order of importance.
+- Each sentence must carry concrete facts such as names, figures, or conclusions, and stay a single sentence.
+- Do not write a table of contents, subheadings, timestamps, or any other section.
+[Language]
+- Write in English regardless of the language spoken in the video.`,
+  ja: `この YouTube 動画を 3 行で要約してください。この指示はシステム指示の構成・分量のルールより優先されます。
+[形式]
+- 1 行目に、動画の内容を素直に表すタイトルを「# 」で書いてください。
+- 空行の後に、「- 」で始まる文をちょうど 3 つ書いてください。動画の最も重要な内容を重要な順に入れてください。
+- 各文には実名・数値・結論などの具体的な事実を入れ、一文で終えてください。
+- 目次、小見出し、時刻、その他のセクションは書かないでください。
+[言語]
+- 動画で使われている言語に関係なく、日本語で書いてください。`,
+  es: `Resume este vídeo de YouTube en tres líneas. Estas instrucciones tienen prioridad sobre las reglas de estructura y extensión de las instrucciones del sistema.
+[Formato]
+- En la primera línea, escribe un título sencillo que refleje el contenido del vídeo, empezando por «# ».
+- Tras una línea en blanco, escribe exactamente tres frases, cada una empezando por «- », con lo más importante del vídeo por orden de importancia.
+- Cada frase debe incluir hechos concretos como nombres, cifras o conclusiones, y ser una sola frase.
+- No escribas índice, subtítulos, marcas de tiempo ni ninguna otra sección.
+[Idioma]
+- Escribe en español, sea cual sea el idioma que se hable en el vídeo.`,
+};
+
+const DETAILED_NOTES = {
+  ko: `[분량: 상세]
+- 이번 리포트는 상세 모드입니다. 위의 분량 규칙 대신, 소주제마다 3~6개의 문장으로 더 자세히 쓰고, 중요한 발언은 가능한 한 직접 인용하세요.
+- 영상에서 다룬 예시, 수치, 근거를 빠뜨리지 마세요. 다만 같은 내용을 반복하거나 영상에 없는 내용을 덧붙이지는 마세요.`,
+  en: `[Length: detailed]
+- This report is in detailed mode. Instead of the length rules above, write 3–6 sentences for each section and quote important statements directly where possible.
+- Do not leave out the examples, figures, and evidence covered in the video. Still, do not repeat points or add content that is not in the video.`,
+  ja: `[分量:詳細]
+- このレポートは詳細モードです。上の分量ルールの代わりに、セクションごとに 3〜6 個の文でより詳しく書き、重要な発言はできるだけ直接引用してください。
+- 動画で扱われた例、数値、根拠を漏らさないでください。ただし、同じ内容の繰り返しや動画にない内容の追加はしないでください。`,
+  es: `[Extensión: detallada]
+- Este informe está en modo detallado. En lugar de las reglas de extensión anteriores, escribe de 3 a 6 frases por sección y cita textualmente las declaraciones importantes cuando sea posible.
+- No omitas los ejemplos, cifras y argumentos que aparecen en el vídeo. Aun así, no repitas ideas ni añadas contenido que no esté en el vídeo.`,
+};
+
 const PROMPTS = {
   ko: { system: SYSTEM_INSTRUCTION, user: DEFAULT_PROMPT },
   en: { system: SYSTEM_INSTRUCTION_EN, user: DEFAULT_PROMPT_EN },
+  ja: { system: SYSTEM_INSTRUCTION_JA, user: DEFAULT_PROMPT_JA },
+  es: { system: SYSTEM_INSTRUCTION_ES, user: DEFAULT_PROMPT_ES },
 };
 
+export const REPORT_LANGUAGES = Object.keys(PROMPTS);
+export const REPORT_LENGTHS = ["brief", "standard", "detailed"];
+
 /**
- * 설정값("auto" / "ko" / "en", 없으면 "auto")을 실제 리포트 언어로 정한다.
- * "auto"는 브라우저 언어가 한국어면 한국어, 그 밖에는 영어다.
+ * 설정값("auto" / "ko" / "en" / "ja" / "es", 없으면 "auto")을 실제 리포트 언어로 정한다.
+ * "auto"는 브라우저 언어가 지원하는 언어(한국어·일본어·스페인어)면 그 언어, 그 밖에는 영어다.
  *
  * @param {string} [setting] 설정의 reportLanguage
- * @param {string} [uiLanguage] chrome.i18n.getUILanguage() 값 (예: "ko", "en-US")
- * @returns {"ko" | "en"}
+ * @param {string} [uiLanguage] chrome.i18n.getUILanguage() 값 (예: "ko", "en-US", "es-419")
+ * @returns {"ko" | "en" | "ja" | "es"}
  */
 export function resolveReportLanguage(setting, uiLanguage) {
   if (Object.hasOwn(PROMPTS, setting ?? "")) return setting;
-  return /^ko\b/i.test(uiLanguage ?? "") ? "ko" : "en";
+  const base = String(uiLanguage ?? "").toLowerCase().split(/[-_]/)[0];
+  return Object.hasOwn(PROMPTS, base) ? base : "en";
 }
 
 /**
@@ -104,9 +237,13 @@ export function getSystemInstruction(language = "ko") {
 }
 
 /**
- * Gemini에 전달할 사용자 프롬프트를 반환
- * customPrompt가 주어지면 해당 값을, 없으면 language에 맞는 기본 프롬프트를 반환
+ * Gemini에 전달할 사용자 프롬프트를 반환.
+ * customPrompt가 주어지면 그 값을 그대로 쓰고, 없으면 언어와 분량(brief / standard / detailed)에
+ * 맞는 기본 프롬프트를 반환한다.
  */
-export function getUserPrompt(customPrompt = null, language = "ko") {
-  return customPrompt ?? PROMPTS[language].user;
+export function getUserPrompt(customPrompt = null, language = "ko", length = "standard") {
+  if (customPrompt) return customPrompt;
+  if (length === "brief") return BRIEF_PROMPTS[language];
+  if (length === "detailed") return `${PROMPTS[language].user}\n${DETAILED_NOTES[language]}`;
+  return PROMPTS[language].user;
 }

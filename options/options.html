@@ -72,9 +72,21 @@
         <option value="auto" data-i18n="optionsReportLanguageAuto">자동 (브라우저 언어)</option>
         <option value="ko">한국어</option>
         <option value="en">English</option>
+        <option value="ja">日本語</option>
+        <option value="es">Español</option>
       </select>
       <p class="card-desc field-hint" data-i18n="optionsReportLanguageHint">
         자동으로 두면 브라우저 언어가 한국어일 때는 한국어로, 그 밖에는 영어로 작성합니다. 영상에서 쓰인 언어와는 관계없습니다.
+      </p>
+
+      <label class="field-label" for="report-length-select" data-i18n="optionsReportLengthLabel">리포트 분량</label>
+      <select id="report-length-select" class="text-input">
+        <option value="brief" data-i18n="optionsReportLengthBrief">3줄 요약</option>
+        <option value="standard" data-i18n="optionsReportLengthStandard">보통 (기본)</option>
+        <option value="detailed" data-i18n="optionsReportLengthDetailed">상세</option>
+      </select>
+      <p class="card-desc field-hint" data-i18n="optionsReportLengthHint">
+        3줄 요약은 빠르게 훑어볼 때, 상세는 강의·인터뷰처럼 내용이 많은 영상에 좋습니다. 채널 자동 분석에도 적용됩니다.
       </p>
 
       <label class="checkbox-row">
@@ -84,6 +96,12 @@
 
       <label class="field-label" for="daily-limit-input" data-i18n="optionsDailyLimitLabel">하루 최대 분석 횟수</label>
       <input type="number" id="daily-limit-input" class="text-input" min="1" max="200" step="1" />
+
+      <label class="field-label" for="monthly-budget-input" data-i18n="optionsMonthlyBudgetLabel">월 예산 (USD)</label>
+      <input type="number" id="monthly-budget-input" class="text-input" min="0" step="0.5" data-i18n-placeholder="optionsMonthlyBudgetPlaceholder" placeholder="제한 없음" />
+      <p class="card-desc field-hint" data-i18n="optionsMonthlyBudgetHint">
+        이번 달 예상 비용이 이 금액에 이르면 새 분석과 질문을 멈춥니다. 비워 두면 제한하지 않습니다. 실제 청구액은 Google AI Studio에서 확인하세요.
+      </p>
 
       <div class="button-row">
         <button id="save-settings-btn" class="primary-btn" type="button" data-i18n="optionsSaveSettings">설정 저장</button>

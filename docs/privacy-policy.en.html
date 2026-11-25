@@ -66,7 +66,7 @@
 <main>
   <p class="lang-switch"><a href="privacy-policy.html" lang="ko">한국어</a> · <strong>English</strong></p>
   <h1>View Digest Privacy Policy</h1>
-  <p class="updated">Last updated: September 30, 2026</p>
+  <p class="updated">Last updated: November 25, 2026</p>
 
   <p class="lead">
     View Digest (&ldquo;the extension&rdquo;) does not run a backend server, and the developer does not collect,
@@ -98,7 +98,7 @@
       <tr>
         <td>Usage log (number of analyses, token counts, estimated cost)</td>
         <td><code>chrome.storage.local</code></td>
-        <td>Used only to enforce the daily limit and estimate costs.</td>
+        <td>Used only to enforce the daily limit and monthly budget and to estimate costs.</td>
       </tr>
       <tr>
         <td>Review-prompt state (number of successful analyses, when to ask next, whether you answered)</td>
@@ -121,6 +121,7 @@
   <ul>
     <li>The URL of the YouTube video you are analyzing</li>
     <li>The prompt used to generate the report (fixed instruction text)</li>
+    <li>If you use &ldquo;Ask about this video&rdquo;: your question, the saved report for that video, and up to four earlier questions and answers on the same report. With &ldquo;Search the whole video&rdquo; on, the video URL is sent as well. Questions and answers are stored with the report, only in this browser.</li>
   </ul>
   <p>
     This request goes straight from your browser to Google and never passes through a server run by the
@@ -147,8 +148,15 @@
   </p>
   <p>
     Likewise, to show when a video was posted, the extension loads the analyzed video&rsquo;s public watch page
-    (<code>youtube.com/watch</code>) without sign-in information (cookies) and reads only the publish date. The date is
-    stored with your history, only in this browser; nothing else from the page is stored or sent anywhere.
+    (<code>youtube.com/watch</code>) without sign-in information (cookies) and reads only the publish date and the video
+    length. The length is used only to estimate the cost before an analysis. The date is stored with your history,
+    only in this browser; nothing else from the page is stored or sent anywhere.
+  </p>
+  <p>
+    When you right-click a YouTube video link or thumbnail and choose &ldquo;Analyze this video with View Digest&rdquo;,
+    the extension reads only that link&rsquo;s address to start the analysis, and gets the video title from the oEmbed
+    endpoint above. To tell whether you already analyzed a video, the analyze button and the popup look only at the
+    history stored in this browser.
   </p>
 
   <h2>4. Channel subscriptions (automatic analysis)</h2>

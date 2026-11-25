@@ -253,13 +253,14 @@ async function fetchLatestVideos(channelId, maxResults = 15) {
 }
 
 /**
- * 영상 URL로 그 영상의 채널 이름을 알아낸다. YouTube의 공개 oEmbed 주소를 쓰므로 API 키가
+ * 영상 URL로 그 영상의 제목과 채널 이름을 알아낸다. YouTube의 공개 oEmbed 주소를 쓰므로 API 키가
  * 필요 없고, 로그인 정보(쿠키)도 보내지 않는다.
  *
- * @returns {Promise<string | null | undefined>} 채널 이름. YouTube가 모른다고 답하면(비공개·
- *   삭제된 영상 등) null, 네트워크 오류처럼 나중에 다시 시도할 만하면 undefined.
+ * @returns {Promise<{title: string | null, channelTitle: string | null} | null | undefined>}
+ *   YouTube가 모른다고 답하면(비공개·삭제된 영상 등) null, 네트워크 오류처럼 나중에 다시
+ *   시도할 만하면 undefined.
  */
-async function fetchVideoChannelName(videoUrl) {
+async function fetchVideoOEmbed(videoUrl) {
   let response;
   try {
     response = await fetchWithTimeout(
@@ -271,22 +272,35 @@ async function fetchVideoChannelName(videoUrl) {
   }
   if (!response.ok) return null;
   try {
-    const name = (await response.json())?.author_name;
-    return typeof name === "string" && name.trim() ? name.trim() : null;
+    const data = await response.json();
+    const clean = (value) => (typeof value === "string" && value.trim() ? value.trim() : null);
+    return { title: clean(data?.title), channelTitle: clean(data?.author_name) };
   } catch {
     return null;
   }
 }
 
 /**
- * 영상의 게시 시각을 YouTube 시청 페이지에서 읽는다. API 키가 필요 없고 로그인 정보(쿠키)도
- * 보내지 않는다. 채널 자동 분석은 RSS에 게시 시각이 있으므로, 이것은 직접 분석한 영상과
- * 게시 시각을 저장하지 않던 버전의 기록에만 쓴다.
+ * 영상의 채널 이름.
  *
- * @returns {Promise<string | null | undefined>} ISO 시각. 페이지에서 찾지 못하면(비공개·삭제된
- *   영상, 동의 페이지 등) null, 네트워크 오류처럼 나중에 다시 시도할 만하면 undefined.
+ * @returns {Promise<string | null | undefined>} 채널 이름. YouTube가 모른다고 답하면(비공개·
+ *   삭제된 영상 등) null, 네트워크 오류처럼 나중에 다시 시도할 만하면 undefined.
  */
-async function fetchVideoPublishDate(videoUrl) {
+async function fetchVideoChannelName(videoUrl) {
+  const info = await fetchVideoOEmbed(videoUrl);
+  if (info === undefined) return undefined;
+  return info?.channelTitle ?? null;
+}
+
+/**
+ * 영상의 게시 시각과 길이를 YouTube 시청 페이지에서 읽는다. API 키가 필요 없고 로그인 정보(쿠키)도
+ * 보내지 않는다.
+ *
+ * @returns {Promise<{publishedAt: string | null, lengthSeconds: number | null} | null | undefined>}
+ *   페이지를 받지 못하면(비공개·삭제된 영상 등) null, 네트워크 오류처럼 나중에 다시 시도할 만하면
+ *   undefined.
+ */
+async function fetchVideoPageInfo(videoUrl) {
   let html;
   try {
     const response = await fetchWithTimeout(videoUrl, { credentials: "omit" });
@@ -295,19 +309,37 @@ async function fetchVideoPublishDate(videoUrl) {
   } catch {
     return undefined;
   }
-  const match =
+  const dateMatch =
     html.match(/<meta itemprop="(?:datePublished|uploadDate)" content="([^"]+)"/) ??
     html.match(/"(?:publishDate|uploadDate)":"([^"]+)"/);
-  if (!match) return null;
-  const date = new Date(match[1]);
-  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+  const date = dateMatch ? new Date(dateMatch[1]) : null;
+  const lengthMatch = html.match(/"lengthSeconds":"(\d+)"/);
+  return {
+    publishedAt: date && !Number.isNaN(date.getTime()) ? date.toISOString() : null,
+    lengthSeconds: lengthMatch ? Number(lengthMatch[1]) : null,
+  };
+}
+
+/**
+ * 영상의 게시 시각. 채널 자동 분석은 RSS에 게시 시각이 있으므로, 이것은 직접 분석한 영상과
+ * 게시 시각을 저장하지 않던 버전의 기록에만 쓴다.
+ *
+ * @returns {Promise<string | null | undefined>} ISO 시각. 페이지에서 찾지 못하면(비공개·삭제된
+ *   영상, 동의 페이지 등) null, 네트워크 오류처럼 나중에 다시 시도할 만하면 undefined.
+ */
+async function fetchVideoPublishDate(videoUrl) {
+  const info = await fetchVideoPageInfo(videoUrl);
+  if (info === undefined) return undefined;
+  return info?.publishedAt ?? null;
 }
 
 export {
   CHANNEL_ID_RE,
   resolveChannelId,
   fetchLatestVideos,
+  fetchVideoOEmbed,
   fetchVideoChannelName,
+  fetchVideoPageInfo,
   fetchVideoPublishDate,
   extractInitialData,
   collectPageVideos,

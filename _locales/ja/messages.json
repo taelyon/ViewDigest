@@ -1,0 +1,692 @@
+{
+  "htmlLang": {
+    "message": "ja"
+  },
+  "extDescription": {
+    "message": "YouTube動画をAIで要約:Geminiで目次とチャプター別の要点、3行要約、動画への質問、シーンへのジャンプ(自分のAPIキーを使用)"
+  },
+  "untitled": {
+    "message": "無題"
+  },
+  "unknownError": {
+    "message": "不明なエラーが発生しました。"
+  },
+  "unknownErrorShort": {
+    "message": "不明なエラー"
+  },
+  "rateLimited": {
+    "message": "本日の分析回数(1日$1回)をすべて使いました。"
+  },
+  "popupOpenSettings": {
+    "message": "設定を開く"
+  },
+  "popupAnalyzeNow": {
+    "message": "🔍 今すぐ分析"
+  },
+  "popupWatchPageOnly": {
+    "message": "分析するには YouTube の動画ページを開いてください。"
+  },
+  "popupTabHistory": {
+    "message": "履歴"
+  },
+  "popupTabUsage": {
+    "message": "使用量"
+  },
+  "popupClearHistory": {
+    "message": "すべて削除"
+  },
+  "popupMarkAllRead": {
+    "message": "すべて既読"
+  },
+  "popupClearHistoryConfirm": {
+    "message": "すべて削除しますか?もう一度クリック"
+  },
+  "popupHistoryCount": {
+    "message": "保存された分析:$1件"
+  },
+  "popupHistoryEmpty": {
+    "message": "まだ分析した動画はありません。"
+  },
+  "popupDelete": {
+    "message": "削除"
+  },
+  "popupUsageToday": {
+    "message": "今日の分析"
+  },
+  "popupUsageMonth": {
+    "message": "今月の分析"
+  },
+  "popupCostToday": {
+    "message": "今日の推定コスト"
+  },
+  "popupCostMonth": {
+    "message": "今月の推定コスト"
+  },
+  "popupDailyLimit": {
+    "message": "今日の上限"
+  },
+  "popupCount": {
+    "message": "$1回"
+  },
+  "popupRemaining": {
+    "message": "今日はあと$1回分析できます。"
+  },
+  "popupLimitReached": {
+    "message": "今日の分析上限に達しました。明日もう一度お試しください。"
+  },
+  "optionsPageTitle": {
+    "message": "View Digest - 設定"
+  },
+  "optionsSubtitle": {
+    "message": "設定"
+  },
+  "optionsTheme": {
+    "message": "テーマ"
+  },
+  "optionsThemeDark": {
+    "message": "ダーク"
+  },
+  "optionsThemeLight": {
+    "message": "ライト"
+  },
+  "optionsThemeSystem": {
+    "message": "システム設定に合わせる"
+  },
+  "optionsApiKeyHeading": {
+    "message": "Gemini API キー"
+  },
+  "optionsApiKeyDescHtml": {
+    "message": "<a href=\"https://aistudio.google.com/app/apikey\" target=\"_blank\" rel=\"noopener noreferrer\">Google AI Studio</a> で発行した API キーを入力してください。キーはデバイス間で同期されるストレージ(chrome.storage.sync)に保存されます。"
+  },
+  "optionsChecking": {
+    "message": "確認中..."
+  },
+  "optionsApiKeyPlaceholder": {
+    "message": "新しい API キーを入力"
+  },
+  "optionsToggleVisibility": {
+    "message": "キーの表示/非表示"
+  },
+  "optionsSaveApiKey": {
+    "message": "API キーを保存"
+  },
+  "optionsTestApiKey": {
+    "message": "接続テスト"
+  },
+  "optionsSavedKey": {
+    "message": "保存済みのキー:$1"
+  },
+  "optionsNoSavedKey": {
+    "message": "API キーが保存されていません。"
+  },
+  "optionsEnterApiKey": {
+    "message": "API キーを入力してください。"
+  },
+  "optionsApiKeySaved": {
+    "message": "API キーを保存しました。"
+  },
+  "optionsSaveFailed": {
+    "message": "保存できませんでした:$1"
+  },
+  "optionsNoKeyToTest": {
+    "message": "テストする API キーがありません。先に入力してください。"
+  },
+  "optionsKeyValid": {
+    "message": "✅ API キーは有効です。"
+  },
+  "optionsKeyInvalid": {
+    "message": "❌ API キーが無効です。(HTTP $1)"
+  },
+  "optionsKeyNetworkError": {
+    "message": "❌ ネットワークエラーのため確認できませんでした。"
+  },
+  "optionsAnalysisHeading": {
+    "message": "分析設定"
+  },
+  "optionsModelLabel": {
+    "message": "使用するモデル"
+  },
+  "optionsModelDefault": {
+    "message": "Gemini 3.7 Flash(標準・バランス型)"
+  },
+  "optionsModelHigh": {
+    "message": "Gemini 3.8 Flash(高性能)"
+  },
+  "optionsModelLite": {
+    "message": "Gemini 3.5 Flash Lite(エコノミー)"
+  },
+  "optionsReportLanguageLabel": {
+    "message": "レポートの言語"
+  },
+  "optionsReportLanguageAuto": {
+    "message": "自動(ブラウザの言語)"
+  },
+  "optionsReportLanguageHint": {
+    "message": "自動にすると、ブラウザの言語が韓国語・日本語・スペイン語ならその言語で、それ以外は英語で書きます。動画で話されている言語は関係ありません。"
+  },
+  "optionsShareAttribution": {
+    "message": "コピー・ダウンロード時に元の動画と出典リンク(Made with View Digest)を含める"
+  },
+  "optionsDailyLimitLabel": {
+    "message": "1日の最大分析回数"
+  },
+  "optionsSaveSettings": {
+    "message": "設定を保存"
+  },
+  "optionsDailyLimitInvalid": {
+    "message": "1日の上限は1以上の数値にしてください。"
+  },
+  "optionsSettingsSaved": {
+    "message": "設定を保存しました。"
+  },
+  "optionsChannelsHeading": {
+    "message": "チャンネル登録(新しい動画を自動分析)"
+  },
+  "optionsChannelsDesc": {
+    "message": "チャンネルを登録すると、それ以降にアップロードされた動画だけが自動で分析されます。(登録時点の既存の動画は分析されません。)確認はブラウザが開いている間だけ行います。"
+  },
+  "optionsChannelInputLabel": {
+    "message": "チャンネル URL、@ハンドル、またはチャンネル ID"
+  },
+  "optionsChannelPlaceholder": {
+    "message": "https://www.youtube.com/@channelhandle"
+  },
+  "optionsAddChannel": {
+    "message": "チャンネルを追加"
+  },
+  "optionsIntervalLabel": {
+    "message": "確認間隔(分)"
+  },
+  "optionsSaveInterval": {
+    "message": "間隔を保存"
+  },
+  "optionsCheckNow": {
+    "message": "今すぐ確認"
+  },
+  "optionsNoChannels": {
+    "message": "登録したチャンネルはまだありません。"
+  },
+  "optionsLastChecked": {
+    "message": "最終確認:$1"
+  },
+  "optionsNotCheckedYet": {
+    "message": "まだ確認していません"
+  },
+  "optionsCheckFailed": {
+    "message": "確認に失敗しました($1):$2"
+  },
+  "optionsRecentFailure": {
+    "message": "分析に失敗しました($1)"
+  },
+  "optionsRetryPending": {
+    "message": "再試行中(最初の失敗 $1、$2回目)"
+  },
+  "optionsLastSuccess": {
+    "message": "最後に成功した確認:$1"
+  },
+  "optionsReadFromPage": {
+    "message": "RSS の代わりにチャンネルページから取得"
+  },
+  "optionsNextCheck": {
+    "message": "次の自動確認:$1"
+  },
+  "optionsAutoAnalyze": {
+    "message": "自動分析"
+  },
+  "optionsUnsubscribe": {
+    "message": "登録解除"
+  },
+  "optionsEnterChannel": {
+    "message": "チャンネル URL、@ハンドル、またはチャンネル ID を入力してください。"
+  },
+  "optionsResolvingChannel": {
+    "message": "チャンネルを確認しています..."
+  },
+  "optionsChannelSubscribed": {
+    "message": "「$1」を登録しました。"
+  },
+  "optionsIntervalInvalid": {
+    "message": "確認間隔は5分以上にしてください。"
+  },
+  "optionsIntervalSaved": {
+    "message": "確認間隔を保存しました。"
+  },
+  "resultsPageTitle": {
+    "message": "View Digest 分析"
+  },
+  "resultsPreparing": {
+    "message": "分析を準備中..."
+  },
+  "resultsStarting": {
+    "message": "開始しています..."
+  },
+  "resultsCopy": {
+    "message": "📋 コピー"
+  },
+  "resultsCopied": {
+    "message": "✅ コピーしました"
+  },
+  "resultsDownload": {
+    "message": "⬇️ Markdown をダウンロード"
+  },
+  "resultsReanalyze": {
+    "message": "🔄 もう一度分析"
+  },
+  "resultsAlreadyAnalyzed": {
+    "message": "この動画はすでに分析済み($1)なので、保存されたレポートを表示しています。もう一度分析すると、その分の費用がかかります。"
+  },
+  "shareSourceVideo": {
+    "message": "元の動画:$1"
+  },
+  "reviewTitle": {
+    "message": "View Digest はお役に立っていますか?"
+  },
+  "reviewText": {
+    "message": "これまでに$1本の動画を分析しました。ストアに短いレビューを書いていただけると、他の人が View Digest を見つけやすくなります。"
+  },
+  "reviewNow": {
+    "message": "⭐ レビューを書く"
+  },
+  "reviewLater": {
+    "message": "後で"
+  },
+  "reviewNever": {
+    "message": "今後表示しない"
+  },
+  "resultsMeta": {
+    "message": "$1 · 推定コスト $2"
+  },
+  "resultsNotFound": {
+    "message": "保存された分析が見つかりません。削除された可能性があります。"
+  },
+  "resultsUnknownError": {
+    "message": "分析中に不明なエラーが発生しました。"
+  },
+  "resultsNoUrl": {
+    "message": "分析する動画の URL がありません。このページは View Digest の分析ボタンからのみ開けます。"
+  },
+  "contentButton": {
+    "message": "⚡ 動画を分析"
+  },
+  "contentButtonFull": {
+    "message": "動画を分析(詳細なレポートを作成)"
+  },
+  "contentOpenFailed": {
+    "message": "❌ 開けません"
+  },
+  "contentOpenFailedDetail": {
+    "message": "新しいタブを開く際にエラーが発生しました。"
+  },
+  "contentReloadNeeded": {
+    "message": "🔄 再読み込みが必要"
+  },
+  "contentReloadNeededDetail": {
+    "message": "View Digest が更新されました。このページを再読み込みしてから、もう一度クリックしてください。(ボタンをもう一度押すと再読み込みします。)"
+  },
+  "bgAlreadyAnalyzing": {
+    "message": "この動画はすでに分析中です。"
+  },
+  "bgNotificationTitle": {
+    "message": "新しい動画を分析しました"
+  },
+  "actionTitleUnseen": {
+    "message": "View Digest - 未読の分析:$1件"
+  },
+  "popupNewBadge": {
+    "message": "NEW"
+  },
+  "historyDates": {
+    "message": "投稿 $1 · 分析 $2"
+  },
+  "historyAnalyzed": {
+    "message": "分析 $1"
+  },
+  "historyPublishedFull": {
+    "message": "動画の投稿日時:$1"
+  },
+  "historyAnalyzedFull": {
+    "message": "分析日時:$1"
+  },
+  "resultsPublished": {
+    "message": "投稿 $1"
+  },
+  "bgAnalysisFailedTitle": {
+    "message": "新しい動画を分析できませんでした"
+  },
+  "bgMissingKeyBody": {
+    "message": "Gemini API キーが設定されていないため、チャンネルの新しい動画を分析できませんでした。クリックしてキーを登録すると、次の確認時に分析されます。"
+  },
+  "bgRateLimitedTitle": {
+    "message": "1日の分析上限に達しました"
+  },
+  "bgRateLimitedBody": {
+    "message": "本日の分析回数(1日$1回)をすべて使いました。チャンネルの新しい動画は明日分析されます。クリックすると上限を変更できます。"
+  },
+  "geminiKeyLoadError": {
+    "message": "API キーを読み込めませんでした。"
+  },
+  "geminiVideoTooLong": {
+    "message": "この動画は長すぎて、Gemini が1回のリクエストで分析できません(入力トークンの上限を超えています)。もっと短い動画でお試しください。"
+  },
+  "geminiVideoNotAccessible": {
+    "message": "Gemini がこの動画にアクセスできませんでした(権限なし)。まだ始まっていないプレミア公開・ライブ配信、配信中のライブ、アップロード直後で処理中の動画、または非公開・限定公開・メンバー限定・年齢制限のある動画の可能性があります。すべての動画でこうなる場合は API キーの権限を確認してください。"
+  },
+  "geminiRequestFailed": {
+    "message": "Gemini API リクエストに失敗しました:$1"
+  },
+  "geminiRequestFailedStatus": {
+    "message": "Gemini API リクエストに失敗しました。(HTTP $1)"
+  },
+  "geminiMaxTokens": {
+    "message": "Gemini がレポートを書き終える前に出力トークンの上限に達し、応答が途中で切れました。動画が非常に長いか情報量が多い可能性があります。少し待ってからもう一度お試しください。"
+  },
+  "geminiSafety": {
+    "message": "Gemini の安全ポリシーにより、この動画への応答がブロックされました。"
+  },
+  "geminiRecitation": {
+    "message": "出力が元のコンテンツに似すぎているため、Gemini が生成を停止しました。"
+  },
+  "geminiEmpty": {
+    "message": "Gemini から空の応答が返されました。"
+  },
+  "geminiNoData": {
+    "message": "Gemini がデータを送る前に接続が切れました。少し待ってからもう一度お試しください。"
+  },
+  "geminiBlocked": {
+    "message": "Gemini がこの動画へのリクエストをブロックしました。(理由:$1)"
+  },
+  "geminiInvalidUrl": {
+    "message": "有効な YouTube 動画の URL ではありません。"
+  },
+  "geminiMissingKey": {
+    "message": "Gemini API キーが設定されていません。先に設定ページで登録してください。"
+  },
+  "geminiUnknownError": {
+    "message": "Gemini API の呼び出し中に不明なエラーが発生しました。"
+  },
+  "geminiTimeout": {
+    "message": "Gemini が$1分以内に応答しませんでした。次の確認時に再試行します。"
+  },
+  "requestTimedOut": {
+    "message": "リクエストがタイムアウトしました"
+  },
+  "networkUnavailable": {
+    "message": "ネットワークに接続できませんでした"
+  },
+  "geminiAnalyzing": {
+    "message": "Gemini が動画を分析しています。最初の文字が表示されるまで時間がかかることがあります..."
+  },
+  "channelEnterInput": {
+    "message": "チャンネル URL または ID を入力してください。"
+  },
+  "channelPageFailed": {
+    "message": "チャンネルページを読み込めませんでした。(HTTP $1)"
+  },
+  "channelIdNotFound": {
+    "message": "チャンネル ID が見つかりません。チャンネル URL が正しいか確認してください。"
+  },
+  "channelVideosFailed": {
+    "message": "最新の動画を読み込めませんでした。($1)"
+  },
+  "channelSourceHttp": {
+    "message": "$1 HTTP $2"
+  },
+  "channelSourcePage": {
+    "message": "チャンネルページ"
+  },
+  "channelPageNoVideos": {
+    "message": "チャンネルページに動画が見つかりません"
+  },
+  "welcomePageTitle": {
+    "message": "View Digest をはじめる"
+  },
+  "welcomeHeading": {
+    "message": "View Digest へようこそ"
+  },
+  "welcomeSubtitle": {
+    "message": "YouTube 動画を、目次・要点・シーンへのジャンプ付きのレポートにします。3つのステップで準備完了です。"
+  },
+  "welcomeSampleHeading": {
+    "message": "まずは仕上がりを見る"
+  },
+  "welcomeSampleDesc": {
+    "message": "API キーがなくてもサンプルレポートを開けます。実際のレポートでは、セクション横の ▶ 時刻をクリックすると動画のその場面に移動します。"
+  },
+  "welcomeSampleButton": {
+    "message": "📄 サンプルレポートを見る"
+  },
+  "welcomeStep1Heading": {
+    "message": "Gemini API キーを取得(無料)"
+  },
+  "welcomeStep1Desc": {
+    "message": "View Digest は、あなた自身の Google アカウントの Gemini API で動画を分析します。間にサーバーはないので、キーもレポートも開発者に届くことはありません。"
+  },
+  "welcomeStep1Item1": {
+    "message": "下のボタンで Google AI Studio を開き、Google アカウントでログインします。"
+  },
+  "welcomeStep1Item2": {
+    "message": "<b>Create API key</b> をクリックし、<code>AIza</code> で始まるキーをコピーします。"
+  },
+  "welcomeStep1Button": {
+    "message": "Google AI Studio でキーを取得 ↗"
+  },
+  "welcomeStep2Heading": {
+    "message": "キーを貼り付けてテスト"
+  },
+  "welcomeSaveAndTest": {
+    "message": "保存してテスト"
+  },
+  "welcomeKeySaved": {
+    "message": "✓ キーが保存されています:$1"
+  },
+  "welcomeNoKeyYet": {
+    "message": "コピーしたキーを下に貼り付けてください。"
+  },
+  "welcomeEnterKey": {
+    "message": "API キーを貼り付けてください。"
+  },
+  "welcomeChecking": {
+    "message": "キーを確認しています..."
+  },
+  "welcomeKeyOk": {
+    "message": "準備完了です!YouTube で動画を分析できます。"
+  },
+  "welcomeKeyInvalid": {
+    "message": "Google がこのキーを受け付けませんでした(HTTP $1)。キー全体をコピーしたか確認してください。保存はされていません。"
+  },
+  "welcomeKeyNetwork": {
+    "message": "キーは保存しましたが、ネットワークの問題で確認できませんでした。接続を確認してもう一度お試しください。"
+  },
+  "welcomeStep3Heading": {
+    "message": "YouTube で動画を分析"
+  },
+  "welcomeStep3Desc": {
+    "message": "YouTube の動画を開くと、タイトルの下とおすすめ動画の上に ⚡ 動画を分析 ボタンが表示されます。クリックすると新しいタブでレポートがリアルタイムに書かれます。"
+  },
+  "welcomeStep3Tip": {
+    "message": "チャンネルを登録すると新しい動画が自動で分析されます(設定 → チャンネル登録)。ツールバーのパズルアイコンから View Digest を固定すると、未読レポートの数がアイコンに表示されます。"
+  },
+  "welcomeOpenYoutube": {
+    "message": "YouTube を開く ↗"
+  },
+  "welcomeOpenOptions": {
+    "message": "設定を開く"
+  },
+  "welcomeQuotaHeading": {
+    "message": "「使用量の上限を超えました」と表示されたら"
+  },
+  "welcomeQuotaDesc": {
+    "message": "請求設定のないキーは無料枠で、1分あたり・1日あたりの使用量に上限があります。動画分析は多くのトークンを使うため、すぐに上限に達することがあります。"
+  },
+  "welcomeQuotaItem1": {
+    "message": "1分あたりの上限は1〜2分で解除され、1日の上限は翌日にリセットされます。"
+  },
+  "welcomeQuotaItem2": {
+    "message": "設定でモデルを「Gemini 3.5 Flash Lite(エコノミー)」に変えると、上限にかかりにくく費用も安くなります。"
+  },
+  "welcomeQuotaItem3": {
+    "message": "たくさん使う場合は、AI Studio でキーのプロジェクトに請求設定をしてください。使った分だけ支払い、分析ごとに推定コストが記録されます。"
+  },
+  "resultsSampleNotice": {
+    "message": "これはサンプルレポートです。選んだ動画でこのようなレポートを受け取るには、Gemini API キーを登録してください。"
+  },
+  "resultsOpenGuide": {
+    "message": "はじめにガイドを開く"
+  },
+  "resultsRetry": {
+    "message": "🔄 もう一度試す"
+  },
+  "resultsUseLiteModel": {
+    "message": "エコノミーモデルに切り替えて再試行"
+  },
+  "resultsCheckUsage": {
+    "message": "使用量と上限を確認 ↗"
+  },
+  "resultsSetUpBilling": {
+    "message": "請求を設定 ↗"
+  },
+  "resultsQuotaHint": {
+    "message": "1分あたりの上限は1〜2分で、1日の上限は翌日に解除されます。よく起こる場合はエコノミーモデルを使うか、請求を設定してください。"
+  },
+  "geminiQuotaExceeded": {
+    "message": "Gemini API の使用量の上限に達しました。請求設定のないキーは無料枠で、1分あたり・1日あたりの使用量に上限があります。"
+  },
+  "bgQuotaTitle": {
+    "message": "Gemini API の使用量の上限に達しました"
+  },
+  "bgQuotaBody": {
+    "message": "チャンネルの自動分析をいったん停止し、上限が解除されたら次の確認時に続けます。クリックすると対処方法を確認できます。"
+  },
+  "popupNoKey": {
+    "message": "分析を始めるには、まず Gemini API キーを登録してください。"
+  },
+  "popupOpenGuide": {
+    "message": "🔑 API キーを登録(はじめにガイド)"
+  },
+  "optionsOpenGuide": {
+    "message": "初めてですか?はじめにガイドを見る"
+  },
+  "budgetExceeded": {
+    "message": "今月の予算($1)に達したため、新しい分析と質問を停止しました。予算は設定で変更できます。"
+  },
+  "bgBudgetTitle": {
+    "message": "今月の予算に達しました"
+  },
+  "bgBudgetBody": {
+    "message": "今月の推定コストが予算($1)に達したため、チャンネルの自動分析を停止しました。クリックすると予算を変更できます。"
+  },
+  "contextMenuAnalyzeLink": {
+    "message": "View Digest でこの動画を分析"
+  },
+  "contextMenuAnalyzePage": {
+    "message": "View Digest でこの動画を分析"
+  },
+  "contentButtonView": {
+    "message": "📄 要約を見る"
+  },
+  "contentButtonViewFull": {
+    "message": "分析済みの動画です。保存されたレポートを開きます。"
+  },
+  "contentEstimate": {
+    "message": "推定コスト 約 $1"
+  },
+  "resultsOpenSettings": {
+    "message": "設定を開く"
+  },
+  "resultsEstimate": {
+    "message": "推定コスト 約 $1(約$2分の動画)"
+  },
+  "printSource": {
+    "message": "元の動画:$1"
+  },
+  "resultsCopyTitle": {
+    "message": "レポートを Markdown でコピーします。Notion や Obsidian などに貼り付けても書式が保たれます。"
+  },
+  "resultsDownloadObsidian": {
+    "message": "🗂️ Obsidian 用"
+  },
+  "resultsDownloadObsidianTitle": {
+    "message": "タイトル・元の URL・チャンネル・日付・タグのプロパティ(YAML)付きの Markdown ファイルをダウンロードします。"
+  },
+  "resultsPrint": {
+    "message": "🖨️ PDF・印刷"
+  },
+  "resultsPrintTitle": {
+    "message": "印刷ダイアログで「PDF に保存」を選ぶと PDF ファイルとして保存できます。"
+  },
+  "qaTitle": {
+    "message": "💬 動画に質問する"
+  },
+  "qaDesc": {
+    "message": "レポートをもとに答えます。レポートにない内容は「動画全体から探す」をオンにして質問してください。"
+  },
+  "qaPlaceholder": {
+    "message": "例:この動画で勧めている方法を順番に教えて"
+  },
+  "qaUseVideo": {
+    "message": "動画全体から探す"
+  },
+  "qaSubmit": {
+    "message": "質問する"
+  },
+  "qaThinking": {
+    "message": "回答を作成中..."
+  },
+  "qaThinkingVideo": {
+    "message": "動画をもう一度見て回答を作成中...(時間がかかることがあります)"
+  },
+  "qaFromReport": {
+    "message": "レポートから回答"
+  },
+  "qaFromVideo": {
+    "message": "動画全体から検索"
+  },
+  "qaCostReport": {
+    "message": "レポートから答える場合の費用はごくわずかです(通常 $$0.01 未満)。"
+  },
+  "qaCostVideo": {
+    "message": "動画をもう一度見るため、分析1回分の費用がかかり、1日の分析回数にも含まれます。"
+  },
+  "qaExportHeading": {
+    "message": "質問と回答"
+  },
+  "optionsReportLengthLabel": {
+    "message": "レポートの分量"
+  },
+  "optionsReportLengthBrief": {
+    "message": "3行要約"
+  },
+  "optionsReportLengthStandard": {
+    "message": "標準(デフォルト)"
+  },
+  "optionsReportLengthDetailed": {
+    "message": "詳細"
+  },
+  "optionsReportLengthHint": {
+    "message": "3行要約はざっと目を通したいときに、詳細は講義やインタビューなど情報量の多い動画に向いています。チャンネルの自動分析にも適用されます。"
+  },
+  "optionsMonthlyBudgetLabel": {
+    "message": "月の予算(USD)"
+  },
+  "optionsMonthlyBudgetPlaceholder": {
+    "message": "上限なし"
+  },
+  "optionsMonthlyBudgetHint": {
+    "message": "今月の推定コストがこの金額に達すると、新しい分析と質問を停止します。空欄なら上限はありません。実際の請求額は Google AI Studio で確認してください。"
+  },
+  "optionsMonthlyBudgetInvalid": {
+    "message": "月の予算は0以上の数値にしてください(空欄なら上限なし)。"
+  },
+  "popupViewSaved": {
+    "message": "📄 保存された要約を見る"
+  },
+  "popupEstimate": {
+    "message": "分析の推定コスト:約 $1"
+  },
+  "popupBudgetStatus": {
+    "message": "今月の予算:$1 / $2"
+  },
+  "popupBudgetReached": {
+    "message": "今月の予算に達しました:$1 / $2"
+  }
+}

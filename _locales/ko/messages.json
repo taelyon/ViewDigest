@@ -3,7 +3,7 @@
     "message": "ko"
   },
   "extDescription": {
-    "message": "YouTube 영상을 Gemini API로 분석해 목차와 챕터별 상세 분석 리포트를 만들어 주는 확장프로그램 (본인 API 키 필요)"
+    "message": "유튜브 영상 AI 요약: Gemini로 목차·챕터별 핵심 정리, 3줄 요약, 영상에 질문하기, 장면 바로가기까지 (본인 API 키 사용)"
   },
   "untitled": {
     "message": "제목 없음"
@@ -162,7 +162,7 @@
     "message": "자동 (브라우저 언어)"
   },
   "optionsReportLanguageHint": {
-    "message": "자동으로 두면 브라우저 언어가 한국어일 때는 한국어로, 그 밖에는 영어로 작성합니다. 영상에서 쓰인 언어와는 관계없습니다."
+    "message": "자동으로 두면 브라우저 언어가 한국어·일본어·스페인어이면 그 언어로, 그 밖에는 영어로 작성합니다. 영상에서 쓰인 언어와는 관계없습니다."
   },
   "optionsShareAttribution": {
     "message": "복사·다운로드할 때 원본 영상과 출처 링크(Made with View Digest) 포함"
@@ -565,5 +565,128 @@
   },
   "optionsOpenGuide": {
     "message": "처음이신가요? 시작 가이드 보기"
+  },
+  "budgetExceeded": {
+    "message": "이번 달 예산($1)에 이르러 새 분석과 질문을 멈췄습니다. 설정에서 예산을 바꿀 수 있습니다."
+  },
+  "bgBudgetTitle": {
+    "message": "이번 달 예산에 이르렀습니다"
+  },
+  "bgBudgetBody": {
+    "message": "이번 달 예상 비용이 예산($1)에 이르러 채널 자동 분석을 멈췄습니다. 눌러서 예산을 바꿀 수 있습니다."
+  },
+  "contextMenuAnalyzeLink": {
+    "message": "View Digest로 이 영상 분석"
+  },
+  "contextMenuAnalyzePage": {
+    "message": "View Digest로 이 영상 분석"
+  },
+  "contentButtonView": {
+    "message": "📄 요약 보기"
+  },
+  "contentButtonViewFull": {
+    "message": "이미 분석한 영상입니다. 저장된 리포트를 엽니다."
+  },
+  "contentEstimate": {
+    "message": "예상 비용 약 $1"
+  },
+  "resultsOpenSettings": {
+    "message": "설정 열기"
+  },
+  "resultsEstimate": {
+    "message": "예상 비용 약 $1 (약 $2분 영상)"
+  },
+  "printSource": {
+    "message": "원본 영상: $1"
+  },
+  "resultsCopyTitle": {
+    "message": "Markdown으로 복사합니다. Notion·Obsidian 등에 붙여 넣으면 서식이 유지됩니다."
+  },
+  "resultsDownloadObsidian": {
+    "message": "🗂️ Obsidian용"
+  },
+  "resultsDownloadObsidianTitle": {
+    "message": "제목·원본 주소·채널·날짜·태그 속성(YAML)을 붙인 Markdown 파일로 내려받습니다."
+  },
+  "resultsPrint": {
+    "message": "🖨️ PDF·인쇄"
+  },
+  "resultsPrintTitle": {
+    "message": "인쇄 창에서 'PDF로 저장'을 고르면 PDF 파일로 저장됩니다."
+  },
+  "qaTitle": {
+    "message": "💬 영상에 질문하기"
+  },
+  "qaDesc": {
+    "message": "리포트를 바탕으로 답합니다. 리포트에 없는 내용은 '영상 전체에서 찾기'를 켜고 물어보세요."
+  },
+  "qaPlaceholder": {
+    "message": "예: 이 영상에서 추천한 방법을 순서대로 알려 줘"
+  },
+  "qaUseVideo": {
+    "message": "영상 전체에서 찾기"
+  },
+  "qaSubmit": {
+    "message": "질문하기"
+  },
+  "qaThinking": {
+    "message": "답변을 만드는 중..."
+  },
+  "qaThinkingVideo": {
+    "message": "영상을 다시 보며 답변을 만드는 중... (시간이 걸릴 수 있어요)"
+  },
+  "qaFromReport": {
+    "message": "리포트에서 답함"
+  },
+  "qaFromVideo": {
+    "message": "영상 전체에서 찾음"
+  },
+  "qaCostReport": {
+    "message": "리포트로 답하면 비용이 매우 적습니다(보통 $$0.01 미만)."
+  },
+  "qaCostVideo": {
+    "message": "영상을 다시 보므로 분석 1회만큼 비용이 들고, 일일 분석 횟수에 포함됩니다."
+  },
+  "qaExportHeading": {
+    "message": "질문과 답변"
+  },
+  "optionsReportLengthLabel": {
+    "message": "리포트 분량"
+  },
+  "optionsReportLengthBrief": {
+    "message": "3줄 요약"
+  },
+  "optionsReportLengthStandard": {
+    "message": "보통 (기본)"
+  },
+  "optionsReportLengthDetailed": {
+    "message": "상세"
+  },
+  "optionsReportLengthHint": {
+    "message": "3줄 요약은 빠르게 훑어볼 때, 상세는 강의·인터뷰처럼 내용이 많은 영상에 좋습니다. 채널 자동 분석에도 적용됩니다."
+  },
+  "optionsMonthlyBudgetLabel": {
+    "message": "월 예산 (USD)"
+  },
+  "optionsMonthlyBudgetPlaceholder": {
+    "message": "제한 없음"
+  },
+  "optionsMonthlyBudgetHint": {
+    "message": "이번 달 예상 비용이 이 금액에 이르면 새 분석과 질문을 멈춥니다. 비워 두면 제한하지 않습니다. 실제 청구액은 Google AI Studio에서 확인하세요."
+  },
+  "optionsMonthlyBudgetInvalid": {
+    "message": "월 예산은 0 이상의 숫자여야 합니다(비워 두면 제한 없음)."
+  },
+  "popupViewSaved": {
+    "message": "📄 저장된 요약 보기"
+  },
+  "popupEstimate": {
+    "message": "분석하면 예상 비용 약 $1"
+  },
+  "popupBudgetStatus": {
+    "message": "이번 달 예산: $1 / $2"
+  },
+  "popupBudgetReached": {
+    "message": "이번 달 예산에 이르렀습니다: $1 / $2"
   }
 }

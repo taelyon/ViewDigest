@@ -24,6 +24,7 @@
       <div id="status-view" class="state-view">
         <div class="spinner" aria-hidden="true"></div>
         <p class="state-message" id="status-text" data-i18n="resultsStarting">시작하는 중...</p>
+        <p class="state-hint hidden" id="status-estimate"></p>
       </div>
 
       <div id="error-view" class="state-view hidden">
@@ -42,12 +43,33 @@
       </div>
 
       <div id="result-content" class="markdown-body hidden"></div>
+      <p id="print-source" class="print-only"></p>
 
       <div id="result-actions" class="result-actions hidden">
-        <button id="copy-btn" class="secondary-btn" type="button" data-i18n="resultsCopy">📋 복사</button>
+        <button id="copy-btn" class="secondary-btn" type="button" data-i18n="resultsCopy" data-i18n-title="resultsCopyTitle">📋 복사</button>
         <button id="download-btn" class="secondary-btn" type="button" data-i18n="resultsDownload">⬇️ Markdown 다운로드</button>
+        <button id="obsidian-btn" class="secondary-btn" type="button" data-i18n="resultsDownloadObsidian" data-i18n-title="resultsDownloadObsidianTitle">🗂️ Obsidian용</button>
+        <button id="print-btn" class="secondary-btn" type="button" data-i18n="resultsPrint" data-i18n-title="resultsPrintTitle">🖨️ PDF·인쇄</button>
         <button id="reanalyze-btn" class="secondary-btn hidden" type="button" data-i18n="resultsReanalyze">🔄 다시 분석</button>
       </div>
+
+      <section id="qa-section" class="qa-section hidden" aria-labelledby="qa-title">
+        <h2 id="qa-title" class="qa-title" data-i18n="qaTitle">💬 영상에 질문하기</h2>
+        <p class="qa-desc" data-i18n="qaDesc">리포트를 바탕으로 답합니다.</p>
+        <ul id="qa-list" class="qa-list"></ul>
+        <form id="qa-form" class="qa-form">
+          <textarea id="qa-input" class="qa-input" rows="2" maxlength="1000" data-i18n-placeholder="qaPlaceholder"></textarea>
+          <div class="qa-form-row">
+            <label class="qa-video-toggle">
+              <input type="checkbox" id="qa-use-video" />
+              <span data-i18n="qaUseVideo">영상 전체에서 찾기</span>
+            </label>
+            <span id="qa-cost-hint" class="qa-cost-hint"></span>
+            <button id="qa-submit" class="primary-btn" type="submit" data-i18n="qaSubmit">질문하기</button>
+          </div>
+          <p id="qa-error" class="qa-error hidden" role="alert"></p>
+        </form>
+      </section>
     </main>
   </div>
 

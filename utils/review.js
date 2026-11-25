@@ -1,4 +1,4 @@
-// ViewDigest - 웹스토어 리뷰 요청과 공유용 출처 표기
+// View Digest - 웹스토어 리뷰 요청과 공유용 출처 표기
 //
 // 리뷰 요청은 설치 직후가 아니라, 분석이 몇 번 성공해 확장프로그램이 실제로 쓸모 있었던
 // 뒤에 한다. 사용자가 거절하면 존중한다: "나중에"는 한참 뒤에 한 번 더, "다시 보지 않기"와
@@ -11,15 +11,49 @@ const FIRST_ASK_AFTER = 3; // 성공한 분석 수
 const ASK_AGAIN_AFTER = 10; // "나중에"를 누른 뒤 추가로 성공해야 하는 분석 수
 
 /**
- * 스토어에서 설치한 확장프로그램은 확장프로그램 ID가 곧 웹스토어 항목 ID다.
+ * 스토어에서 설치한 확장프로그램은 확장프로그램 ID가 곧 그 스토어의 항목 ID다.
  * (개발자 모드로 불러온 사본은 ID가 달라 이 주소가 맞지 않는다.)
+ * Edge 추가 기능·웨일 스토어에서 설치하면 ID와 스토어가 다르므로, 업데이트 주소로 설치한 스토어를
+ * 알아내 그 스토어의 페이지로 보낸다(chrome.management.getSelf는 권한 없이 쓸 수 있다).
  */
+const STORES = {
+  chrome: {
+    page: (id) => `https://chromewebstore.google.com/detail/${id}`,
+    reviews: (id) => `https://chromewebstore.google.com/detail/${id}/reviews`,
+  },
+  edge: {
+    page: (id) => `https://microsoftedge.microsoft.com/addons/detail/${id}`,
+    reviews: (id) => `https://microsoftedge.microsoft.com/addons/detail/${id}`,
+  },
+  whale: {
+    page: (id) => `https://store.whale.naver.com/detail/${id}`,
+    reviews: (id) => `https://store.whale.naver.com/detail/${id}`,
+  },
+};
+
+let installedStore = STORES.chrome;
+
+function storeFromUpdateUrl(updateUrl) {
+  if (/edge\.microsoft\.com/i.test(updateUrl ?? "")) return STORES.edge;
+  if (/whale\.naver\.com/i.test(updateUrl ?? "")) return STORES.whale;
+  return STORES.chrome;
+}
+
+try {
+  chrome.management?.getSelf?.((info) => {
+    void chrome.runtime.lastError;
+    if (info) installedStore = storeFromUpdateUrl(info.updateUrl);
+  });
+} catch {
+  // management API를 쓸 수 없는 환경이면 Chrome 웹 스토어로 둔다.
+}
+
 function storePageUrl() {
-  return `https://chromewebstore.google.com/detail/${chrome.runtime.id}`;
+  return installedStore.page(chrome.runtime.id);
 }
 
 function storeReviewUrl() {
-  return `${storePageUrl()}/reviews`;
+  return installedStore.reviews(chrome.runtime.id);
 }
 
 async function getState() {

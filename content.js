@@ -1,4 +1,4 @@
-// ViewDigest - YouTube 페이지 content script
+// View Digest - YouTube 페이지 content script
 //
 // 이 스크립트는 일반 script(non-module)로 주입되므로 utils/*.js 의 ES export를
 // 직접 import할 수 없다. Gemini 호출 등 무거운 로직은 background.js 에서
@@ -14,6 +14,8 @@
 //      그 탭이 직접 수행하므로, 여기서는 탭을 여는 것까지만 책임진다.
 //   3. 리포트의 ▶ 시각 버튼을 누르면 background.js가 보내는 { action: "seekTo", seconds }를
 //      받아 이 탭의 영상을 그 시각으로 옮기고 재생한다.
+//   4. 이미 분석한 영상이면 버튼을 "📄 요약 보기"로 바꾸고, 아직이면 버튼에 마우스를 올렸을 때
+//      예상 비용을 보여 준다(background.js의 getVideoState).
 
 (function () {
   const TITLE_BUTTON_ID = "viewdigest-analyze-button";
@@ -25,6 +27,11 @@
   // 확장프로그램이 업데이트되면 chrome.i18n도 못 쓰게 되므로 미리 읽어 둔다.
   const RELOAD_LABEL = chrome.i18n.getMessage("contentReloadNeeded");
   const RELOAD_DETAIL = chrome.i18n.getMessage("contentReloadNeededDetail");
+  const VIEW_LABEL = chrome.i18n.getMessage("contentButtonView");
+  const VIEW_LABEL_FULL = chrome.i18n.getMessage("contentButtonViewFull");
+  // 금액 자리를 표시해 둔 문구. 업데이트로 연결이 끊긴 뒤에도 쓸 수 있게 미리 읽어 둔다.
+  const ESTIMATE_TEMPLATE = chrome.i18n.getMessage("contentEstimate", ["{cost}"]);
+  const HISTORY_STORAGE_KEY = "analysisHistory";
 
   // 좋아요/공유/다운로드 등 모든 네이티브 액션 버튼은 #actions-inner 안에서
   // 실질적으로 #menu 라는 단일 블록(ytd-menu-renderer)에 다 뭉쳐 들어있고,
@@ -103,6 +110,88 @@
       if (el) return el;
     }
     return null;
+  }
+
+  /** 지금 영상의 길이(초). 광고가 재생 중이거나 아직 모르면 null. */
+  function getVideoDuration() {
+    const player = document.querySelector("#movie_player");
+    if (player?.classList.contains("ad-showing")) return null;
+    const video =
+      player?.querySelector("video") ?? document.querySelector("video.html5-main-video");
+    const duration = video?.duration;
+    return Number.isFinite(duration) && duration > 0 ? duration : null;
+  }
+
+  // ---------------------------------------------------------------------
+  // 영상 상태: 이미 분석했는지, 예상 비용은 얼마인지
+  // ---------------------------------------------------------------------
+
+  // { href, analyzed, estimate } — 지금 페이지(href)에 대한 마지막 답
+  let videoState = null;
+  let stateRequestTimer = null;
+
+  function buttons() {
+    return [TITLE_BUTTON_ID, SIDEBAR_BUTTON_ID]
+      .map((id) => document.getElementById(id))
+      .filter(Boolean);
+  }
+
+  function applyVideoState(button) {
+    if (button.dataset.reloadNeeded || button.dataset.busy) return;
+    const state = videoState?.href === location.href ? videoState : null;
+    if (state?.analyzed) {
+      button.textContent = VIEW_LABEL;
+      button.title = VIEW_LABEL_FULL;
+      button.dataset.analyzed = "true";
+    } else {
+      button.textContent = BUTTON_LABEL;
+      button.title = state?.estimate
+        ? `${BUTTON_LABEL_FULL}\n${ESTIMATE_TEMPLATE.replace("{cost}", state.estimate.formatted)}`
+        : BUTTON_LABEL_FULL;
+      delete button.dataset.analyzed;
+    }
+    button.setAttribute("aria-label", button.title.split("\n")[0]);
+  }
+
+  /** background.js에 지금 영상의 상태를 묻는다. 짧은 시간에 여러 번 불려도 한 번만 묻는다. */
+  function requestVideoState(delay = 300) {
+    clearTimeout(stateRequestTimer);
+    stateRequestTimer = setTimeout(() => {
+      if (!isWatchPage() || !isExtensionAlive()) return;
+      const href = location.href;
+      try {
+        chrome.runtime.sendMessage(
+          { action: "getVideoState", url: href, duration: getVideoDuration() },
+          (response) => {
+            void chrome.runtime.lastError;
+            if (!response?.success || href !== location.href) return;
+            videoState = { href, analyzed: response.analyzed, estimate: response.estimate };
+            buttons().forEach(applyVideoState);
+          }
+        );
+      } catch {
+        // 확장프로그램이 업데이트되어 연결이 끊긴 경우. 버튼을 누르면 새로고침을 안내한다.
+      }
+    }, delay);
+  }
+
+  function setupVideoStateWatchers() {
+    // 영상 길이는 재생 정보를 받은 뒤에야 알 수 있다(미디어 이벤트는 버블링되지 않으므로 캡처로 받는다).
+    document.addEventListener(
+      "loadedmetadata",
+      (event) => {
+        if (event.target instanceof HTMLVideoElement) requestVideoState();
+      },
+      true
+    );
+    // 분석이 끝나 히스토리가 바뀌면(이 탭에서 연 결과 탭이든 채널 자동 분석이든) 버튼을 바로 바꾼다.
+    try {
+      chrome.storage.onChanged.addListener((changes, area) => {
+        if (area === "local" && changes[HISTORY_STORAGE_KEY]) requestVideoState();
+      });
+    } catch {
+      // 연결이 끊긴 오래된 스크립트
+    }
   }
 
   // ---------------------------------------------------------------------
@@ -201,30 +290,35 @@
     // 실제 분석/진행 상태 표시는 새로 열리는 results 탭이 전담하므로, 이 버튼은
     // 탭을 여는 짧은 순간만 중복 클릭을 막고 바로 원래 상태로 돌아온다.
     button.disabled = true;
+    button.dataset.busy = "true";
 
     try {
       sendOpenResultsTab(button);
     } catch {
       button.disabled = false;
+      delete button.dataset.busy;
       showReloadNeeded(button);
     }
   }
 
   function sendOpenResultsTab(button) {
     chrome.runtime.sendMessage(
-      { action: "openResultsTab", url: location.href },
+      { action: "openResultsTab", url: location.href, duration: getVideoDuration() },
       (response) => {
         void chrome.runtime.lastError;
+        button.disabled = false;
         if (!response?.success) {
           button.textContent = chrome.i18n.getMessage("contentOpenFailed");
           button.title =
             response?.error?.message ?? chrome.i18n.getMessage("contentOpenFailedDetail");
           setTimeout(() => {
-            button.textContent = BUTTON_LABEL;
-            button.title = BUTTON_LABEL_FULL;
+            delete button.dataset.busy;
+            applyVideoState(button);
           }, 3000);
+          return;
         }
-        button.disabled = false;
+        delete button.dataset.busy;
+        applyVideoState(button);
       }
     );
   }
@@ -237,6 +331,12 @@
     button.title = BUTTON_LABEL_FULL;
     button.setAttribute("aria-label", BUTTON_LABEL_FULL);
     button.addEventListener("click", handleAnalyzeClick);
+    // 예상 비용은 영상 길이를 알아야 하므로, 마우스를 올릴 때 한 번 더 묻는다.
+    button.addEventListener("mouseenter", () => {
+      if (!button.dataset.analyzed && !videoState?.estimate) requestVideoState(0);
+    });
+    applyVideoState(button);
+    if (videoState?.href !== location.href) requestVideoState();
     return button;
   }
 
@@ -297,7 +397,12 @@
 
   function setupNavigationWatchers() {
     // YouTube 라우터가 클라이언트 사이드 네비게이션을 마치면 document에 발생시키는 이벤트
-    document.addEventListener("yt-navigate-finish", scheduleEnsureButton);
+    document.addEventListener("yt-navigate-finish", () => {
+      scheduleEnsureButton();
+      // 다른 영상으로 옮겨도 버튼은 그대로 남으므로, 새 영상의 상태로 바꾼다.
+      buttons().forEach(applyVideoState);
+      requestVideoState();
+    });
 
     // yt-navigate-finish만으로는 액션 바가 아직 렌더링되지 않은 타이밍을 놓칠 수 있어
     // DOM 변경을 함께 감시해 버튼이 사라지거나 아직 없으면 다시 삽입을 시도한다.
@@ -329,8 +434,12 @@
 
   function setupSeekListener() {
     chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-      if (message?.action !== "seekTo") return false;
-      sendResponse({ success: isWatchPage() && seekTo(Number(message.seconds)) });
+      if (message?.action === "seekTo") {
+        sendResponse({ success: isWatchPage() && seekTo(Number(message.seconds)) });
+      } else if (message?.action === "getVideoInfo") {
+        // 팝업이 예상 비용을 보여 주려고 영상 길이를 묻는다.
+        sendResponse({ success: isWatchPage(), duration: getVideoDuration() });
+      }
       return false;
     });
   }
@@ -339,6 +448,7 @@
     injectStyles();
     setupNavigationWatchers();
     setupSeekListener();
+    setupVideoStateWatchers();
     scheduleEnsureButton();
   }
 

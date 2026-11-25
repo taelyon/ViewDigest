@@ -1,4 +1,4 @@
-// ViewDigest - popup script
+// View Digest - popup script
 //
 // 분석은 항상 results/results.html을 새 탭으로 열어 처리한다(스트리밍 표시).
 // 팝업 자체는 분석 결과를 렌더링하지 않고, 분석 시작 버튼 + 히스토리 + 사용량만 보여준다.
@@ -10,7 +10,7 @@ import {
   getUnseenIds,
   setUnseenIds,
 } from "../utils/storage.js";
-import { getUsageStats, checkRateLimit } from "../utils/cost.js";
+import { getUsageStats, checkRateLimit, formatUsd } from "../utils/cost.js";
 import { t, localizePage, formatDateTime, formatShortDate, formatShortDateTime } from "../utils/i18n.js";
 import { refreshBadge } from "../utils/badge.js";
 import { getApiKey } from "../utils/apikey.js";
@@ -77,11 +77,40 @@ async function initAnalyzeButton() {
   // API 키가 없으면 분석해도 실패하므로, 시작 가이드로 가는 버튼을 먼저 보여 준다.
   const hasKey = Boolean(await getApiKey());
   document.getElementById("setup-guide-btn").classList.toggle("hidden", hasKey);
-  if (!hasKey) hint.textContent = t("popupNoKey");
+  if (!hasKey) {
+    hint.textContent = t("popupNoKey");
+    return;
+  }
+  if (tab) showVideoState(tab, startBtn, hint);
+}
+
+// 지금 탭의 영상을 이미 분석했으면 버튼을 "저장된 요약 보기"로 바꾸고, 아니면 예상 비용을 보여 준다.
+let savedEntryId = null;
+
+async function showVideoState(tab, startBtn, hint) {
+  // 영상 길이는 YouTube 탭의 content.js만 안다. 확장 설치 전에 열린 탭이면 답이 없다.
+  const info = await chrome.tabs
+    .sendMessage(tab.id, { action: "getVideoInfo" })
+    .catch(() => null);
+  const state = await chrome.runtime
+    .sendMessage({ action: "getVideoState", url: tab.url, duration: info?.duration ?? null })
+    .catch(() => null);
+  if (!state?.success) return;
+  if (state.analyzed) {
+    savedEntryId = state.entryId;
+    startBtn.textContent = t("popupViewSaved");
+  } else if (state.estimate) {
+    hint.textContent = t("popupEstimate", state.estimate.formatted);
+  }
 }
 
 function setupAnalyzeButton() {
   document.getElementById("start-analyze-btn").addEventListener("click", async () => {
+    if (savedEntryId) {
+      openResultsTab({ entryId: savedEntryId });
+      window.close();
+      return;
+    }
     const tab = await getActiveYoutubeTab();
     if (!tab?.url) return;
 
@@ -226,12 +255,23 @@ async function refreshUsage() {
   const fill = document.getElementById("rate-limit-fill");
   const percent = rateLimit.limit > 0 ? Math.min((rateLimit.used / rateLimit.limit) * 100, 100) : 100;
   fill.style.width = `${percent}%`;
-  fill.classList.toggle("is-full", !rateLimit.allowed);
+  fill.classList.toggle("is-full", rateLimit.dailyLimitReached);
 
   const status = document.getElementById("rate-limit-status");
-  status.textContent = rateLimit.allowed
-    ? t("popupRemaining", rateLimit.remaining)
-    : t("popupLimitReached");
+  status.textContent = rateLimit.dailyLimitReached
+    ? t("popupLimitReached")
+    : t("popupRemaining", rateLimit.remaining);
+
+  const budgetStatus = document.getElementById("budget-status");
+  budgetStatus.classList.toggle("hidden", rateLimit.budget === null);
+  budgetStatus.classList.toggle("is-over", rateLimit.budgetExceeded);
+  if (rateLimit.budget !== null) {
+    budgetStatus.textContent = t(
+      rateLimit.budgetExceeded ? "popupBudgetReached" : "popupBudgetStatus",
+      formatUsd(rateLimit.monthCost),
+      formatUsd(rateLimit.budget)
+    );
+  }
 }
 
 // ---------------------------------------------------------------------
